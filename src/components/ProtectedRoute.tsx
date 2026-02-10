@@ -1,5 +1,7 @@
-import { Navigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { Navigate, useNavigate } from "react-router-dom";
+import { useAuth, roleLabels } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { ShieldAlert, ArrowLeft } from "lucide-react";
 
 interface Props {
   children: React.ReactNode;
@@ -7,7 +9,8 @@ interface Props {
 }
 
 export function ProtectedRoute({ children, module }: Props) {
-  const { user, loading, hasModuleAccess } = useAuth();
+  const { user, role, loading, hasModuleAccess } = useAuth();
+  const navigate = useNavigate();
 
   if (loading) {
     return (
@@ -23,9 +26,24 @@ export function ProtectedRoute({ children, module }: Props) {
 
   if (module && !hasModuleAccess(module)) {
     return (
-      <div className="flex flex-col items-center justify-center h-full py-20 gap-3">
-        <p className="text-lg font-semibold text-foreground">Acesso Restrito</p>
-        <p className="text-sm text-muted-foreground">Você não tem permissão para acessar este módulo.</p>
+      <div className="flex flex-col items-center justify-center h-full py-20 gap-4 text-center">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
+          <ShieldAlert className="h-7 w-7 text-destructive" />
+        </div>
+        <div className="space-y-1">
+          <h2 className="text-lg font-serif font-bold text-foreground">Acesso Restrito</h2>
+          <p className="text-sm text-muted-foreground max-w-sm">
+            O módulo <span className="font-semibold text-foreground">{module}</span> não está disponível para o perfil{" "}
+            <span className="font-semibold text-foreground">{role ? roleLabels[role] : "atual"}</span>.
+          </p>
+          <p className="text-xs text-muted-foreground mt-2">
+            Se você acredita que deveria ter acesso, entre em contato com o Administrador da Loja.
+          </p>
+        </div>
+        <Button variant="outline" size="sm" className="gap-1.5 mt-2" onClick={() => navigate("/")}>
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Voltar ao Dashboard
+        </Button>
       </div>
     );
   }
