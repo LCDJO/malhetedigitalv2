@@ -6,6 +6,7 @@ import {
 import { ChartTooltip } from "./ChartTooltip";
 import { receitaMensal, pagosVsAberto, composicaoReceita, formatCurrency } from "./DashboardData";
 import { SectionHeader } from "./SectionHeader";
+import { EmptyState } from "./EmptyState";
 import type { DashboardFilters } from "./DashboardFilterTypes";
 
 interface Props {
@@ -48,65 +49,76 @@ export function DashboardCharts({ filters }: Props) {
     personalizado: "Período personalizado",
   };
 
+  const hasLineData = lineData.length > 0;
+  const hasBarData = barData.length > 0;
+
   return (
     <section className="space-y-5">
       <SectionHeader title="Evolução Financeira" subtitle={subtitleMap[filters.periodo] ?? "Todos os períodos"} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* Gráfico de Linha — Evolução da Arrecadação */}
-        <Card className="animate-fade-in [animation-delay:350ms]">
+        {/* Linha — Evolução da Arrecadação */}
+        <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-sans font-semibold">Evolução da Arrecadação</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[260px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={lineData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 14%, 88%)" vertical={false} />
-                  <XAxis dataKey="mes" {...axisProps} />
-                  <YAxis {...axisProps} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                  <Tooltip content={<ChartTooltip />} />
-                  <Legend content={renderLegend} />
-                  <Line
-                    type="monotone"
-                    dataKey="valor"
-                    name="Arrecadação"
-                    stroke="hsl(220, 55%, 22%)"
-                    strokeWidth={2.5}
-                    dot={{ r: 4, fill: "hsl(220, 55%, 22%)", strokeWidth: 2, stroke: "hsl(0, 0%, 100%)" }}
-                    activeDot={{ r: 6, fill: "hsl(220, 55%, 22%)", strokeWidth: 2, stroke: "hsl(0, 0%, 100%)" }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+            {hasLineData ? (
+              <div className="h-[260px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={lineData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 14%, 88%)" vertical={false} />
+                    <XAxis dataKey="mes" {...axisProps} />
+                    <YAxis {...axisProps} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                    <Tooltip content={<ChartTooltip />} />
+                    <Legend content={renderLegend} />
+                    <Line
+                      type="monotone"
+                      dataKey="valor"
+                      name="Arrecadação"
+                      stroke="hsl(220, 55%, 22%)"
+                      strokeWidth={2.5}
+                      dot={{ r: 4, fill: "hsl(220, 55%, 22%)", strokeWidth: 2, stroke: "hsl(0, 0%, 100%)" }}
+                      activeDot={{ r: 6, fill: "hsl(220, 55%, 22%)", strokeWidth: 2, stroke: "hsl(0, 0%, 100%)" }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <EmptyState message="Sem dados de arrecadação" submessage="Nenhum dado disponível para o período selecionado." />
+            )}
           </CardContent>
         </Card>
 
-        {/* Gráfico de Barras — Pagos vs Em Aberto */}
-        <Card className="animate-fade-in [animation-delay:400ms]">
+        {/* Barras — Pagos vs Em Aberto */}
+        <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-sans font-semibold">Valores Pagos vs Em Aberto</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[260px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={barData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 14%, 88%)" vertical={false} />
-                  <XAxis dataKey="mes" {...axisProps} />
-                  <YAxis {...axisProps} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                  <Tooltip content={<ChartTooltip />} />
-                  <Legend content={renderLegend} />
-                  <Bar dataKey="pago" name="Pagos" fill="hsl(152, 55%, 38%)" radius={[3, 3, 0, 0]} barSize={22} />
-                  <Bar dataKey="em_aberto" name="Em Aberto" fill="hsl(0, 65%, 48%)" radius={[3, 3, 0, 0]} barSize={22} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            {hasBarData ? (
+              <div className="h-[260px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={barData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 14%, 88%)" vertical={false} />
+                    <XAxis dataKey="mes" {...axisProps} />
+                    <YAxis {...axisProps} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                    <Tooltip content={<ChartTooltip />} />
+                    <Legend content={renderLegend} />
+                    <Bar dataKey="pago" name="Pagos" fill="hsl(152, 55%, 38%)" radius={[3, 3, 0, 0]} barSize={22} />
+                    <Bar dataKey="em_aberto" name="Em Aberto" fill="hsl(0, 65%, 48%)" radius={[3, 3, 0, 0]} barSize={22} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <EmptyState message="Sem dados de fluxo" submessage="Nenhum dado disponível para o período selecionado." />
+            )}
           </CardContent>
         </Card>
       </div>
 
       {/* Composição da Receita */}
-      <Card className="animate-fade-in [animation-delay:450ms]">
+      <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-sans font-semibold">Composição da Receita</CardTitle>
         </CardHeader>
