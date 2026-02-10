@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -11,8 +11,16 @@ import { Calendar } from "@/components/ui/calendar";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { CalendarIcon, Check, ChevronsUpDown, Plus, RotateCcw } from "lucide-react";
+import { CalendarIcon, Check, ChevronsUpDown, Plus, RotateCcw, Lightbulb } from "lucide-react";
 import { toast } from "sonner";
+import {
+  formatCurrency,
+  taxasMaconicasMock,
+  irmaosComGrau,
+  getSugestoesTaxas,
+  grauLabels,
+  type TaxaMaconica,
+} from "@/components/dashboard/DashboardData";
 
 interface Lancamento {
   id: number;
@@ -23,24 +31,12 @@ interface Lancamento {
   descricao: string;
 }
 
-const irmaos = [
-  { id: 1, nome: "João Silva", cim: "123456" },
-  { id: 2, nome: "Carlos Mendes", cim: "234567" },
-  { id: 3, nome: "Pedro Alves", cim: "345678" },
-  { id: 4, nome: "Marcos Oliveira", cim: "456789" },
-  { id: 5, nome: "Antônio Souza", cim: "567890" },
-];
-
 const tipoLabels: Record<string, string> = { mensalidade: "Mensalidade", avulso: "Valor Avulso", taxa: "Taxa" };
 const tipoBadge: Record<string, string> = {
   mensalidade: "bg-primary/10 text-primary border-primary/20",
   avulso: "bg-accent/20 text-accent-foreground border-accent/30",
   taxa: "bg-warning/10 text-warning border-warning/20",
 };
-
-function formatCurrency(v: number) {
-  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
 
 const emptyForm = { irmaoId: "", tipo: "", valor: "", descricao: "", data: new Date() };
 
@@ -49,18 +45,29 @@ export function LancamentoIndividual() {
   const [form, setForm] = useState(emptyForm);
   const [comboOpen, setComboOpen] = useState(false);
 
-  const selectedIrmao = irmaos.find((i) => i.id.toString() === form.irmaoId);
+  const selectedIrmao = irmaosComGrau.find((i) => i.id.toString() === form.irmaoId);
+  const sugestoes = selectedIrmao ? getSugestoesTaxas(selectedIrmao, taxasMaconicasMock) : [];
 
   const resetForm = () => setForm(emptyForm);
+
+  const applySugestao = (taxa: TaxaMaconica) => {
+    setForm((f) => ({
+      ...f,
+      tipo: "taxa",
+      valor: taxa.valorPadrao.toString().replace(".", ","),
+      descricao: taxa.nome,
+    }));
+    toast.info(`Taxa "${taxa.nome}" aplicada — ${formatCurrency(taxa.valorPadrao)}`);
+  };
 
   const handleSalvar = () => {
     if (!form.irmaoId) { toast.error("É obrigatório selecionar um irmão para o lançamento."); return; }
     if (!form.tipo) { toast.error("Selecione o tipo de lançamento (mensalidade, avulso ou taxa)."); return; }
     const v = parseFloat(form.valor.replace(",", ".")) || 0;
-    if (v <= 0 || isNaN(v)) { toast.error("O valor deve ser maior que zero. Valores negativos não são permitidos."); return; }
+    if (v <= 0 || isNaN(v)) { toast.error("O valor deve ser maior que zero."); return; }
 
-    const irmao = irmaos.find((i) => i.id.toString() === form.irmaoId);
-    if (!irmao) { toast.error("Irmão não encontrado. Selecione novamente."); return; }
+    const irmao = irmaosComGrau.find((i) => i.id.toString() === form.irmaoId);
+    if (!irmao) { toast.error("Irmão não encontrado."); return; }
 
     const novo: Lancamento = {
       id: Date.now(),
@@ -72,7 +79,7 @@ export function LancamentoIndividual() {
     };
     setHistorico((prev) => [novo, ...prev]);
     resetForm();
-    toast.success(`Lançamento de ${formatCurrency(v)} registrado com sucesso para ${irmao.nome}.`);
+    toast.success(`Lançamento de ${formatCurrency(v)} registrado para ${irmao.nome}.`);
   };
 
   return (
@@ -88,7 +95,9 @@ export function LancamentoIndividual() {
             <Popover open={comboOpen} onOpenChange={setComboOpen}>
               <PopoverTrigger asChild>
                 <Button variant="outline" role="combobox" aria-expanded={comboOpen} className="w-full justify-between font-normal">
-                  {selectedIrmao ? `${selectedIrmao.nome} — CIM ${selectedIrmao.cim}` : "Buscar irmão..."}
+                  {selectedIrmao
+                    ? `${selectedIrmao.nome} — CIM ${selectedIrmao.cim}`
+                    : "Buscar irmão..."}
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
@@ -98,14 +107,20 @@ export function LancamentoIndividual() {
                   <CommandList>
                     <CommandEmpty>Nenhum irmão encontrado.</CommandEmpty>
                     <CommandGroup>
-                      {irmaos.map((i) => (
+                      {irmaosComGrau.map((i) => (
                         <CommandItem
                           key={i.id}
                           value={`${i.nome} ${i.cim}`}
                           onSelect={() => { setForm((f) => ({ ...f, irmaoId: i.id.toString() })); setComboOpen(false); }}
                         >
                           <Check className={cn("mr-2 h-4 w-4", form.irmaoId === i.id.toString() ? "opacity-100" : "opacity-0")} />
-                          {i.nome} <span className="ml-auto text-xs text-muted-foreground">CIM {i.cim}</span>
+                          <div className="flex items-center gap-2 flex-1">
+                            <span>{i.nome}</span>
+                            <Badge variant="outline" className="text-[9px] px-1.5 py-0 ml-auto mr-2">
+                              {grauLabels[i.grau]}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">CIM {i.cim}</span>
+                          </div>
                         </CommandItem>
                       ))}
                     </CommandGroup>
@@ -114,6 +129,37 @@ export function LancamentoIndividual() {
               </PopoverContent>
             </Popover>
           </div>
+
+          {/* Sugestões de taxas */}
+          {selectedIrmao && sugestoes.length > 0 && (
+            <Card className="border-accent/25 bg-accent/5">
+              <CardContent className="pt-4 pb-3">
+                <div className="flex items-center gap-2 mb-3">
+                  <Lightbulb className="h-4 w-4 text-accent" strokeWidth={1.6} />
+                  <p className="text-xs font-semibold text-accent-foreground">Taxas sugeridas para {selectedIrmao.nome}</p>
+                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-accent/10 text-accent-foreground border-accent/20">
+                    {grauLabels[selectedIrmao.grau]}
+                  </Badge>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {sugestoes.map((taxa) => (
+                    <Button
+                      key={taxa.id}
+                      variant="outline"
+                      size="sm"
+                      className="h-auto py-2 px-3 text-left gap-2 border-accent/20 hover:bg-accent/10 hover:border-accent/40"
+                      onClick={() => applySugestao(taxa)}
+                    >
+                      <div>
+                        <p className="text-xs font-medium">{taxa.nome}</p>
+                        <p className="text-[10px] text-muted-foreground">{formatCurrency(taxa.valorPadrao)}</p>
+                      </div>
+                    </Button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="space-y-1.5">

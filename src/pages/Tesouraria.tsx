@@ -1,7 +1,8 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Users } from "lucide-react";
+import { User, Users, Receipt } from "lucide-react";
 import { LancamentoIndividual } from "@/components/tesouraria/LancamentoIndividual";
 import { LancamentoLote } from "@/components/tesouraria/LancamentoLote";
+import { TaxasMaconicas } from "@/components/tesouraria/TaxasMaconicas";
 
 const Tesouraria = () => {
   return (
@@ -21,6 +22,10 @@ const Tesouraria = () => {
             <Users className="h-4 w-4" />
             Lançamento em Lote
           </TabsTrigger>
+          <TabsTrigger value="taxas" className="gap-2 data-[state=active]:bg-card data-[state=active]:shadow-sm">
+            <Receipt className="h-4 w-4" />
+            Taxas Maçônicas
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="individual">
@@ -29,6 +34,10 @@ const Tesouraria = () => {
 
         <TabsContent value="lote">
           <LancamentoLote />
+        </TabsContent>
+
+        <TabsContent value="taxas">
+          <TaxasMaconicas />
         </TabsContent>
       </Tabs>
     </div>
