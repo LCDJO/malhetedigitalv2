@@ -1,100 +1,78 @@
 import { StatCard } from "@/components/StatCard";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Users, DollarSign, Calendar, AlertCircle, CheckCircle2, Clock } from "lucide-react";
-
-const recentActivity = [
-  { id: 1, action: "Pagamento de mensalidade recebido", member: "Ir∴ João Silva", time: "Há 2 horas", type: "financial" as const },
-  { id: 2, action: "Novo membro cadastrado", member: "Ir∴ Carlos Mendes", time: "Há 5 horas", type: "member" as const },
-  { id: 3, action: "Sessão ordinária agendada", member: "1º Vigilante", time: "Há 1 dia", type: "session" as const },
-  { id: 4, action: "Mensalidade em atraso", member: "Ir∴ Pedro Alves", time: "Há 2 dias", type: "alert" as const },
-  { id: 5, action: "Ata da sessão aprovada", member: "Secretário", time: "Há 3 dias", type: "document" as const },
-];
-
-const upcomingSessions = [
-  { id: 1, title: "Sessão Ordinária", date: "15 Fev 2026", time: "19:30", status: "confirmed" as const },
-  { id: 2, title: "Sessão Magna", date: "22 Fev 2026", time: "19:00", status: "pending" as const },
-  { id: 3, title: "Sessão de Instrução", date: "01 Mar 2026", time: "19:30", status: "confirmed" as const },
-];
-
-const activityTypeStyles = {
-  financial: "bg-success/10 text-success",
-  member: "bg-primary/10 text-primary",
-  session: "bg-accent/20 text-accent-foreground",
-  alert: "bg-destructive/10 text-destructive",
-  document: "bg-muted text-muted-foreground",
-};
-
-const activityIcons = {
-  financial: DollarSign,
-  member: Users,
-  session: Calendar,
-  alert: AlertCircle,
-  document: CheckCircle2,
-};
-
-const statusStyles = {
-  confirmed: { label: "Confirmada", className: "bg-success/10 text-success border-success/20" },
-  pending: { label: "Pendente", className: "bg-warning/10 text-warning border-warning/20" },
-};
+import { Card, CardContent } from "@/components/ui/card";
+import { Users, AlertCircle, TrendingUp, BookOpen, Wallet, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Index = () => {
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Membros Ativos" value="47" description="3 novos este mês" icon={Users} trend={{ value: "6.8%", positive: true }} className="[animation-delay:0ms]" />
-        <StatCard title="Receita Mensal" value="R$ 12.580" description="Fev 2026" icon={DollarSign} trend={{ value: "12%", positive: true }} className="[animation-delay:100ms]" />
-        <StatCard title="Próxima Sessão" value="15 Fev" description="Sessão Ordinária — 19:30" icon={Calendar} className="[animation-delay:200ms]" />
-        <StatCard title="Inadimplentes" value="5" description="Mensalidades em atraso" icon={AlertCircle} trend={{ value: "2 a mais", positive: false }} className="[animation-delay:300ms]" />
+    <div className="space-y-8 max-w-5xl mx-auto">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-serif font-bold">Painel Geral</h1>
+        <p className="text-sm text-muted-foreground mt-1">Resumo da Loja Estrela do Oriente nº 123</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 animate-fade-in [animation-delay:400ms]">
-          <CardHeader>
-            <CardTitle className="text-base font-sans font-semibold">Atividade Recente</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1">
-            {recentActivity.map((item) => {
-              const Icon = activityIcons[item.type];
-              return (
-                <div key={item.id} className="flex items-center gap-3 py-3 border-b last:border-0">
-                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${activityTypeStyles[item.type]}`}>
-                    <Icon className="h-3.5 w-3.5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{item.action}</p>
-                    <p className="text-xs text-muted-foreground">{item.member}</p>
-                  </div>
-                  <span className="text-xs text-muted-foreground shrink-0">{item.time}</span>
-                </div>
-              );
-            })}
-          </CardContent>
-        </Card>
+      {/* Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <StatCard
+          title="Irmãos Cadastrados"
+          value="47"
+          description="Membros ativos no quadro"
+          icon={Users}
+          className="[animation-delay:0ms]"
+        />
+        <StatCard
+          title="Total em Aberto"
+          value="R$ 3.250,00"
+          description="Mensalidades pendentes"
+          icon={AlertCircle}
+          trend={{ value: "5 inadimplentes", positive: false }}
+          className="[animation-delay:100ms]"
+        />
+        <StatCard
+          title="Total Arrecadado"
+          value="R$ 12.580,00"
+          description="Arrecadação em Fev/2026"
+          icon={TrendingUp}
+          trend={{ value: "12% vs mês anterior", positive: true }}
+          className="[animation-delay:200ms]"
+        />
+      </div>
 
-        <Card className="animate-fade-in [animation-delay:500ms]">
-          <CardHeader>
-            <CardTitle className="text-base font-sans font-semibold">Próximas Sessões</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {upcomingSessions.map((session) => (
-              <div key={session.id} className="flex flex-col gap-2 p-3 rounded-lg bg-muted/50">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{session.title}</span>
-                  <Badge variant="outline" className={statusStyles[session.status].className}>
-                    {statusStyles[session.status].label}
-                  </Badge>
+      {/* Atalhos Rápidos */}
+      <div>
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Atalhos Rápidos</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Link to="/secretaria" className="group">
+            <Card className="transition-all hover:shadow-md hover:border-primary/30 group-focus-visible:ring-2 group-focus-visible:ring-ring">
+              <CardContent className="flex items-center gap-4 p-5">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                  <BookOpen className="h-5 w-5" />
                 </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Calendar className="h-3 w-3" />
-                  <span>{session.date}</span>
-                  <Clock className="h-3 w-3 ml-2" />
-                  <span>{session.time}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm">Acessar Secretaria</p>
+                  <p className="text-xs text-muted-foreground">Gestão de membros e documentos</p>
                 </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+                <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link to="/tesouraria" className="group">
+            <Card className="transition-all hover:shadow-md hover:border-primary/30 group-focus-visible:ring-2 group-focus-visible:ring-ring">
+              <CardContent className="flex items-center gap-4 p-5">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                  <Wallet className="h-5 w-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm">Acessar Tesouraria</p>
+                  <p className="text-xs text-muted-foreground">Financeiro e mensalidades</p>
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
       </div>
     </div>
   );
