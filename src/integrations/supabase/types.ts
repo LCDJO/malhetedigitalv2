@@ -50,6 +50,33 @@ export type Database = {
         }
         Relationships: []
       }
+      lodge_config: {
+        Row: {
+          created_at: string
+          id: string
+          lodge_name: string
+          lodge_number: string
+          orient: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lodge_name: string
+          lodge_number: string
+          orient: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lodge_name?: string
+          lodge_number?: string
+          orient?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

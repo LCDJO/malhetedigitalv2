@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
     );
   }
 
-  // POST: Create the first admin user (only if no roles exist)
+  // POST: Create the first admin user + lodge config (only if no roles exist)
   if (req.method === "POST") {
     // Double-check no roles exist
     const { count } = await supabaseAdmin
@@ -48,11 +48,20 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { email, password, full_name } = await req.json();
+    const { email, password, full_name, lodge_name, lodge_number, orient } = await req.json();
 
-    if (!email || !password || !full_name) {
+    // Validate required fields
+    if (!email || !password || !full_name || !lodge_name || !lodge_number || !orient) {
       return new Response(
         JSON.stringify({ error: "Todos os campos são obrigatórios." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate field lengths
+    if (full_name.length > 100 || email.length > 255 || lodge_name.length > 150 || lodge_number.length > 20 || orient.length > 100) {
+      return new Response(
+        JSON.stringify({ error: "Um ou mais campos excedem o tamanho máximo permitido." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -64,12 +73,21 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return new Response(
+        JSON.stringify({ error: "Formato de email inválido." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Create auth user with auto-confirm
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email,
+      email: email.trim().toLowerCase(),
       password,
       email_confirm: true,
-      user_metadata: { full_name },
+      user_metadata: { full_name: full_name.trim() },
     });
 
     if (authError) {
@@ -93,14 +111,36 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Create lodge config
+    const { error: lodgeError } = await supabaseAdmin
+      .from("lodge_config")
+      .insert({
+        lodge_name: lodge_name.trim(),
+        lodge_number: lodge_number.trim(),
+        orient: orient.trim(),
+      });
+
+    if (lodgeError) {
+      return new Response(
+        JSON.stringify({ error: lodgeError.message }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Log the bootstrap action
     await supabaseAdmin.from("audit_log").insert({
       user_id: userId,
-      user_name: full_name,
+      user_name: full_name.trim(),
       action: "BOOTSTRAP_SYSTEM",
       target_table: "user_roles",
       target_id: userId,
-      details: { email, role: "administrador" },
+      details: {
+        email: email.trim().toLowerCase(),
+        role: "administrador",
+        lodge_name: lodge_name.trim(),
+        lodge_number: lodge_number.trim(),
+        orient: orient.trim(),
+      },
     });
 
     return new Response(
