@@ -1,7 +1,8 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, DollarSign } from "lucide-react";
+import { Users, DollarSign, ShieldCheck } from "lucide-react";
 import { CadastroIrmaos } from "@/components/secretaria/CadastroIrmaos";
 import { FinanceiroIrmao } from "@/components/secretaria/FinanceiroIrmao";
+import { IsencaoIrmao } from "@/components/secretaria/IsencaoIrmao";
 
 const Secretaria = () => {
   return (
@@ -21,6 +22,10 @@ const Secretaria = () => {
             <DollarSign className="h-4 w-4" />
             Financeiro do Irmão
           </TabsTrigger>
+          <TabsTrigger value="isencoes" className="gap-2 data-[state=active]:bg-card data-[state=active]:shadow-sm">
+            <ShieldCheck className="h-4 w-4" />
+            Isenções
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="cadastro">
@@ -29,6 +34,10 @@ const Secretaria = () => {
 
         <TabsContent value="financeiro">
           <FinanceiroIrmao />
+        </TabsContent>
+
+        <TabsContent value="isencoes">
+          <IsencaoIrmao />
         </TabsContent>
       </Tabs>
     </div>
