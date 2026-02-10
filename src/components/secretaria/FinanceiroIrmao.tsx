@@ -93,10 +93,10 @@ export function FinanceiroIrmao() {
     : null;
 
   const handleLancamento = () => {
-    if (!selected) return;
+    if (!selected) { toast.error("Selecione um irmão antes de registrar."); return; }
     if (!tipo) { toast.error("Selecione o tipo de lançamento."); return; }
     const v = currencyToNumber(valor);
-    if (v <= 0) { toast.error("Informe um valor válido."); return; }
+    if (v <= 0 || isNaN(v)) { toast.error("O valor deve ser maior que zero."); return; }
 
     const novo: Lancamento = {
       id: Date.now(),
@@ -115,7 +115,7 @@ export function FinanceiroIrmao() {
     setValor("");
     setDescricao("");
     setData(new Date());
-    toast.success("Lançamento registrado.");
+    toast.success(`Lançamento de ${formatCurrency(v)} registrado para ${selected.nome}.`);
   };
 
   return (

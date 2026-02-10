@@ -56,17 +56,30 @@ export function LancamentoLote() {
   const toggle = (id: number) => setSelected((p) => p.includes(id) ? p.filter((x) => x !== id) : [...p, id]);
 
   const canAdvance = () => {
-    if (!tipo) { toast.error("Selecione o tipo de lançamento."); return false; }
-    if (valorNum <= 0) { toast.error("Informe um valor válido."); return false; }
-    if (targetIds.length === 0) { toast.error("Selecione ao menos um irmão."); return false; }
+    if (!tipo) { toast.error("Selecione o tipo de lançamento (mensalidade ou taxa)."); return false; }
+    if (valorNum <= 0 || isNaN(valorNum)) { toast.error("O valor deve ser maior que zero. Valores negativos não são permitidos."); return false; }
+    if (targetIds.length === 0) { toast.error("Selecione ao menos um irmão para o lançamento em lote."); return false; }
     return true;
   };
 
   const goPreview = () => { if (canAdvance()) setStep("preview"); };
 
+  // Gera registros individuais para cada irmão selecionado
+  const [registrosGerados, setRegistrosGerados] = useState<Array<{ id: number; irmao: string; cim: string; tipo: string; valor: number; descricao: string; data: Date }>>([]);
+
   const confirmar = () => {
+    const novos = targetIrmaos.map((i) => ({
+      id: Date.now() + i.id,
+      irmao: i.nome,
+      cim: i.cim,
+      tipo,
+      valor: valorNum,
+      descricao: descricao || tipoLabels[tipo],
+      data,
+    }));
+    setRegistrosGerados(novos);
     setStep("done");
-    toast.success(`${targetIrmaos.length} lançamento(s) registrado(s) com sucesso.`);
+    toast.success(`${novos.length} lançamento(s) individual(is) gerado(s) com sucesso.`);
   };
 
   const resetAll = () => {
@@ -77,6 +90,7 @@ export function LancamentoLote() {
     setData(new Date());
     setSelecaoMode("todos");
     setSelected([]);
+    setRegistrosGerados([]);
   };
 
   // ── Steps indicator ──
@@ -286,18 +300,56 @@ export function LancamentoLote() {
 
       {/* ── STEP 3: Done ── */}
       {step === "done" && (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16 gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
-              <CheckCircle2 className="h-8 w-8 text-success" />
-            </div>
-            <h2 className="text-xl font-serif font-bold">Lançamento Concluído</h2>
-            <p className="text-sm text-muted-foreground text-center max-w-md">
-              {targetIrmaos.length} lançamento(s) de <strong>{formatCurrency(valorNum)}</strong> ({tipoLabels[tipo]}) registrado(s) com sucesso em {format(data, "dd/MM/yyyy")}.
-            </p>
-            <Button variant="outline" onClick={resetAll} className="mt-2">Novo Lançamento em Lote</Button>
-          </CardContent>
-        </Card>
+        <div className="space-y-6">
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12 gap-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
+                <CheckCircle2 className="h-8 w-8 text-success" />
+              </div>
+              <h2 className="text-xl font-serif font-bold">Lançamento Concluído</h2>
+              <p className="text-sm text-muted-foreground text-center max-w-md">
+                {registrosGerados.length} registro(s) individual(is) de <strong>{formatCurrency(valorNum)}</strong> ({tipoLabels[tipo]}) gerado(s) com sucesso em {format(data, "dd/MM/yyyy")}.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base font-sans font-semibold">Registros Individuais Gerados</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Irmão</TableHead>
+                      <TableHead>CIM</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead className="text-right">Valor</TableHead>
+                      <TableHead>Descrição</TableHead>
+                      <TableHead>Data</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {registrosGerados.map((r) => (
+                      <TableRow key={r.id}>
+                        <TableCell className="font-medium">{r.irmao}</TableCell>
+                        <TableCell className="text-muted-foreground">{r.cim}</TableCell>
+                        <TableCell><Badge variant="outline" className={tipoBadge[r.tipo]}>{tipoLabels[r.tipo]}</Badge></TableCell>
+                        <TableCell className="text-right font-medium">{formatCurrency(r.valor)}</TableCell>
+                        <TableCell className="text-muted-foreground">{r.descricao}</TableCell>
+                        <TableCell>{format(r.data, "dd/MM/yyyy")}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              <div className="mt-4 flex justify-center">
+                <Button variant="outline" onClick={resetAll}>Novo Lançamento em Lote</Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );

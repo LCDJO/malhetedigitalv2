@@ -91,9 +91,19 @@ export function CadastroIrmaos() {
   };
 
   const handleSave = () => {
-    if (!form.nome.trim()) { toast.error("Nome é obrigatório."); return; }
-    if (!validateCpf(form.cpf)) { toast.error("CPF inválido."); return; }
-    if (!form.cim.trim()) { toast.error("CIM é obrigatório."); return; }
+    if (!form.nome.trim()) { toast.error("O campo Nome completo é obrigatório."); return; }
+    if (!validateCpf(form.cpf)) { toast.error("CPF inválido. Verifique os dígitos informados."); return; }
+    if (!form.cim.trim()) { toast.error("O campo CIM é obrigatório."); return; }
+
+    // CPF deve ser único
+    const cpfDigits = form.cpf.replace(/\D/g, "");
+    const duplicate = irmaos.find(
+      (i) => i.cpf.replace(/\D/g, "") === cpfDigits && i.id !== editingId
+    );
+    if (duplicate) {
+      toast.error(`CPF já cadastrado para ${duplicate.nome}. Cada irmão deve ter um CPF único.`);
+      return;
+    }
 
     if (editingId) {
       setIrmaos((prev) =>
@@ -101,13 +111,13 @@ export function CadastroIrmaos() {
           i.id === editingId ? { ...i, nome: form.nome.trim(), cpf: form.cpf, cim: form.cim.trim(), foto: form.foto } : i
         )
       );
-      toast.success("Cadastro atualizado.");
+      toast.success("Cadastro atualizado com sucesso.");
     } else {
       setIrmaos((prev) => [
         { id: Date.now(), nome: form.nome.trim(), cpf: form.cpf, cim: form.cim.trim(), foto: form.foto },
         ...prev,
       ]);
-      toast.success("Irmão cadastrado com sucesso.");
+      toast.success("Irmão cadastrado com sucesso no quadro de obreiros.");
     }
     closeDialog();
   };

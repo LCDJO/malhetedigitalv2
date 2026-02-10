@@ -54,15 +54,17 @@ export function LancamentoIndividual() {
   const resetForm = () => setForm(emptyForm);
 
   const handleSalvar = () => {
-    if (!form.irmaoId) { toast.error("Selecione um irmão."); return; }
-    if (!form.tipo) { toast.error("Selecione o tipo de lançamento."); return; }
+    if (!form.irmaoId) { toast.error("É obrigatório selecionar um irmão para o lançamento."); return; }
+    if (!form.tipo) { toast.error("Selecione o tipo de lançamento (mensalidade, avulso ou taxa)."); return; }
     const v = parseFloat(form.valor.replace(",", ".")) || 0;
-    if (v <= 0) { toast.error("Informe um valor válido."); return; }
+    if (v <= 0 || isNaN(v)) { toast.error("O valor deve ser maior que zero. Valores negativos não são permitidos."); return; }
 
     const irmao = irmaos.find((i) => i.id.toString() === form.irmaoId);
+    if (!irmao) { toast.error("Irmão não encontrado. Selecione novamente."); return; }
+
     const novo: Lancamento = {
       id: Date.now(),
-      irmao: irmao?.nome || "",
+      irmao: irmao.nome,
       data: form.data,
       tipo: form.tipo,
       valor: v,
@@ -70,7 +72,7 @@ export function LancamentoIndividual() {
     };
     setHistorico((prev) => [novo, ...prev]);
     resetForm();
-    toast.success(`Lançamento registrado para ${irmao?.nome}.`);
+    toast.success(`Lançamento de ${formatCurrency(v)} registrado com sucesso para ${irmao.nome}.`);
   };
 
   return (
