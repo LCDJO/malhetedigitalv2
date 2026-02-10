@@ -13,6 +13,33 @@ export interface Lancamento {
   data: string; // dd/MM/yyyy
 }
 
+export type TipoIsencao = "temporaria" | "permanente";
+
+export interface Isencao {
+  id: number;
+  irmaoId: number;
+  irmaoNome: string;
+  tipo: TipoIsencao;
+  motivo: string;
+  dataInicio: string; // dd/MM/yyyy
+  dataFim?: string;   // dd/MM/yyyy — only for temporaria
+  ativa: boolean;
+}
+
+export const isencoesMock: Isencao[] = [
+  { id: 1, irmaoId: 3, irmaoNome: "Pedro Alves", tipo: "temporaria", motivo: "Licença médica — cirurgia programada", dataInicio: "01/01/2026", dataFim: "30/06/2026", ativa: true },
+  { id: 2, irmaoId: 5, irmaoNome: "Antônio Souza", tipo: "permanente", motivo: "Membro benemérito — mais de 30 anos de contribuição", dataInicio: "01/03/2025", ativa: true },
+  { id: 3, irmaoId: 4, irmaoNome: "Marcos Oliveira", tipo: "temporaria", motivo: "Dificuldade financeira temporária", dataInicio: "01/11/2025", dataFim: "28/02/2026", ativa: false },
+];
+
+export function getIsencaoAtiva(irmaoId: number, isencoes: Isencao[]): Isencao | undefined {
+  return isencoes.find((i) => i.irmaoId === irmaoId && i.ativa);
+}
+
+export function isIrmaoIsento(irmaoId: number, isencoes: Isencao[]): boolean {
+  return !!getIsencaoAtiva(irmaoId, isencoes);
+}
+
 export const receitaMensal = [
   { mes: "Set", valor: 10200 },
   { mes: "Out", valor: 11400 },

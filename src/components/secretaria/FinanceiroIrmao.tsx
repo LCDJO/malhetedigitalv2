@@ -6,14 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { CalendarIcon, DollarSign, Clock, CheckCircle2, Plus } from "lucide-react";
+import { CalendarIcon, DollarSign, Clock, Plus, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import { isencoesMock, getIsencaoAtiva } from "@/components/dashboard/DashboardData";
 
 interface Lancamento {
   id: number;
@@ -86,6 +86,7 @@ export function FinanceiroIrmao() {
   const [data, setData] = useState<Date>(new Date());
 
   const selected = allData.find((d) => d.id.toString() === selectedId);
+  const isencaoAtiva = selected ? getIsencaoAtiva(selected.id, isencoesMock) : undefined;
 
   const totalPago = selected ? selected.lancamentos.reduce((s, l) => s + l.valor, 0) : 0;
   const ultimaMov = selected && selected.lancamentos.length > 0
@@ -94,6 +95,7 @@ export function FinanceiroIrmao() {
 
   const handleLancamento = () => {
     if (!selected) { toast.error("Selecione um irmão antes de registrar."); return; }
+    if (isencaoAtiva) { toast.error("Este irmão está isento. Não é possível gerar lançamentos automáticos."); return; }
     if (!tipo) { toast.error("Selecione o tipo de lançamento."); return; }
     const v = currencyToNumber(valor);
     if (v <= 0 || isNaN(v)) { toast.error("O valor deve ser maior que zero."); return; }
@@ -149,6 +151,33 @@ export function FinanceiroIrmao() {
 
       {selected && (
         <>
+          {/* Exemption Banner */}
+          {isencaoAtiva && (
+            <Card className="border-success/30 bg-success/5">
+              <CardContent className="flex items-start gap-3 pt-6">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-success/15">
+                  <ShieldCheck className="h-5 w-5 text-success" strokeWidth={1.6} />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold text-success">Irmão com Isenção Ativa</p>
+                    <Badge variant="outline" className="text-[10px] px-2 py-0 bg-success/10 text-success border-success/20">
+                      {isencaoAtiva.tipo === "permanente" ? "Permanente" : "Temporária"}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{isencaoAtiva.motivo}</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    Desde {isencaoAtiva.dataInicio}
+                    {isencaoAtiva.dataFim ? ` até ${isencaoAtiva.dataFim}` : " — sem data de término"}
+                  </p>
+                  <p className="text-[10px] text-warning font-medium mt-1">
+                    ⚠ Lançamentos automáticos suspensos durante o período de isenção.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Resumo financeiro */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Card>
@@ -195,9 +224,16 @@ export function FinanceiroIrmao() {
           </div>
 
           {/* Lançamento */}
-          <Card>
+          <Card className={cn(isencaoAtiva && "opacity-60 pointer-events-none select-none")}>
             <CardHeader>
-              <CardTitle className="text-base font-sans font-semibold">Novo Lançamento</CardTitle>
+              <CardTitle className="text-base font-sans font-semibold flex items-center gap-2">
+                Novo Lançamento
+                {isencaoAtiva && (
+                  <Badge variant="outline" className="text-[10px] bg-warning/10 text-warning border-warning/20">
+                    Bloqueado — irmão isento
+                  </Badge>
+                )}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
