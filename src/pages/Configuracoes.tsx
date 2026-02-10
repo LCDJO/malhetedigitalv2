@@ -2,28 +2,32 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Wallet, SlidersHorizontal, Save, Loader2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Save, Loader2, Building2, Wallet, ScrollText, Tags, SlidersHorizontal } from "lucide-react";
+import { TabDadosLoja } from "@/components/configuracoes/TabDadosLoja";
+import { TabParametrosFinanceiros } from "@/components/configuracoes/TabParametrosFinanceiros";
+import { TabRegrasMaconicas } from "@/components/configuracoes/TabRegrasMaconicas";
+import { TabCategoriasFinanceiras, type CategoriaFinanceira } from "@/components/configuracoes/TabCategoriasFinanceiras";
+import { TabPreferencias } from "@/components/configuracoes/TabPreferencias";
 
 interface LodgeConfig {
   id: string;
   lodge_name: string;
   lodge_number: string;
   orient: string;
+  observacoes: string;
   mensalidade_padrao: number;
   dia_vencimento: number;
   meses_tolerancia_inadimplencia: number;
+  tempo_minimo_aprendiz: number;
+  tempo_minimo_companheiro: number;
+  exigir_quitacao_para_avanco: boolean;
+  categorias_financeiras: CategoriaFinanceira[];
   permitir_lancamento_retroativo: boolean;
   exigir_aprovacao_tesouraria: boolean;
   notificar_inadimplencia: boolean;
-  observacoes: string;
 }
 
 const defaultConfig: LodgeConfig = {
@@ -31,13 +35,17 @@ const defaultConfig: LodgeConfig = {
   lodge_name: "",
   lodge_number: "",
   orient: "",
+  observacoes: "",
   mensalidade_padrao: 0,
   dia_vencimento: 10,
   meses_tolerancia_inadimplencia: 3,
+  tempo_minimo_aprendiz: 12,
+  tempo_minimo_companheiro: 12,
+  exigir_quitacao_para_avanco: true,
+  categorias_financeiras: [],
   permitir_lancamento_retroativo: true,
   exigir_aprovacao_tesouraria: false,
   notificar_inadimplencia: true,
-  observacoes: "",
 };
 
 export default function Configuracoes() {
@@ -58,7 +66,13 @@ export default function Configuracoes() {
       if (error) {
         toast.error("Erro ao carregar configurações.");
       } else if (data) {
-        setConfig(data as unknown as LodgeConfig);
+        setConfig({
+          ...defaultConfig,
+          ...(data as any),
+          categorias_financeiras: Array.isArray((data as any).categorias_financeiras)
+            ? (data as any).categorias_financeiras
+            : [],
+        });
       }
       setLoading(false);
     })();
@@ -96,7 +110,7 @@ export default function Configuracoes() {
   }
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto pb-12">
+    <div className="space-y-6 max-w-4xl mx-auto pb-12">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <div>
@@ -111,164 +125,50 @@ export default function Configuracoes() {
         </Button>
       </div>
 
-      {/* ── Dados Institucionais ── */}
-      <Card>
-        <CardHeader className="pb-4">
-          <div className="flex items-center gap-2">
-            <Building2 className="h-5 w-5 text-primary" />
-            <CardTitle className="text-lg">Dados Institucionais</CardTitle>
-          </div>
-          <CardDescription>Informações oficiais da Loja utilizadas em documentos e relatórios.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-5 sm:grid-cols-2">
-          <div className="space-y-2 sm:col-span-2">
-            <Label htmlFor="lodge_name">Nome da Loja</Label>
-            <Input
-              id="lodge_name"
-              value={config.lodge_name}
-              onChange={(e) => set("lodge_name", e.target.value)}
-              disabled={!canWrite}
-              placeholder="Ex: Loja Maçônica Exemplo Nº 123"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="lodge_number">Número da Loja</Label>
-            <Input
-              id="lodge_number"
-              value={config.lodge_number}
-              onChange={(e) => set("lodge_number", e.target.value)}
-              disabled={!canWrite}
-              placeholder="Ex: 2693"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="orient">Oriente</Label>
-            <Input
-              id="orient"
-              value={config.orient}
-              onChange={(e) => set("orient", e.target.value)}
-              disabled={!canWrite}
-              placeholder="Ex: Alta Floresta"
-            />
-          </div>
-          <div className="space-y-2 sm:col-span-2">
-            <Label htmlFor="observacoes">Observações</Label>
-            <Textarea
-              id="observacoes"
-              value={config.observacoes}
-              onChange={(e) => set("observacoes", e.target.value)}
-              disabled={!canWrite}
-              rows={3}
-              placeholder="Anotações internas sobre a Loja..."
-            />
-          </div>
-        </CardContent>
-      </Card>
+      {/* Tabs */}
+      <Tabs defaultValue="dados" className="w-full">
+        <TabsList className="w-full justify-start flex-wrap h-auto gap-1 bg-muted/50 p-1">
+          <TabsTrigger value="dados" className="gap-1.5 text-xs sm:text-sm">
+            <Building2 className="h-3.5 w-3.5" /> Dados da Loja
+          </TabsTrigger>
+          <TabsTrigger value="financeiro" className="gap-1.5 text-xs sm:text-sm">
+            <Wallet className="h-3.5 w-3.5" /> Parâmetros Financeiros
+          </TabsTrigger>
+          <TabsTrigger value="regras" className="gap-1.5 text-xs sm:text-sm">
+            <ScrollText className="h-3.5 w-3.5" /> Regras Maçônicas
+          </TabsTrigger>
+          <TabsTrigger value="categorias" className="gap-1.5 text-xs sm:text-sm">
+            <Tags className="h-3.5 w-3.5" /> Categorias Financeiras
+          </TabsTrigger>
+          <TabsTrigger value="preferencias" className="gap-1.5 text-xs sm:text-sm">
+            <SlidersHorizontal className="h-3.5 w-3.5" /> Preferências
+          </TabsTrigger>
+        </TabsList>
 
-      {/* ── Parâmetros Financeiros ── */}
-      <Card>
-        <CardHeader className="pb-4">
-          <div className="flex items-center gap-2">
-            <Wallet className="h-5 w-5 text-primary" />
-            <CardTitle className="text-lg">Parâmetros Financeiros</CardTitle>
-          </div>
-          <CardDescription>
-            Valores padrão utilizados pela Tesouraria e Secretaria ao gerar lançamentos.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-5 sm:grid-cols-3">
-          <div className="space-y-2">
-            <Label htmlFor="mensalidade_padrao">Mensalidade Padrão (R$)</Label>
-            <Input
-              id="mensalidade_padrao"
-              type="number"
-              min={0}
-              step={0.01}
-              value={config.mensalidade_padrao}
-              onChange={(e) => set("mensalidade_padrao", parseFloat(e.target.value) || 0)}
-              disabled={!canWrite}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="dia_vencimento">Dia de Vencimento</Label>
-            <Input
-              id="dia_vencimento"
-              type="number"
-              min={1}
-              max={28}
-              value={config.dia_vencimento}
-              onChange={(e) => set("dia_vencimento", parseInt(e.target.value) || 10)}
-              disabled={!canWrite}
-            />
-            <p className="text-xs text-muted-foreground">Dia do mês (1–28)</p>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="meses_tolerancia">Tolerância Inadimplência</Label>
-            <Input
-              id="meses_tolerancia"
-              type="number"
-              min={1}
-              max={12}
-              value={config.meses_tolerancia_inadimplencia}
-              onChange={(e) => set("meses_tolerancia_inadimplencia", parseInt(e.target.value) || 3)}
-              disabled={!canWrite}
-            />
-            <p className="text-xs text-muted-foreground">Meses antes de marcar como inadimplente</p>
-          </div>
-        </CardContent>
-      </Card>
+        <TabsContent value="dados" className="mt-6">
+          <TabDadosLoja config={config} canWrite={canWrite} onChange={set} />
+        </TabsContent>
 
-      {/* ── Controles Globais ── */}
-      <Card>
-        <CardHeader className="pb-4">
-          <div className="flex items-center gap-2">
-            <SlidersHorizontal className="h-5 w-5 text-primary" />
-            <CardTitle className="text-lg">Controles Globais</CardTitle>
-          </div>
-          <CardDescription>Comportamentos que impactam Secretaria, Tesouraria e Dashboard.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-sm font-medium">Permitir Lançamento Retroativo</p>
-              <p className="text-xs text-muted-foreground">Permite registrar lançamentos com data anterior à atual.</p>
-            </div>
-            <Switch
-              checked={config.permitir_lancamento_retroativo}
-              onCheckedChange={(v) => set("permitir_lancamento_retroativo", v)}
-              disabled={!canWrite}
-            />
-          </div>
-          <Separator />
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-sm font-medium">Exigir Aprovação na Tesouraria</p>
-              <p className="text-xs text-muted-foreground">
-                Lançamentos precisam de aprovação do Venerável antes de serem efetivados.
-              </p>
-            </div>
-            <Switch
-              checked={config.exigir_aprovacao_tesouraria}
-              onCheckedChange={(v) => set("exigir_aprovacao_tesouraria", v)}
-              disabled={!canWrite}
-            />
-          </div>
-          <Separator />
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-sm font-medium">Notificar Inadimplência</p>
-              <p className="text-xs text-muted-foreground">
-                Exibir alertas de inadimplência no Dashboard e painel de secretaria.
-              </p>
-            </div>
-            <Switch
-              checked={config.notificar_inadimplencia}
-              onCheckedChange={(v) => set("notificar_inadimplencia", v)}
-              disabled={!canWrite}
-            />
-          </div>
-        </CardContent>
-      </Card>
+        <TabsContent value="financeiro" className="mt-6">
+          <TabParametrosFinanceiros config={config} canWrite={canWrite} onChange={set} />
+        </TabsContent>
+
+        <TabsContent value="regras" className="mt-6">
+          <TabRegrasMaconicas config={config} canWrite={canWrite} onChange={set} />
+        </TabsContent>
+
+        <TabsContent value="categorias" className="mt-6">
+          <TabCategoriasFinanceiras
+            categorias={config.categorias_financeiras}
+            canWrite={canWrite}
+            onChange={(cats) => set("categorias_financeiras", cats)}
+          />
+        </TabsContent>
+
+        <TabsContent value="preferencias" className="mt-6">
+          <TabPreferencias config={config} canWrite={canWrite} onChange={set} />
+        </TabsContent>
+      </Tabs>
 
       {/* Impact notice */}
       <div className="flex items-center gap-2 text-xs text-muted-foreground px-1">
