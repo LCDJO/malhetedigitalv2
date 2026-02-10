@@ -18,6 +18,9 @@ interface LodgeConfig extends DadosLojaConfig {
   mensalidade_padrao: number;
   dia_vencimento: number;
   meses_tolerancia_inadimplencia: number;
+  permitir_juros: boolean;
+  percentual_multa: number;
+  percentual_juros: number;
   tempo_minimo_aprendiz: number;
   tempo_minimo_companheiro: number;
   exigir_quitacao_para_avanco: boolean;
@@ -41,6 +44,9 @@ const defaultConfig: LodgeConfig = {
   mensalidade_padrao: 0,
   dia_vencimento: 10,
   meses_tolerancia_inadimplencia: 3,
+  permitir_juros: false,
+  percentual_multa: 2,
+  percentual_juros: 1,
   tempo_minimo_aprendiz: 12,
   tempo_minimo_companheiro: 12,
   exigir_quitacao_para_avanco: true,
