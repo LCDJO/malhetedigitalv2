@@ -21,13 +21,7 @@ import { useAuditLog } from "@/hooks/useAuditLog";
 import { PermissionGate } from "@/components/PermissionGate";
 import { type Isencao, type TipoIsencao, isencoesMock } from "@/components/dashboard/DashboardData";
 
-const irmaosDisponiveis = [
-  { id: 1, nome: "João Silva", cim: "123456" },
-  { id: 2, nome: "Carlos Mendes", cim: "234567" },
-  { id: 3, nome: "Pedro Alves", cim: "345678" },
-  { id: 4, nome: "Marcos Oliveira", cim: "456789" },
-  { id: 5, nome: "Antônio Souza", cim: "567890" },
-];
+const irmaosDisponiveis: { id: number; nome: string; cim: string }[] = [];
 
 export function IsencaoIrmao() {
   const { hasPermission } = useAuth();

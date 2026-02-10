@@ -42,26 +42,7 @@ const tipoBadgeClass: Record<string, string> = {
   taxa: "bg-warning/10 text-warning border-warning/20",
 };
 
-const dados: IrmaoFinanceiro[] = [
-  {
-    id: 1, nome: "João Silva", cim: "123456",
-    lancamentos: [
-      { id: 1, data: new Date(2026, 0, 5), tipo: "mensalidade", valor: 280, descricao: "Mensalidade Jan/2026" },
-      { id: 2, data: new Date(2026, 1, 3), tipo: "mensalidade", valor: 280, descricao: "Mensalidade Fev/2026" },
-      { id: 3, data: new Date(2026, 1, 3), tipo: "taxa", valor: 50, descricao: "Taxa de expediente" },
-    ],
-  },
-  {
-    id: 2, nome: "Carlos Mendes", cim: "234567",
-    lancamentos: [
-      { id: 4, data: new Date(2026, 0, 10), tipo: "mensalidade", valor: 280, descricao: "Mensalidade Jan/2026" },
-    ],
-  },
-  {
-    id: 3, nome: "Pedro Alves", cim: "345678",
-    lancamentos: [],
-  },
-];
+const dados: IrmaoFinanceiro[] = [];
 
 function formatCurrency(value: number) {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
