@@ -45,6 +45,15 @@ export const fluxoCaixa = [
   { mes: "Fev", entrada: 12580, saida: 9200 },
 ];
 
+export const pagosVsAberto = [
+  { mes: "Set", pago: 9600, em_aberto: 600 },
+  { mes: "Out", pago: 10700, em_aberto: 700 },
+  { mes: "Nov", pago: 9900, em_aberto: 900 },
+  { mes: "Dez", pago: 12100, em_aberto: 1100 },
+  { mes: "Jan", pago: 10130, em_aberto: 1100 },
+  { mes: "Fev", pago: 10060, em_aberto: 2520 },
+];
+
 export const ultimosLancamentos: Lancamento[] = [
   { id: 1, descricao: "Mensalidade Fev/2026", irmao: "Ir∴ Carlos Mendes", tipo: "entrada", categoria: "mensalidade", situacao: "pago", valor: 280, data: "03/02/2026" },
   { id: 2, descricao: "Taxa de Iniciação", irmao: "Ir∴ André Souza", tipo: "entrada", categoria: "taxa", situacao: "pago", valor: 350, data: "02/02/2026" },
