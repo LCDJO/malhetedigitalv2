@@ -52,9 +52,11 @@ export type Database = {
       }
       lodge_config: {
         Row: {
+          categorias_financeiras: Json
           created_at: string
           dia_vencimento: number
           exigir_aprovacao_tesouraria: boolean
+          exigir_quitacao_para_avanco: boolean
           id: string
           lodge_name: string
           lodge_number: string
@@ -64,12 +66,16 @@ export type Database = {
           observacoes: string | null
           orient: string
           permitir_lancamento_retroativo: boolean
+          tempo_minimo_aprendiz: number
+          tempo_minimo_companheiro: number
           updated_at: string
         }
         Insert: {
+          categorias_financeiras?: Json
           created_at?: string
           dia_vencimento?: number
           exigir_aprovacao_tesouraria?: boolean
+          exigir_quitacao_para_avanco?: boolean
           id?: string
           lodge_name: string
           lodge_number: string
@@ -79,12 +85,16 @@ export type Database = {
           observacoes?: string | null
           orient: string
           permitir_lancamento_retroativo?: boolean
+          tempo_minimo_aprendiz?: number
+          tempo_minimo_companheiro?: number
           updated_at?: string
         }
         Update: {
+          categorias_financeiras?: Json
           created_at?: string
           dia_vencimento?: number
           exigir_aprovacao_tesouraria?: boolean
+          exigir_quitacao_para_avanco?: boolean
           id?: string
           lodge_name?: string
           lodge_number?: string
@@ -94,6 +104,8 @@ export type Database = {
           observacoes?: string | null
           orient?: string
           permitir_lancamento_retroativo?: boolean
+          tempo_minimo_aprendiz?: number
+          tempo_minimo_companheiro?: number
           updated_at?: string
         }
         Relationships: []
