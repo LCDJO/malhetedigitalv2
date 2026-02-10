@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { LogIn, UserPlus, Eye, EyeOff, KeyRound, ArrowLeft } from "lucide-react";
+import BootstrapWizard from "@/components/BootstrapWizard";
 
 type AuthView = "login" | "signup" | "forgot" | "reset";
 
@@ -23,6 +24,14 @@ export default function Auth() {
   const [fullName, setFullName] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [needsBootstrap, setNeedsBootstrap] = useState<boolean | null>(null);
+
+  // Check if bootstrap is needed
+  useEffect(() => {
+    supabase.functions.invoke("bootstrap", { method: "GET" }).then(({ data }) => {
+      setNeedsBootstrap(data?.needs_bootstrap ?? false);
+    }).catch(() => setNeedsBootstrap(false));
+  }, []);
 
   // Detect password recovery event from URL
   useEffect(() => {
@@ -136,6 +145,24 @@ export default function Auth() {
       {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
     </button>
   );
+
+  // Show loading while checking bootstrap
+  if (needsBootstrap === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  // Show bootstrap wizard if system needs initialization
+  if (needsBootstrap) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <BootstrapWizard onComplete={() => setNeedsBootstrap(false)} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
