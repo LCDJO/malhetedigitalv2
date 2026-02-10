@@ -15,7 +15,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <AppSidebar />
         <main className="flex-1 flex flex-col min-w-0">
           {/* Top bar */}
-          <header className="h-[56px] border-b bg-card flex items-center justify-between px-5 shrink-0 shadow-sm">
+          <header className="h-[52px] border-b bg-card/80 backdrop-blur-sm flex items-center justify-between px-5 shrink-0">
             <div className="flex items-center gap-3">
               <SidebarTrigger className="text-muted-foreground hover:text-foreground transition-colors" />
               <div className="h-4 w-px bg-border" />
