@@ -6,6 +6,11 @@ import {
 import { ChartTooltip } from "./ChartTooltip";
 import { receitaMensal, composicaoReceita, fluxoCaixa, formatCurrency } from "./DashboardData";
 import { SectionHeader } from "./SectionHeader";
+import type { DashboardFilters } from "./DashboardFilterTypes";
+
+interface Props {
+  filters: DashboardFilters;
+}
 
 const axisProps = {
   tick: { fontSize: 11, fill: "hsl(220, 10%, 48%)" },
@@ -13,13 +18,28 @@ const axisProps = {
   tickLine: false,
 };
 
-export function DashboardCharts() {
+export function DashboardCharts({ filters }: Props) {
+  // Apply period filter to chart data
+  const chartData = filters.periodo === "mes_atual"
+    ? receitaMensal.slice(-1)
+    : filters.periodo === "ultimo_trimestre"
+      ? receitaMensal.slice(-3)
+      : receitaMensal;
+
+  const fluxoData = filters.periodo === "mes_atual"
+    ? fluxoCaixa.slice(-1)
+    : filters.periodo === "ultimo_trimestre"
+      ? fluxoCaixa.slice(-3)
+      : fluxoCaixa;
+
   return (
     <section className="space-y-4">
-      <SectionHeader title="Evolução Financeira" subtitle="Últimos 6 meses de movimentação" />
+      <SectionHeader title="Evolução Financeira" subtitle={
+        filters.periodo === "mes_atual" ? "Mês atual" :
+        filters.periodo === "ultimo_trimestre" ? "Último trimestre" : "Período personalizado"
+      } />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Evolução da Receita */}
         <Card className="lg:col-span-2 animate-fade-in [animation-delay:350ms]">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-sans font-semibold">Receita Mensal</CardTitle>
@@ -27,7 +47,7 @@ export function DashboardCharts() {
           <CardContent>
             <div className="h-[240px]">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={receitaMensal} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+                <AreaChart data={chartData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
                   <defs>
                     <linearGradient id="receitaGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="hsl(220, 55%, 22%)" stopOpacity={0.2} />
@@ -45,7 +65,6 @@ export function DashboardCharts() {
           </CardContent>
         </Card>
 
-        {/* Composição */}
         <Card className="animate-fade-in [animation-delay:400ms]">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-sans font-semibold">Composição da Receita</CardTitle>
@@ -78,7 +97,6 @@ export function DashboardCharts() {
         </Card>
       </div>
 
-      {/* Fluxo de Caixa */}
       <Card className="animate-fade-in [animation-delay:450ms]">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-sans font-semibold">Fluxo de Caixa — Entradas vs Saídas</CardTitle>
@@ -86,7 +104,7 @@ export function DashboardCharts() {
         <CardContent>
           <div className="h-[220px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={fluxoCaixa} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+              <BarChart data={fluxoData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 14%, 88%)" vertical={false} />
                 <XAxis dataKey="mes" {...axisProps} />
                 <YAxis {...axisProps} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />

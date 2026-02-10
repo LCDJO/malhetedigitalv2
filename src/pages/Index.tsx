@@ -1,14 +1,19 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Wallet } from "lucide-react";
 import { Link } from "react-router-dom";
+import { DashboardFilterBar } from "@/components/dashboard/DashboardFilterBar";
 import { DashboardKPIs } from "@/components/dashboard/DashboardKPIs";
 import { DashboardAlerts } from "@/components/dashboard/DashboardAlerts";
 import { DashboardCharts } from "@/components/dashboard/DashboardCharts";
 import { DashboardInadimplencia } from "@/components/dashboard/DashboardInadimplencia";
 import { DashboardCategorias } from "@/components/dashboard/DashboardCategorias";
 import { DashboardLancamentos } from "@/components/dashboard/DashboardLancamentos";
+import { type DashboardFilters, defaultFilters } from "@/components/dashboard/DashboardFilterTypes";
 
 const Index = () => {
+  const [filters, setFilters] = useState<DashboardFilters>(defaultFilters);
+
   return (
     <div className="space-y-10 max-w-6xl mx-auto pb-10">
       {/* Header */}
@@ -33,23 +38,26 @@ const Index = () => {
         </div>
       </div>
 
+      {/* Filtros Globais */}
+      <DashboardFilterBar filters={filters} onChange={setFilters} />
+
       {/* 1. KPIs */}
-      <DashboardKPIs />
+      <DashboardKPIs filters={filters} />
 
       {/* Alertas Estratégicos */}
-      <DashboardAlerts />
+      <DashboardAlerts filters={filters} />
 
       {/* 2. Gráficos de Evolução */}
-      <DashboardCharts />
+      <DashboardCharts filters={filters} />
 
       {/* 3. Indicadores de Inadimplência */}
-      <DashboardInadimplencia />
+      <DashboardInadimplencia filters={filters} />
 
       {/* 4. Resumo por Categorias */}
       <DashboardCategorias />
 
       {/* 5. Últimos Lançamentos */}
-      <DashboardLancamentos />
+      <DashboardLancamentos filters={filters} />
     </div>
   );
 };

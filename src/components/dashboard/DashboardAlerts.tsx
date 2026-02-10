@@ -1,9 +1,15 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertTriangle } from "lucide-react";
-import { formatCurrency, inadimplentes } from "./DashboardData";
+import { formatCurrency, filterInadimplentes } from "./DashboardData";
+import type { DashboardFilters } from "./DashboardFilterTypes";
 
-export function DashboardAlerts() {
-  const criticos = inadimplentes.filter((i) => i.meses >= 3);
+interface Props {
+  filters: DashboardFilters;
+}
+
+export function DashboardAlerts({ filters }: Props) {
+  const inadFiltrados = filterInadimplentes(filters);
+  const criticos = inadFiltrados.filter((i) => i.meses >= 3);
   if (criticos.length === 0) return null;
 
   return (
