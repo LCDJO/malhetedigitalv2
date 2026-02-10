@@ -11,8 +11,10 @@ import { Calendar } from "@/components/ui/calendar";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { CalendarIcon, Check, ChevronsUpDown, Plus, RotateCcw, Lightbulb } from "lucide-react";
+import { CalendarIcon, Check, ChevronsUpDown, Plus, RotateCcw, Lightbulb, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { ConfirmSensitiveAction } from "@/components/ConfirmSensitiveAction";
 import {
   formatCurrency,
   taxasMaconicasMock,
@@ -41,9 +43,17 @@ const tipoBadge: Record<string, string> = {
 const emptyForm = { irmaoId: "", tipo: "", valor: "", descricao: "", data: new Date() };
 
 export function LancamentoIndividual() {
+  const { hasPermission } = useAuth();
   const [historico, setHistorico] = useState<Lancamento[]>([]);
   const [form, setForm] = useState(emptyForm);
   const [comboOpen, setComboOpen] = useState(false);
+
+  // Sensitive action state
+  const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
+  const [editTarget, setEditTarget] = useState<Lancamento | null>(null);
+
+  const canWrite = hasPermission("tesouraria", "write");
+  const canApprove = hasPermission("tesouraria", "approve");
 
   const selectedIrmao = irmaosComGrau.find((i) => i.id.toString() === form.irmaoId);
   const sugestoes = selectedIrmao ? getSugestoesTaxas(selectedIrmao, taxasMaconicasMock) : [];
@@ -226,12 +236,13 @@ export function LancamentoIndividual() {
                   <TableHead>Tipo</TableHead>
                   <TableHead className="text-right">Valor</TableHead>
                   <TableHead>Descrição</TableHead>
+                  {canWrite && <TableHead className="text-right">Ações</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {historico.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={canWrite ? 6 : 5} className="text-center text-muted-foreground py-8">
                       Nenhum lançamento registrado nesta sessão
                     </TableCell>
                   </TableRow>
@@ -243,6 +254,36 @@ export function LancamentoIndividual() {
                       <TableCell><Badge variant="outline" className={tipoBadge[l.tipo]}>{tipoLabels[l.tipo]}</Badge></TableCell>
                       <TableCell className="text-right font-medium">{formatCurrency(l.valor)}</TableCell>
                       <TableCell className="text-muted-foreground">{l.descricao}</TableCell>
+                      {canWrite && (
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              title="Editar valor"
+                              onClick={() => {
+                                if (!canApprove) {
+                                  toast.error("Alteração de valores requer perfil com permissão de aprovação.");
+                                  return;
+                                }
+                                setEditTarget(l);
+                              }}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-destructive hover:text-destructive"
+                              title="Excluir lançamento"
+                              onClick={() => setDeleteTarget(l.id)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))
                 )}
@@ -251,6 +292,38 @@ export function LancamentoIndividual() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Confirmação de exclusão */}
+      <ConfirmSensitiveAction
+        open={deleteTarget !== null}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title="Excluir Lançamento"
+        description="Esta ação é irreversível. O lançamento será permanentemente removido do sistema. Deseja continuar?"
+        confirmLabel="Excluir Lançamento"
+        requireTypedConfirmation="EXCLUIR"
+        destructive
+        onConfirm={() => {
+          if (deleteTarget !== null) {
+            setHistorico((prev) => prev.filter((l) => l.id !== deleteTarget));
+            toast.success("Lançamento excluído com sucesso.");
+            setDeleteTarget(null);
+          }
+        }}
+      />
+
+      {/* Confirmação de edição de valor */}
+      <ConfirmSensitiveAction
+        open={editTarget !== null}
+        onOpenChange={(open) => { if (!open) setEditTarget(null); }}
+        title="Alterar Valor Financeiro"
+        description={`Você está prestes a editar o lançamento de ${editTarget ? formatCurrency(editTarget.valor) : ""} para ${editTarget?.irmao}. Alterações em valores financeiros são auditadas. Deseja continuar?`}
+        confirmLabel="Confirmar Alteração"
+        requireTypedConfirmation="ALTERAR"
+        onConfirm={() => {
+          toast.success("Edição autorizada. Implemente o formulário de edição conforme necessário.");
+          setEditTarget(null);
+        }}
+      />
     </div>
   );
 }

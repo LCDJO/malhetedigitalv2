@@ -15,6 +15,8 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { CalendarIcon, Plus, ShieldCheck, ShieldOff, AlertTriangle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { ConfirmSensitiveAction } from "@/components/ConfirmSensitiveAction";
 import { type Isencao, type TipoIsencao, isencoesMock } from "@/components/dashboard/DashboardData";
 
 const irmaosDisponiveis = [
@@ -26,8 +28,14 @@ const irmaosDisponiveis = [
 ];
 
 export function IsencaoIrmao() {
+  const { hasPermission } = useAuth();
   const [isencoes, setIsencoes] = useState<Isencao[]>(isencoesMock);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [revogarTarget, setRevogarTarget] = useState<number | null>(null);
+  const [concederConfirmOpen, setConcederConfirmOpen] = useState(false);
+
+  const canApprove = hasPermission("secretaria", "approve");
+  const canWrite = hasPermission("secretaria", "write");
 
   // form
   const [irmaoId, setIrmaoId] = useState("");
@@ -44,31 +52,41 @@ export function IsencaoIrmao() {
     setDataFim(undefined);
   };
 
-  const handleSave = () => {
-    if (!irmaoId) { toast.error("Selecione um irmão."); return; }
-    if (!tipoIsencao) { toast.error("Selecione o tipo de isenção."); return; }
-    if (!motivo.trim()) { toast.error("Informe o motivo da isenção."); return; }
-    if (!dataInicio) { toast.error("Informe a data de início."); return; }
-    if (tipoIsencao === "temporaria" && !dataFim) { toast.error("Isenções temporárias exigem data final."); return; }
-    if (tipoIsencao === "temporaria" && dataFim && dataFim <= dataInicio) { toast.error("A data final deve ser posterior à data inicial."); return; }
-
+  const validateForm = () => {
+    if (!irmaoId) { toast.error("Selecione um irmão."); return false; }
+    if (!tipoIsencao) { toast.error("Selecione o tipo de isenção."); return false; }
+    if (!motivo.trim()) { toast.error("Informe o motivo da isenção."); return false; }
+    if (!dataInicio) { toast.error("Informe a data de início."); return false; }
+    if (tipoIsencao === "temporaria" && !dataFim) { toast.error("Isenções temporárias exigem data final."); return false; }
+    if (tipoIsencao === "temporaria" && dataFim && dataFim <= dataInicio) { toast.error("A data final deve ser posterior à data inicial."); return false; }
     const irmao = irmaosDisponiveis.find((i) => i.id.toString() === irmaoId);
-    if (!irmao) return;
-
-    // Check for existing active exemption
+    if (!irmao) return false;
     const existing = isencoes.find((i) => i.irmaoId === irmao.id && i.ativa);
-    if (existing) {
-      toast.error(`${irmao.nome} já possui uma isenção ativa.`);
+    if (existing) { toast.error(`${irmao.nome} já possui uma isenção ativa.`); return false; }
+    return true;
+  };
+
+  const handleSaveClick = () => {
+    if (!canApprove && !canWrite) {
+      toast.error("Você não tem permissão para conceder isenções.");
       return;
     }
+    if (!validateForm()) return;
+    // Require confirmation for this sensitive action
+    setConcederConfirmOpen(true);
+  };
+
+  const handleSaveConfirmed = () => {
+    const irmao = irmaosDisponiveis.find((i) => i.id.toString() === irmaoId);
+    if (!irmao) return;
 
     const nova: Isencao = {
       id: Date.now(),
       irmaoId: irmao.id,
       irmaoNome: irmao.nome,
-      tipo: tipoIsencao,
+      tipo: tipoIsencao as TipoIsencao,
       motivo: motivo.trim(),
-      dataInicio: format(dataInicio, "dd/MM/yyyy"),
+      dataInicio: format(dataInicio!, "dd/MM/yyyy"),
       dataFim: tipoIsencao === "temporaria" && dataFim ? format(dataFim, "dd/MM/yyyy") : undefined,
       ativa: true,
     };
@@ -79,11 +97,21 @@ export function IsencaoIrmao() {
     resetForm();
   };
 
-  const handleRevogar = (id: number) => {
+  const handleRevogarClick = (id: number) => {
+    if (!canApprove && !canWrite) {
+      toast.error("Você não tem permissão para revogar isenções.");
+      return;
+    }
+    setRevogarTarget(id);
+  };
+
+  const handleRevogarConfirmed = () => {
+    if (revogarTarget === null) return;
     setIsencoes((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, ativa: false } : i))
+      prev.map((i) => (i.id === revogarTarget ? { ...i, ativa: false } : i))
     );
     toast.success("Isenção revogada com sucesso.");
+    setRevogarTarget(null);
   };
 
   const ativas = isencoes.filter((i) => i.ativa);
@@ -193,7 +221,7 @@ export function IsencaoIrmao() {
                             variant="ghost"
                             size="sm"
                             className="h-7 text-xs gap-1 text-destructive hover:text-destructive hover:bg-destructive/10"
-                            onClick={() => handleRevogar(isencao.id)}
+                            onClick={() => handleRevogarClick(isencao.id)}
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                             Revogar
@@ -298,10 +326,33 @@ export function IsencaoIrmao() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setDialogOpen(false); resetForm(); }}>Cancelar</Button>
-            <Button onClick={handleSave}>Registrar Isenção</Button>
+            <Button onClick={handleSaveClick}>Registrar Isenção</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmação de concessão de isenção */}
+      <ConfirmSensitiveAction
+        open={concederConfirmOpen}
+        onOpenChange={setConcederConfirmOpen}
+        title="Conceder Isenção Financeira"
+        description="Isenções financeiras impactam diretamente a arrecadação da Loja. Esta ação será registrada no log de auditoria. Deseja confirmar a concessão?"
+        confirmLabel="Confirmar Isenção"
+        requireTypedConfirmation="CONCEDER"
+        onConfirm={handleSaveConfirmed}
+      />
+
+      {/* Confirmação de revogação */}
+      <ConfirmSensitiveAction
+        open={revogarTarget !== null}
+        onOpenChange={(open) => { if (!open) setRevogarTarget(null); }}
+        title="Revogar Isenção"
+        description="Ao revogar esta isenção, o irmão voltará a ter obrigações financeiras normais. Deseja continuar?"
+        confirmLabel="Revogar Isenção"
+        requireTypedConfirmation="REVOGAR"
+        destructive
+        onConfirm={handleRevogarConfirmed}
+      />
     </div>
   );
 }
