@@ -40,6 +40,69 @@ export function isIrmaoIsento(irmaoId: number, isencoes: Isencao[]): boolean {
   return !!getIsencaoAtiva(irmaoId, isencoes);
 }
 
+// ── Taxas Maçônicas ──
+
+export type GrauMaconico = "aprendiz" | "companheiro" | "mestre" | "todos";
+
+export interface TaxaMaconica {
+  id: number;
+  nome: string;
+  descricao: string;
+  valorPadrao: number;
+  grauAplicavel: GrauMaconico;
+  categoriaFinanceira: "taxa";
+  ativa: boolean;
+}
+
+export const grauLabels: Record<GrauMaconico, string> = {
+  aprendiz: "Aprendiz (1°)",
+  companheiro: "Companheiro (2°)",
+  mestre: "Mestre (3°)",
+  todos: "Todos os Graus",
+};
+
+export const taxasMaconicasMock: TaxaMaconica[] = [
+  { id: 1, nome: "Taxa de Iniciação", descricao: "Cobrada no ato da iniciação do profano", valorPadrao: 500, grauAplicavel: "aprendiz", categoriaFinanceira: "taxa", ativa: true },
+  { id: 2, nome: "Taxa de Elevação", descricao: "Cobrada na elevação ao grau de Companheiro", valorPadrao: 350, grauAplicavel: "companheiro", categoriaFinanceira: "taxa", ativa: true },
+  { id: 3, nome: "Taxa de Exaltação", descricao: "Cobrada na exaltação ao grau de Mestre", valorPadrao: 400, grauAplicavel: "mestre", categoriaFinanceira: "taxa", ativa: true },
+  { id: 4, nome: "Taxa de Regularização", descricao: "Cobrada para regularização de irmão em débito", valorPadrao: 200, grauAplicavel: "todos", categoriaFinanceira: "taxa", ativa: true },
+  { id: 5, nome: "Taxa de Filiação", descricao: "Cobrada na filiação de irmão vindo de outra Loja", valorPadrao: 300, grauAplicavel: "todos", categoriaFinanceira: "taxa", ativa: true },
+  { id: 6, nome: "Taxa Semestral GLESP", descricao: "Repasse semestral à Grande Loja", valorPadrao: 180, grauAplicavel: "todos", categoriaFinanceira: "taxa", ativa: true },
+];
+
+// ── Irmãos com grau (for suggestions) ──
+
+export interface IrmaoComGrau {
+  id: number;
+  nome: string;
+  cim: string;
+  grau: GrauMaconico;
+  eventosPendentes: string[]; // e.g. ["elevacao", "regularizacao"]
+}
+
+export const irmaosComGrau: IrmaoComGrau[] = [
+  { id: 1, nome: "João Silva", cim: "123456", grau: "aprendiz", eventosPendentes: ["elevacao"] },
+  { id: 2, nome: "Carlos Mendes", cim: "234567", grau: "companheiro", eventosPendentes: ["exaltacao"] },
+  { id: 3, nome: "Pedro Alves", cim: "345678", grau: "mestre", eventosPendentes: [] },
+  { id: 4, nome: "Marcos Oliveira", cim: "456789", grau: "aprendiz", eventosPendentes: ["regularizacao"] },
+  { id: 5, nome: "Antônio Souza", cim: "567890", grau: "mestre", eventosPendentes: [] },
+];
+
+export function getSugestoesTaxas(irmao: IrmaoComGrau, taxas: TaxaMaconica[]): TaxaMaconica[] {
+  return taxas.filter((t) => {
+    if (!t.ativa) return false;
+    // Match by pending events
+    const eventoMap: Record<string, string> = {
+      elevacao: "Taxa de Elevação",
+      exaltacao: "Taxa de Exaltação",
+      regularizacao: "Taxa de Regularização",
+      iniciacao: "Taxa de Iniciação",
+      filiacao: "Taxa de Filiação",
+    };
+    return irmao.eventosPendentes.some((ev) => eventoMap[ev] === t.nome);
+  });
+}
+
 export const receitaMensal = [
   { mes: "Set", valor: 10200 },
   { mes: "Out", valor: 11400 },
