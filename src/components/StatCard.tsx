@@ -13,18 +13,18 @@ interface StatCardProps {
 
 export function StatCard({ title, value, description, icon: Icon, trend, className }: StatCardProps) {
   return (
-    <Card className={cn("animate-fade-in", className)}>
+    <Card className={cn("animate-fade-in group", className)}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground font-sans">{title}</CardTitle>
-        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10">
-          <Icon className="h-4 w-4 text-primary" />
+        <CardTitle className="text-[12px] font-medium text-muted-foreground font-sans uppercase tracking-wide">{title}</CardTitle>
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/8 group-hover:bg-primary/12 transition-colors">
+          <Icon className="h-[18px] w-[18px] text-primary" strokeWidth={1.8} />
         </div>
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold font-serif">{value}</div>
-        {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
+        <div className="text-[26px] font-bold font-serif leading-none">{value}</div>
+        {description && <p className="text-[11px] text-muted-foreground mt-1.5">{description}</p>}
         {trend && (
-          <p className={cn("text-xs mt-1 font-medium", trend.positive ? "text-success" : "text-destructive")}>
+          <p className={cn("text-[11px] mt-1.5 font-semibold", trend.positive ? "text-success" : "text-destructive")}>
             {trend.positive ? "↑" : "↓"} {trend.value}
           </p>
         )}
