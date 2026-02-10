@@ -5,6 +5,7 @@ import {
   Settings,
   Lock,
   LayoutDashboard,
+  Users,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth, roleLabels } from "@/contexts/AuthContext";
@@ -30,6 +31,7 @@ const menuItems = [
   { title: "Chancelaria", url: "/chancelaria", icon: Stamp, module: "chancelaria" },
   { title: "Tesouraria", url: "/tesouraria", icon: Wallet, module: "tesouraria" },
   { title: "Configurações", url: "/configuracoes", icon: Settings, module: "configuracoes" },
+  { title: "Gestão de Usuários", url: "/gestao-usuarios", icon: Users, module: "configuracoes" },
 ];
 
 export function AppSidebar() {
