@@ -85,6 +85,7 @@ export type Database = {
           descricao: string
           id: string
           member_id: string
+          status: string
           tipo: string
           valor: number
         }
@@ -95,6 +96,7 @@ export type Database = {
           descricao?: string
           id?: string
           member_id: string
+          status?: string
           tipo: string
           valor: number
         }
@@ -105,6 +107,7 @@ export type Database = {
           descricao?: string
           id?: string
           member_id?: string
+          status?: string
           tipo?: string
           valor?: number
         }
