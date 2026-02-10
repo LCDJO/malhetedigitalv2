@@ -68,6 +68,9 @@ export type Database = {
           notificar_inadimplencia: boolean
           observacoes: string | null
           orient: string
+          percentual_juros: number
+          percentual_multa: number
+          permitir_juros: boolean
           permitir_lancamento_retroativo: boolean
           potencia: string
           telefone: string | null
@@ -92,6 +95,9 @@ export type Database = {
           notificar_inadimplencia?: boolean
           observacoes?: string | null
           orient: string
+          percentual_juros?: number
+          percentual_multa?: number
+          permitir_juros?: boolean
           permitir_lancamento_retroativo?: boolean
           potencia?: string
           telefone?: string | null
@@ -116,6 +122,9 @@ export type Database = {
           notificar_inadimplencia?: boolean
           observacoes?: string | null
           orient?: string
+          percentual_juros?: number
+          percentual_multa?: number
+          permitir_juros?: boolean
           permitir_lancamento_retroativo?: boolean
           potencia?: string
           telefone?: string | null
