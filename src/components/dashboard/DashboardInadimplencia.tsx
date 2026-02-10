@@ -4,6 +4,7 @@ import { Progress } from "@/components/ui/progress";
 import { AlertCircle, Users, Banknote } from "lucide-react";
 import { formatCurrency, filterInadimplentes, TOTAL_IRMAOS } from "./DashboardData";
 import { SectionHeader } from "./SectionHeader";
+import { EmptyState } from "./EmptyState";
 import type { DashboardFilters } from "./DashboardFilterTypes";
 
 interface Props {
@@ -22,7 +23,7 @@ export function DashboardInadimplencia({ filters }: Props) {
 
       {/* Summary strip */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="border-destructive/15 bg-destructive/[0.03] animate-fade-in [animation-delay:500ms]">
+        <Card className="border-destructive/15 bg-destructive/[0.03]">
           <CardContent className="flex items-center gap-3 p-4">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-destructive/10">
               <Users className="h-5 w-5 text-destructive" strokeWidth={1.8} />
@@ -35,7 +36,7 @@ export function DashboardInadimplencia({ filters }: Props) {
           </CardContent>
         </Card>
 
-        <Card className="border-destructive/15 bg-destructive/[0.03] animate-fade-in [animation-delay:550ms]">
+        <Card className="border-destructive/15 bg-destructive/[0.03]">
           <CardContent className="flex items-center gap-3 p-4">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-destructive/10">
               <Banknote className="h-5 w-5 text-destructive" strokeWidth={1.8} />
@@ -48,7 +49,7 @@ export function DashboardInadimplencia({ filters }: Props) {
           </CardContent>
         </Card>
 
-        <Card className="animate-fade-in [animation-delay:600ms]">
+        <Card>
           <CardContent className="flex flex-col justify-center gap-3 p-4 h-full">
             <div className="flex items-center justify-between">
               <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Taxa de Adimplência</p>
@@ -65,7 +66,7 @@ export function DashboardInadimplencia({ filters }: Props) {
       </div>
 
       {/* Top 5 inadimplentes */}
-      <Card className="border-destructive/15 animate-fade-in [animation-delay:650ms]">
+      <Card className="border-destructive/15">
         <CardHeader className="pb-3 flex flex-row items-center justify-between">
           <div className="flex items-center gap-2">
             <AlertCircle className="h-4 w-4 text-destructive" strokeWidth={1.8} />
@@ -77,10 +78,9 @@ export function DashboardInadimplencia({ filters }: Props) {
         </CardHeader>
         <CardContent>
           {top5.length === 0 ? (
-            <p className="text-xs text-muted-foreground py-6 text-center">Nenhum inadimplente para os filtros selecionados.</p>
+            <EmptyState message="Nenhum inadimplente encontrado" submessage="Ajuste os filtros ou verifique o período selecionado." />
           ) : (
             <div className="space-y-0">
-              {/* Header row */}
               <div className="grid grid-cols-[auto_1fr_auto_auto] gap-3 px-1 pb-2 border-b text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                 <span className="w-7">#</span>
                 <span>Nome</span>
@@ -110,7 +110,6 @@ export function DashboardInadimplencia({ filters }: Props) {
                 </div>
               ))}
 
-              {/* Footer total */}
               <div className="grid grid-cols-[auto_1fr_auto_auto] gap-3 items-center px-1 pt-3 border-t mt-1">
                 <span className="w-7" />
                 <span className="text-xs font-medium text-muted-foreground">Total dos 5 maiores</span>

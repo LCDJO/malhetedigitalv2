@@ -8,6 +8,7 @@ import {
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { formatCurrency, filterLancamentos, ultimosLancamentos } from "./DashboardData";
 import { SectionHeader } from "./SectionHeader";
+import { EmptyState } from "./EmptyState";
 import type { DashboardFilters } from "./DashboardFilterTypes";
 
 interface Props {
@@ -35,12 +36,10 @@ export function DashboardLancamentos({ filters }: Props) {
         subtitle={`${lancsFiltrados.length} movimentação(ões) encontrada(s)`}
       />
 
-      <Card className="animate-fade-in [animation-delay:650ms]">
+      <Card>
         <CardContent className="p-0">
           {lancsFiltrados.length === 0 ? (
-            <p className="text-xs text-muted-foreground py-8 text-center">
-              Nenhum lançamento para os filtros selecionados.
-            </p>
+            <EmptyState message="Nenhum lançamento encontrado" submessage="Ajuste os filtros para visualizar movimentações." />
           ) : (
             <>
               <Table>
