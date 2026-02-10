@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -13,10 +14,10 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { CalendarIcon, ChevronRight, ChevronLeft, CheckCircle2, Send, Eye, Settings2 } from "lucide-react";
+import { CalendarIcon, ChevronRight, ChevronLeft, CheckCircle2, Send, Eye, Settings2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-const irmaos: { id: number; nome: string; cim: string }[] = [];
+interface MemberOption { id: string; full_name: string; cim: string; }
 
 const tipoLabels: Record<string, string> = { mensalidade: "Mensalidade", taxa: "Taxa" };
 const tipoBadge: Record<string, string> = {
@@ -32,6 +33,8 @@ function formatCurrency(v: number) {
 
 export function LancamentoLote() {
   const [step, setStep] = useState<Step>("config");
+  const [members, setMembers] = useState<MemberOption[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(true);
 
   // form
   const [tipo, setTipo] = useState("");
@@ -39,15 +42,24 @@ export function LancamentoLote() {
   const [descricao, setDescricao] = useState("");
   const [data, setData] = useState<Date>(new Date());
   const [selecaoMode, setSelecaoMode] = useState<"todos" | "manual">("todos");
-  const [selected, setSelected] = useState<number[]>([]);
+  const [selected, setSelected] = useState<string[]>([]);
 
-  const targetIds = selecaoMode === "todos" ? irmaos.map((i) => i.id) : selected;
-  const targetIrmaos = irmaos.filter((i) => targetIds.includes(i.id));
+  useEffect(() => {
+    (async () => {
+      setLoadingMembers(true);
+      const { data } = await supabase.from("members").select("id, full_name, cim").eq("status", "ativo").order("full_name");
+      if (data) setMembers(data);
+      setLoadingMembers(false);
+    })();
+  }, []);
+
+  const targetIds = selecaoMode === "todos" ? members.map((m) => m.id) : selected;
+  const targetIrmaos = members.filter((m) => targetIds.includes(m.id));
   const valorNum = parseFloat(valor.replace(",", ".")) || 0;
 
-  const allManualSelected = selected.length === irmaos.length;
-  const toggleAll = () => setSelected(allManualSelected ? [] : irmaos.map((i) => i.id));
-  const toggle = (id: number) => setSelected((p) => p.includes(id) ? p.filter((x) => x !== id) : [...p, id]);
+  const allManualSelected = selected.length === members.length;
+  const toggleAll = () => setSelected(allManualSelected ? [] : members.map((m) => m.id));
+  const toggle = (id: string) => setSelected((p) => p.includes(id) ? p.filter((x) => x !== id) : [...p, id]);
 
   const canAdvance = () => {
     if (!tipo) { toast.error("Selecione o tipo de lançamento (mensalidade ou taxa)."); return false; }
@@ -59,13 +71,13 @@ export function LancamentoLote() {
   const goPreview = () => { if (canAdvance()) setStep("preview"); };
 
   // Gera registros individuais para cada irmão selecionado
-  const [registrosGerados, setRegistrosGerados] = useState<Array<{ id: number; irmao: string; cim: string; tipo: string; valor: number; descricao: string; data: Date }>>([]);
+  const [registrosGerados, setRegistrosGerados] = useState<Array<{ id: string; irmao: string; cim: string; tipo: string; valor: number; descricao: string; data: Date }>>([]);
 
   const confirmar = () => {
-    const novos = targetIrmaos.map((i) => ({
-      id: Date.now() + i.id,
-      irmao: i.nome,
-      cim: i.cim,
+    const novos = targetIrmaos.map((m) => ({
+      id: m.id,
+      irmao: m.full_name,
+      cim: m.cim,
       tipo,
       valor: valorNum,
       descricao: descricao || tipoLabels[tipo],
@@ -175,7 +187,7 @@ export function LancamentoLote() {
               <RadioGroup value={selecaoMode} onValueChange={(v) => setSelecaoMode(v as "todos" | "manual")} className="flex gap-6">
                 <div className="flex items-center gap-2">
                   <RadioGroupItem value="todos" id="todos" />
-                  <Label htmlFor="todos" className="font-normal cursor-pointer">Todos os irmãos ({irmaos.length})</Label>
+                  <Label htmlFor="todos" className="font-normal cursor-pointer">Todos os irmãos ({members.length})</Label>
                 </div>
                 <div className="flex items-center gap-2">
                   <RadioGroupItem value="manual" id="manual" />
@@ -196,13 +208,13 @@ export function LancamentoLote() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {irmaos.map((irmao) => (
-                        <TableRow key={irmao.id} className={cn(selected.includes(irmao.id) && "bg-primary/5")}>
+                      {members.map((m) => (
+                        <TableRow key={m.id} className={cn(selected.includes(m.id) && "bg-primary/5")}>
                           <TableCell>
-                            <Checkbox checked={selected.includes(irmao.id)} onCheckedChange={() => toggle(irmao.id)} />
+                            <Checkbox checked={selected.includes(m.id)} onCheckedChange={() => toggle(m.id)} />
                           </TableCell>
-                          <TableCell className="font-medium">{irmao.nome}</TableCell>
-                          <TableCell className="text-muted-foreground">{irmao.cim}</TableCell>
+                          <TableCell className="font-medium">{m.full_name}</TableCell>
+                          <TableCell className="text-muted-foreground">{m.cim}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -267,7 +279,7 @@ export function LancamentoLote() {
                 <TableBody>
                   {targetIrmaos.map((i) => (
                     <TableRow key={i.id}>
-                      <TableCell className="font-medium">{i.nome}</TableCell>
+                      <TableCell className="font-medium">{i.full_name}</TableCell>
                       <TableCell className="text-muted-foreground">{i.cim}</TableCell>
                       <TableCell><Badge variant="outline" className={tipoBadge[tipo]}>{tipoLabels[tipo]}</Badge></TableCell>
                       <TableCell className="text-right font-medium">{formatCurrency(valorNum)}</TableCell>

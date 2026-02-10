@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -11,20 +12,20 @@ import { Calendar } from "@/components/ui/calendar";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { CalendarIcon, Check, ChevronsUpDown, Plus, RotateCcw, Lightbulb, Trash2, Pencil } from "lucide-react";
+import { CalendarIcon, Check, ChevronsUpDown, Plus, RotateCcw, Trash2, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { ConfirmSensitiveAction } from "@/components/ConfirmSensitiveAction";
 import { PermissionGate } from "@/components/PermissionGate";
 import { useAuditLog } from "@/hooks/useAuditLog";
-import {
-  formatCurrency,
-  taxasMaconicasMock,
-  irmaosComGrau,
-  getSugestoesTaxas,
-  grauLabels,
-  type TaxaMaconica,
-} from "@/components/dashboard/DashboardData";
+import { formatCurrency } from "@/components/dashboard/DashboardData";
+
+interface MemberOption {
+  id: string;
+  full_name: string;
+  cim: string;
+  degree: string;
+}
 
 interface Lancamento {
   id: number;
@@ -47,6 +48,8 @@ const emptyForm = { irmaoId: "", tipo: "", valor: "", descricao: "", data: new D
 export function LancamentoIndividual() {
   const { hasPermission } = useAuth();
   const { logAction } = useAuditLog();
+  const [members, setMembers] = useState<MemberOption[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(true);
   const [historico, setHistorico] = useState<Lancamento[]>([]);
   const [form, setForm] = useState(emptyForm);
   const [comboOpen, setComboOpen] = useState(false);
@@ -58,20 +61,22 @@ export function LancamentoIndividual() {
   const canWrite = hasPermission("tesouraria", "write");
   const canApprove = hasPermission("tesouraria", "approve");
 
-  const selectedIrmao = irmaosComGrau.find((i) => i.id.toString() === form.irmaoId);
-  const sugestoes = selectedIrmao ? getSugestoesTaxas(selectedIrmao, taxasMaconicasMock) : [];
+  const fetchMembers = useCallback(async () => {
+    setLoadingMembers(true);
+    const { data } = await supabase
+      .from("members")
+      .select("id, full_name, cim, degree")
+      .eq("status", "ativo")
+      .order("full_name");
+    if (data) setMembers(data);
+    setLoadingMembers(false);
+  }, []);
+
+  useEffect(() => { fetchMembers(); }, [fetchMembers]);
+
+  const selectedIrmao = members.find((m) => m.id === form.irmaoId);
 
   const resetForm = () => setForm(emptyForm);
-
-  const applySugestao = (taxa: TaxaMaconica) => {
-    setForm((f) => ({
-      ...f,
-      tipo: "taxa",
-      valor: taxa.valorPadrao.toString().replace(".", ","),
-      descricao: taxa.nome,
-    }));
-    toast.info(`Taxa "${taxa.nome}" aplicada — ${formatCurrency(taxa.valorPadrao)}`);
-  };
 
   const handleSalvar = () => {
     if (!form.irmaoId) { toast.error("É obrigatório selecionar um irmão para o lançamento."); return; }
@@ -79,12 +84,12 @@ export function LancamentoIndividual() {
     const v = parseFloat(form.valor.replace(",", ".")) || 0;
     if (v <= 0 || isNaN(v)) { toast.error("O valor deve ser maior que zero."); return; }
 
-    const irmao = irmaosComGrau.find((i) => i.id.toString() === form.irmaoId);
+    const irmao = members.find((m) => m.id === form.irmaoId);
     if (!irmao) { toast.error("Irmão não encontrado."); return; }
 
     const novo: Lancamento = {
       id: Date.now(),
-      irmao: irmao.nome,
+      irmao: irmao.full_name,
       data: form.data,
       tipo: form.tipo,
       valor: v,
@@ -92,7 +97,7 @@ export function LancamentoIndividual() {
     };
     setHistorico((prev) => [novo, ...prev]);
     resetForm();
-    toast.success(`Lançamento de ${formatCurrency(v)} registrado para ${irmao.nome}.`);
+    toast.success(`Lançamento de ${formatCurrency(v)} registrado para ${irmao.full_name}.`);
   };
 
   return (
@@ -105,74 +110,44 @@ export function LancamentoIndividual() {
           {/* Irmão com busca */}
           <div className="space-y-1.5 max-w-sm">
             <Label>Irmão *</Label>
-            <Popover open={comboOpen} onOpenChange={setComboOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" role="combobox" aria-expanded={comboOpen} className="w-full justify-between font-normal">
-                  {selectedIrmao
-                    ? `${selectedIrmao.nome} — CIM ${selectedIrmao.cim}`
-                    : "Buscar irmão..."}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                <Command>
-                  <CommandInput placeholder="Buscar por nome ou CIM..." />
-                  <CommandList>
-                    <CommandEmpty>Nenhum irmão encontrado.</CommandEmpty>
-                    <CommandGroup>
-                      {irmaosComGrau.map((i) => (
-                        <CommandItem
-                          key={i.id}
-                          value={`${i.nome} ${i.cim}`}
-                          onSelect={() => { setForm((f) => ({ ...f, irmaoId: i.id.toString() })); setComboOpen(false); }}
-                        >
-                          <Check className={cn("mr-2 h-4 w-4", form.irmaoId === i.id.toString() ? "opacity-100" : "opacity-0")} />
-                          <div className="flex items-center gap-2 flex-1">
-                            <span>{i.nome}</span>
-                            <Badge variant="outline" className="text-[9px] px-1.5 py-0 ml-auto mr-2">
-                              {grauLabels[i.grau]}
-                            </Badge>
-                            <span className="text-xs text-muted-foreground">CIM {i.cim}</span>
-                          </div>
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+            {loadingMembers ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground py-2"><Loader2 className="h-4 w-4 animate-spin" /> Carregando...</div>
+            ) : (
+              <Popover open={comboOpen} onOpenChange={setComboOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" role="combobox" aria-expanded={comboOpen} className="w-full justify-between font-normal">
+                    {selectedIrmao
+                      ? `${selectedIrmao.full_name} — CIM ${selectedIrmao.cim}`
+                      : "Buscar irmão..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Buscar por nome ou CIM..." />
+                    <CommandList>
+                      <CommandEmpty>Nenhum irmão encontrado.</CommandEmpty>
+                      <CommandGroup>
+                        {members.map((m) => (
+                          <CommandItem
+                            key={m.id}
+                            value={`${m.full_name} ${m.cim}`}
+                            onSelect={() => { setForm((f) => ({ ...f, irmaoId: m.id })); setComboOpen(false); }}
+                          >
+                            <Check className={cn("mr-2 h-4 w-4", form.irmaoId === m.id ? "opacity-100" : "opacity-0")} />
+                            <div className="flex items-center gap-2 flex-1">
+                              <span>{m.full_name}</span>
+                              <span className="text-xs text-muted-foreground ml-auto">CIM {m.cim}</span>
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            )}
           </div>
-
-          {/* Sugestões de taxas */}
-          {selectedIrmao && sugestoes.length > 0 && (
-            <Card className="border-accent/25 bg-accent/5">
-              <CardContent className="pt-4 pb-3">
-                <div className="flex items-center gap-2 mb-3">
-                  <Lightbulb className="h-4 w-4 text-accent" strokeWidth={1.6} />
-                  <p className="text-xs font-semibold text-accent-foreground">Taxas sugeridas para {selectedIrmao.nome}</p>
-                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-accent/10 text-accent-foreground border-accent/20">
-                    {grauLabels[selectedIrmao.grau]}
-                  </Badge>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {sugestoes.map((taxa) => (
-                    <Button
-                      key={taxa.id}
-                      variant="outline"
-                      size="sm"
-                      className="h-auto py-2 px-3 text-left gap-2 border-accent/20 hover:bg-accent/10 hover:border-accent/40"
-                      onClick={() => applySugestao(taxa)}
-                    >
-                      <div>
-                        <p className="text-xs font-medium">{taxa.nome}</p>
-                        <p className="text-[10px] text-muted-foreground">{formatCurrency(taxa.valorPadrao)}</p>
-                      </div>
-                    </Button>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="space-y-1.5">
