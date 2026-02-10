@@ -55,17 +55,22 @@ export type Database = {
           categorias_financeiras: Json
           created_at: string
           dia_vencimento: number
+          email_institucional: string | null
+          endereco: string | null
           exigir_aprovacao_tesouraria: boolean
           exigir_quitacao_para_avanco: boolean
           id: string
           lodge_name: string
           lodge_number: string
+          logotipo_url: string | null
           mensalidade_padrao: number
           meses_tolerancia_inadimplencia: number
           notificar_inadimplencia: boolean
           observacoes: string | null
           orient: string
           permitir_lancamento_retroativo: boolean
+          potencia: string
+          telefone: string | null
           tempo_minimo_aprendiz: number
           tempo_minimo_companheiro: number
           updated_at: string
@@ -74,17 +79,22 @@ export type Database = {
           categorias_financeiras?: Json
           created_at?: string
           dia_vencimento?: number
+          email_institucional?: string | null
+          endereco?: string | null
           exigir_aprovacao_tesouraria?: boolean
           exigir_quitacao_para_avanco?: boolean
           id?: string
           lodge_name: string
           lodge_number: string
+          logotipo_url?: string | null
           mensalidade_padrao?: number
           meses_tolerancia_inadimplencia?: number
           notificar_inadimplencia?: boolean
           observacoes?: string | null
           orient: string
           permitir_lancamento_retroativo?: boolean
+          potencia?: string
+          telefone?: string | null
           tempo_minimo_aprendiz?: number
           tempo_minimo_companheiro?: number
           updated_at?: string
@@ -93,17 +103,22 @@ export type Database = {
           categorias_financeiras?: Json
           created_at?: string
           dia_vencimento?: number
+          email_institucional?: string | null
+          endereco?: string | null
           exigir_aprovacao_tesouraria?: boolean
           exigir_quitacao_para_avanco?: boolean
           id?: string
           lodge_name?: string
           lodge_number?: string
+          logotipo_url?: string | null
           mensalidade_padrao?: number
           meses_tolerancia_inadimplencia?: number
           notificar_inadimplencia?: boolean
           observacoes?: string | null
           orient?: string
           permitir_lancamento_retroativo?: boolean
+          potencia?: string
+          telefone?: string | null
           tempo_minimo_aprendiz?: number
           tempo_minimo_companheiro?: number
           updated_at?: string
