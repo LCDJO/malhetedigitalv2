@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   FileText, Printer, Loader2, AlertTriangle, DollarSign,
-  User, CalendarRange, ClipboardList,
+  User, CalendarRange, ClipboardList, Download,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -19,6 +19,7 @@ import RelatorioMovimentacao from "@/components/relatorios/RelatorioMovimentacao
 import RelatorioBrothers from "@/components/relatorios/RelatorioBrothers";
 import RelatorioAnual from "@/components/relatorios/RelatorioAnual";
 import RelatorioPrestacaoContas from "@/components/relatorios/RelatorioPrestacaoContas";
+import ExportPanel from "@/components/relatorios/ExportPanel";
 
 const meses = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -162,6 +163,9 @@ export default function Relatorios() {
           <TabsTrigger value="movimentacao" className="gap-1.5 text-xs sm:text-sm">
             <DollarSign className="h-3.5 w-3.5" /> Movimentação
           </TabsTrigger>
+          <TabsTrigger value="exportacao" className="gap-1.5 text-xs sm:text-sm">
+            <Download className="h-3.5 w-3.5" /> Exportação
+          </TabsTrigger>
         </TabsList>
 
         {/* Month-filtered tabs share loading */}
@@ -206,6 +210,17 @@ export default function Relatorios() {
 
         <TabsContent value="anual" className="mt-6">
           <RelatorioAnual />
+        </TabsContent>
+
+        <TabsContent value="exportacao" className="mt-6">
+          <ExportPanel
+            config={config}
+            transactions={transactions}
+            members={members}
+            periodoLabel={periodoLabel}
+            emitidoPor={profile?.full_name}
+            ano={ano}
+          />
         </TabsContent>
       </Tabs>
 

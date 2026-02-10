@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useLodgeConfig } from "@/hooks/useLodgeConfig";
 import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -11,8 +12,9 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import {
   Loader2, User, Search, Filter, TrendingUp, TrendingDown,
-  AlertCircle, CheckCircle2, FileText,
+  AlertCircle, CheckCircle2, FileText as FileTextIcon,
 } from "lucide-react";
+import { exportIndividualPdf } from "./ExportPanel";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -320,7 +322,7 @@ export default function RelatorioBrothers() {
                 <Card>
                   <CardContent className="pt-5 space-y-1">
                     <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-primary" />
+                      <FileTextIcon className="h-4 w-4 text-primary" />
                       <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Lançamentos</p>
                     </div>
                     <p className="text-xl font-bold font-serif">{transactions.length}</p>
@@ -365,6 +367,18 @@ export default function RelatorioBrothers() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Export button */}
+              <div className="flex justify-end print:hidden">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 text-xs"
+                  onClick={() => exportIndividualPdf(config, member as any, transactions, profile?.full_name)}
+                >
+                  <FileTextIcon className="h-3.5 w-3.5" /> Exportar PDF Individual
+                </Button>
+              </div>
 
               {/* Filtros da tabela */}
               <Card className="print:hidden">
@@ -486,7 +500,7 @@ export default function RelatorioBrothers() {
                   </div>
 
                   <div className="mt-3 flex items-start gap-2 text-[10px] text-muted-foreground">
-                    <FileText className="h-3 w-3 mt-0.5 shrink-0" />
+                    <FileTextIcon className="h-3 w-3 mt-0.5 shrink-0" />
                     <p>
                       Ref. = identificador único para rastreabilidade até o lançamento original.
                       Apenas registros com status válido são exibidos.

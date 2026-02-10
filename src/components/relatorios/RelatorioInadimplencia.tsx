@@ -2,15 +2,17 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useLodgeConfig } from "@/hooks/useLodgeConfig";
 import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Heart, CheckCircle2, Users, AlertCircle, Filter } from "lucide-react";
+import { Loader2, Heart, CheckCircle2, Users, AlertCircle, Filter, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { exportInadimplenciaPdf } from "./ExportPanel";
 
 function formatCurrency(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -161,6 +163,19 @@ export default function RelatorioInadimplencia() {
           </div>
         </CardContent>
       </Card>
+
+      {!loading && inadimplentes.length > 0 && (
+        <div className="flex justify-end print:hidden">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 text-xs"
+            onClick={() => exportInadimplenciaPdf(config, inadimplentes, periodoLabel, profile?.full_name)}
+          >
+            <FileText className="h-3.5 w-3.5" /> Exportar PDF
+          </Button>
+        </div>
+      )}
 
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
