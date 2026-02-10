@@ -75,6 +75,12 @@ export const categoriasDespesa = [
   { nome: "Outros", valor: 1100, percentual: 11.9 },
 ];
 
+export const receitaPorCategoria = [
+  { categoria: "Mensalidades", arrecadado: 9800, emAberto: 1680, color: "hsl(var(--primary))" },
+  { categoria: "Taxas", arrecadado: 1680, emAberto: 560, color: "hsl(var(--accent))" },
+  { categoria: "Valores Avulsos", arrecadado: 1100, emAberto: 280, color: "hsl(152, 55%, 38%)" },
+];
+
 export function formatCurrency(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
