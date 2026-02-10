@@ -28,6 +28,8 @@ const GRAUS = [
   { value: "mestre", label: "Mestre" },
 ];
 
+const VALID_STATUSES = ["pago", "em_aberto"];
+
 interface Transaction {
   id: string;
   tipo: string;
@@ -76,6 +78,7 @@ export default function RelatorioInadimplencia() {
       const [txRes, memRes] = await Promise.all([
         supabase.from("member_transactions")
           .select("id, tipo, valor, data, status, member_id")
+          .in("status", VALID_STATUSES)
           .gte("data", startDate).lte("data", endDate),
         supabase.from("members").select("id, full_name, cim, status, degree"),
       ]);
