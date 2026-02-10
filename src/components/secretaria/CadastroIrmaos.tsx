@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { Search, Plus, Pencil, Eye, X, User, CalendarIcon, Loader2, ChevronLeft, ChevronRight, Filter } from "lucide-react";
 import { toast } from "sonner";
 import { PermissionGate } from "@/components/PermissionGate";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Member {
   id: string;
@@ -110,6 +111,7 @@ const emptyForm = {
 const ITEMS_PER_PAGE = 10;
 
 export function CadastroIrmaos() {
+  const { hasPermission } = useAuth();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -476,8 +478,8 @@ export function CadastroIrmaos() {
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-2">Dados Maçônicos</p>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label>Grau *</Label>
-                <Select value={form.degree} onValueChange={(v) => setForm({ ...form, degree: v })}>
+                <Label>Grau * {editingId && !hasPermission("secretaria", "approve") && <span className="text-[10px] text-muted-foreground font-normal">(sem permissão para alterar)</span>}</Label>
+                <Select value={form.degree} onValueChange={(v) => setForm({ ...form, degree: v })} disabled={!!editingId && !hasPermission("secretaria", "approve")}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {Object.entries(degreeLabels).map(([k, v]) => (<SelectItem key={k} value={k}>{v}</SelectItem>))}
