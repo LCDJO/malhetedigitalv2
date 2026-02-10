@@ -15,6 +15,7 @@ import { CalendarIcon, Check, ChevronsUpDown, Plus, RotateCcw, Lightbulb, Trash2
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { ConfirmSensitiveAction } from "@/components/ConfirmSensitiveAction";
+import { useAuditLog } from "@/hooks/useAuditLog";
 import {
   formatCurrency,
   taxasMaconicasMock,
@@ -44,6 +45,7 @@ const emptyForm = { irmaoId: "", tipo: "", valor: "", descricao: "", data: new D
 
 export function LancamentoIndividual() {
   const { hasPermission } = useAuth();
+  const { logAction } = useAuditLog();
   const [historico, setHistorico] = useState<Lancamento[]>([]);
   const [form, setForm] = useState(emptyForm);
   const [comboOpen, setComboOpen] = useState(false);
@@ -304,8 +306,10 @@ export function LancamentoIndividual() {
         destructive
         onConfirm={() => {
           if (deleteTarget !== null) {
+            const entry = historico.find((l) => l.id === deleteTarget);
             setHistorico((prev) => prev.filter((l) => l.id !== deleteTarget));
             toast.success("Lançamento excluído com sucesso.");
+            logAction({ action: "DELETE_ENTRY", targetTable: "lancamentos", targetId: deleteTarget.toString(), details: { irmao: entry?.irmao, valor: entry?.valor } });
             setDeleteTarget(null);
           }
         }}

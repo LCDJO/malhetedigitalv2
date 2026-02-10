@@ -17,6 +17,7 @@ import { CalendarIcon, Plus, ShieldCheck, ShieldOff, AlertTriangle, Trash2 } fro
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { ConfirmSensitiveAction } from "@/components/ConfirmSensitiveAction";
+import { useAuditLog } from "@/hooks/useAuditLog";
 import { type Isencao, type TipoIsencao, isencoesMock } from "@/components/dashboard/DashboardData";
 
 const irmaosDisponiveis = [
@@ -29,6 +30,7 @@ const irmaosDisponiveis = [
 
 export function IsencaoIrmao() {
   const { hasPermission } = useAuth();
+  const { logAction } = useAuditLog();
   const [isencoes, setIsencoes] = useState<Isencao[]>(isencoesMock);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [revogarTarget, setRevogarTarget] = useState<number | null>(null);
@@ -93,6 +95,7 @@ export function IsencaoIrmao() {
 
     setIsencoes((prev) => [nova, ...prev]);
     toast.success(`Isenção ${tipoIsencao === "temporaria" ? "temporária" : "permanente"} registrada para ${irmao.nome}.`);
+    logAction({ action: "GRANT_EXEMPTION", targetTable: "isencoes", targetId: irmao.id.toString(), details: { irmao: irmao.nome, tipo: tipoIsencao, motivo: motivo.trim() } });
     setDialogOpen(false);
     resetForm();
   };
@@ -107,10 +110,12 @@ export function IsencaoIrmao() {
 
   const handleRevogarConfirmed = () => {
     if (revogarTarget === null) return;
+    const isencao = isencoes.find((i) => i.id === revogarTarget);
     setIsencoes((prev) =>
       prev.map((i) => (i.id === revogarTarget ? { ...i, ativa: false } : i))
     );
     toast.success("Isenção revogada com sucesso.");
+    logAction({ action: "REVOKE_EXEMPTION", targetTable: "isencoes", targetId: revogarTarget.toString(), details: { irmao: isencao?.irmaoNome } });
     setRevogarTarget(null);
   };
 
