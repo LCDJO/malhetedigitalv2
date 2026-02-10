@@ -11,6 +11,7 @@ import Index from "./pages/Index";
 import Secretaria from "./pages/Secretaria";
 import Tesouraria from "./pages/Tesouraria";
 import GestaoUsuarios from "./pages/GestaoUsuarios";
+import LogAuditoria from "./pages/LogAuditoria";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -52,6 +53,14 @@ const App = () => (
                         element={
                           <ProtectedRoute module="configuracoes">
                             <GestaoUsuarios />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/log-auditoria"
+                        element={
+                          <ProtectedRoute module="configuracoes">
+                            <LogAuditoria />
                           </ProtectedRoute>
                         }
                       />
