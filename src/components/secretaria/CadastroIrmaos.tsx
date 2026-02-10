@@ -15,7 +15,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { Search, Plus, Pencil, Eye, X, User, CalendarIcon, Loader2 } from "lucide-react";
+import { Search, Plus, Pencil, Eye, X, User, CalendarIcon, Loader2, ChevronLeft, ChevronRight, Filter } from "lucide-react";
 import { toast } from "sonner";
 import { PermissionGate } from "@/components/PermissionGate";
 
@@ -107,10 +107,15 @@ const emptyForm = {
   notes: "", avatar_url: null as string | null,
 };
 
+const ITEMS_PER_PAGE = 10;
+
 export function CadastroIrmaos() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [filterDegree, setFilterDegree] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [currentPage, setCurrentPage] = useState(1);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -134,14 +139,24 @@ export function CadastroIrmaos() {
 
   useEffect(() => { fetchMembers(); }, [fetchMembers]);
 
+  // Reset page when filters change
+  useEffect(() => { setCurrentPage(1); }, [search, filterDegree, filterStatus]);
+
   const filtered = members.filter((m) => {
     const q = search.toLowerCase();
-    return (
+    const matchesSearch =
       m.full_name.toLowerCase().includes(q) ||
       m.cpf.replace(/\D/g, "").includes(q.replace(/\D/g, "")) ||
-      m.cim.toLowerCase().includes(q)
-    );
+      m.cim.toLowerCase().includes(q);
+    const matchesDegree = filterDegree === "all" || m.degree === filterDegree;
+    const matchesStatus = filterStatus === "all" || m.status === filterStatus;
+    return matchesSearch && matchesDegree && matchesStatus;
   });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginated = filtered.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE);
+  const activeFilters = (filterDegree !== "all" ? 1 : 0) + (filterStatus !== "all" ? 1 : 0);
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -272,6 +287,29 @@ export function CadastroIrmaos() {
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Buscar nome, CPF ou CIM" className="pl-9 w-60 h-9 text-sm" value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
+            <Select value={filterDegree} onValueChange={setFilterDegree}>
+              <SelectTrigger className="w-[160px] h-9 text-sm">
+                <SelectValue placeholder="Grau" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os graus</SelectItem>
+                {Object.entries(degreeLabels).map(([k, v]) => (<SelectItem key={k} value={k}>{v}</SelectItem>))}
+              </SelectContent>
+            </Select>
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-[140px] h-9 text-sm">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os status</SelectItem>
+                {Object.entries(statusLabels).map(([k, v]) => (<SelectItem key={k} value={k}>{v}</SelectItem>))}
+              </SelectContent>
+            </Select>
+            {activeFilters > 0 && (
+              <Button variant="ghost" size="sm" className="h-9 text-xs gap-1 text-muted-foreground" onClick={() => { setFilterDegree("all"); setFilterStatus("all"); }}>
+                <X className="h-3.5 w-3.5" /> Limpar filtros
+              </Button>
+            )}
             <PermissionGate module="secretaria" action="write">
               <Button size="sm" className="gap-1.5 h-9" onClick={openNew}>
                 <Plus className="h-4 w-4" />
@@ -284,56 +322,91 @@ export function CadastroIrmaos() {
           {loading ? (
             <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
           ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-14">Foto</TableHead>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>CPF</TableHead>
-                    <TableHead>CIM</TableHead>
-                    <TableHead>Grau</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.length === 0 ? (
+            <>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground py-12">
-                        {members.length === 0 ? "Nenhum irmão cadastrado. Clique em \"Cadastrar Novo Irmão\" para começar." : "Nenhum registro encontrado para a busca."}
-                      </TableCell>
+                      <TableHead className="w-14">Foto</TableHead>
+                      <TableHead>Nome completo</TableHead>
+                      <TableHead>CPF</TableHead>
+                      <TableHead>CIM</TableHead>
+                      <TableHead>Grau</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
-                  ) : (
-                    filtered.map((m) => (
-                      <TableRow key={m.id}>
-                        <TableCell>
-                          <Avatar className="h-9 w-9">
-                            {m.avatar_url ? <AvatarImage src={m.avatar_url} alt={m.full_name} /> : null}
-                            <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">{getInitials(m.full_name)}</AvatarFallback>
-                          </Avatar>
-                        </TableCell>
-                        <TableCell className="font-medium">{m.full_name}</TableCell>
-                        <TableCell className="text-muted-foreground text-sm">{m.cpf}</TableCell>
-                        <TableCell className="text-muted-foreground text-sm">{m.cim}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="text-[10px] px-2 py-0.5">{degreeLabels[m.degree] || m.degree}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className={cn("text-[10px] px-2 py-0.5", statusBadge[m.status])}>{statusLabels[m.status] || m.status}</Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setViewMember(m)} title="Visualizar"><Eye className="h-4 w-4" /></Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(m)} title="Editar"><Pencil className="h-4 w-4" /></Button>
-                          </div>
+                  </TableHeader>
+                  <TableBody>
+                    {filtered.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center text-muted-foreground py-12">
+                          {members.length === 0 ? "Nenhum irmão cadastrado. Clique em \"Cadastrar Novo Irmão\" para começar." : "Nenhum registro encontrado para os filtros aplicados."}
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                    ) : (
+                      paginated.map((m) => (
+                        <TableRow key={m.id}>
+                          <TableCell>
+                            <Avatar className="h-9 w-9">
+                              {m.avatar_url ? <AvatarImage src={m.avatar_url} alt={m.full_name} /> : null}
+                              <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">{getInitials(m.full_name)}</AvatarFallback>
+                            </Avatar>
+                          </TableCell>
+                          <TableCell className="font-medium">{m.full_name}</TableCell>
+                          <TableCell className="text-muted-foreground text-sm">{m.cpf}</TableCell>
+                          <TableCell className="text-muted-foreground text-sm">{m.cim}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-[10px] px-2 py-0.5">{degreeLabels[m.degree] || m.degree}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={cn("text-[10px] px-2 py-0.5", statusBadge[m.status])}>{statusLabels[m.status] || m.status}</Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-1">
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setViewMember(m)} title="Visualizar"><Eye className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(m)} title="Editar"><Pencil className="h-4 w-4" /></Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Pagination */}
+              {filtered.length > ITEMS_PER_PAGE && (
+                <div className="flex items-center justify-between pt-4">
+                  <p className="text-xs text-muted-foreground">
+                    Exibindo {((safePage - 1) * ITEMS_PER_PAGE) + 1}–{Math.min(safePage * ITEMS_PER_PAGE, filtered.length)} de {filtered.length} registro(s)
+                  </p>
+                  <div className="flex items-center gap-1">
+                    <Button variant="outline" size="icon" className="h-8 w-8" disabled={safePage <= 1} onClick={() => setCurrentPage((p) => p - 1)}>
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter((p) => p === 1 || p === totalPages || Math.abs(p - safePage) <= 1)
+                      .reduce<(number | "ellipsis")[]>((acc, p, idx, arr) => {
+                        if (idx > 0 && p - (arr[idx - 1]) > 1) acc.push("ellipsis");
+                        acc.push(p);
+                        return acc;
+                      }, [])
+                      .map((item, idx) =>
+                        item === "ellipsis" ? (
+                          <span key={`e-${idx}`} className="px-1 text-xs text-muted-foreground">…</span>
+                        ) : (
+                          <Button key={item} variant={item === safePage ? "default" : "outline"} size="icon" className="h-8 w-8 text-xs" onClick={() => setCurrentPage(item)}>
+                            {item}
+                          </Button>
+                        )
+                      )}
+                    <Button variant="outline" size="icon" className="h-8 w-8" disabled={safePage >= totalPages} onClick={() => setCurrentPage((p) => p + 1)}>
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
