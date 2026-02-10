@@ -1,23 +1,20 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAuditLog } from "@/hooks/useAuditLog";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Save, Loader2, Building2, Wallet, ScrollText, Tags, SlidersHorizontal } from "lucide-react";
-import { TabDadosLoja } from "@/components/configuracoes/TabDadosLoja";
+import { TabDadosLoja, type DadosLojaConfig } from "@/components/configuracoes/TabDadosLoja";
 import { TabParametrosFinanceiros } from "@/components/configuracoes/TabParametrosFinanceiros";
 import { TabRegrasMaconicas } from "@/components/configuracoes/TabRegrasMaconicas";
 import { TabCategoriasFinanceiras, type CategoriaFinanceira } from "@/components/configuracoes/TabCategoriasFinanceiras";
 import { TabPreferencias } from "@/components/configuracoes/TabPreferencias";
 
-interface LodgeConfig {
+interface LodgeConfig extends DadosLojaConfig {
   id: string;
-  lodge_name: string;
-  lodge_number: string;
-  orient: string;
-  observacoes: string;
   mensalidade_padrao: number;
   dia_vencimento: number;
   meses_tolerancia_inadimplencia: number;
@@ -35,6 +32,11 @@ const defaultConfig: LodgeConfig = {
   lodge_name: "",
   lodge_number: "",
   orient: "",
+  potencia: "",
+  endereco: "",
+  email_institucional: "",
+  telefone: "",
+  logotipo_url: "",
   observacoes: "",
   mensalidade_padrao: 0,
   dia_vencimento: 10,
@@ -51,8 +53,10 @@ const defaultConfig: LodgeConfig = {
 export default function Configuracoes() {
   const { hasPermission } = useAuth();
   const canWrite = hasPermission("configuracoes", "write");
+  const { logAction } = useAuditLog();
 
   const [config, setConfig] = useState<LodgeConfig>(defaultConfig);
+  const previousConfig = useRef<LodgeConfig>(defaultConfig);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -66,13 +70,15 @@ export default function Configuracoes() {
       if (error) {
         toast.error("Erro ao carregar configurações.");
       } else if (data) {
-        setConfig({
+        const parsed: LodgeConfig = {
           ...defaultConfig,
           ...(data as any),
           categorias_financeiras: Array.isArray((data as any).categorias_financeiras)
             ? (data as any).categorias_financeiras
             : [],
-        });
+        };
+        setConfig(parsed);
+        previousConfig.current = parsed;
       }
       setLoading(false);
     })();
@@ -83,6 +89,13 @@ export default function Configuracoes() {
       toast.error("Você não tem permissão para alterar configurações.");
       return;
     }
+
+    // Validate required fields
+    if (!config.lodge_name.trim() || !config.lodge_number.trim() || !config.orient.trim() || !config.potencia.trim()) {
+      toast.error("Preencha todos os campos obrigatórios.");
+      return;
+    }
+
     setSaving(true);
     const { id, ...rest } = config;
     const { error } = await supabase
@@ -93,9 +106,44 @@ export default function Configuracoes() {
     if (error) {
       toast.error("Erro ao salvar configurações.");
     } else {
+      // Build diff for audit log
+      const prev = previousConfig.current;
+      const changes: Record<string, { de: unknown; para: unknown }> = {};
+      for (const key of Object.keys(rest) as (keyof typeof rest)[]) {
+        const oldVal = (prev as any)[key];
+        const newVal = (rest as any)[key];
+        if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
+          changes[key] = { de: oldVal, para: newVal };
+        }
+      }
+
+      if (Object.keys(changes).length > 0) {
+        logAction({
+          action: "UPDATE_LODGE_CONFIG",
+          targetTable: "lodge_config",
+          targetId: id,
+          details: { alteracoes: changes },
+        });
+      }
+
+      previousConfig.current = config;
       toast.success("Configurações salvas com sucesso!");
     }
     setSaving(false);
+  };
+
+  const handleLogoUpload = async (file: File): Promise<string | null> => {
+    const ext = file.name.split(".").pop() || "png";
+    const path = `lodge-logo/logo.${ext}`;
+    const { error } = await supabase.storage
+      .from("member-photos")
+      .upload(path, file, { upsert: true });
+    if (error) {
+      toast.error("Erro ao enviar logotipo.");
+      return null;
+    }
+    const { data } = supabase.storage.from("member-photos").getPublicUrl(path);
+    return data.publicUrl;
   };
 
   const set = <K extends keyof LodgeConfig>(key: K, value: LodgeConfig[K]) =>
@@ -146,7 +194,7 @@ export default function Configuracoes() {
         </TabsList>
 
         <TabsContent value="dados" className="mt-6">
-          <TabDadosLoja config={config} canWrite={canWrite} onChange={set} />
+          <TabDadosLoja config={config} canWrite={canWrite} onChange={set} onLogoUpload={handleLogoUpload} />
         </TabsContent>
 
         <TabsContent value="financeiro" className="mt-6">
