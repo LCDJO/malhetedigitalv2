@@ -14,7 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { CalendarIcon, DollarSign, Clock, Plus, Loader2, User, FileText, TrendingUp, AlertCircle, CheckCircle2, XCircle, Hash } from "lucide-react";
+import { CalendarIcon, DollarSign, Clock, Plus, Loader2, User, FileText, TrendingUp, AlertCircle, CheckCircle2, XCircle, Hash, ArrowUpDown, ArrowUp, ArrowDown, X } from "lucide-react";
 import { toast } from "sonner";
 import { PermissionGate } from "@/components/PermissionGate";
 
@@ -36,6 +36,7 @@ interface Transaction {
   valor: number;
   descricao: string;
   data: string;
+  status: string;
   created_at: string;
 }
 
@@ -97,11 +98,18 @@ export function FinanceiroIrmao() {
   const [loadingTx, setLoadingTx] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // filters for history
+  const [sortAsc, setSortAsc] = useState(false);
+  const [filterDateFrom, setFilterDateFrom] = useState<Date | undefined>(undefined);
+  const [filterDateTo, setFilterDateTo] = useState<Date | undefined>(undefined);
+  const [filterSituacao, setFilterSituacao] = useState<string>("all");
+
   // form
   const [tipo, setTipo] = useState<string>("");
   const [valor, setValor] = useState("");
   const [descricao, setDescricao] = useState("");
   const [data, setData] = useState<Date>(new Date());
+  const [situacao, setSituacao] = useState<string>("pago");
 
   const fetchMembers = useCallback(async () => {
     setLoadingMembers(true);
@@ -117,7 +125,7 @@ export function FinanceiroIrmao() {
     setLoadingTx(true);
     const { data, error } = await supabase
       .from("member_transactions")
-      .select("id, tipo, valor, descricao, data, created_at")
+      .select("id, tipo, valor, descricao, data, status, created_at")
       .eq("member_id", memberId)
       .order("data", { ascending: false });
     if (!error && data) setTransactions(data);
@@ -139,16 +147,10 @@ export function FinanceiroIrmao() {
   const totalQtd = transactions.length;
   const ultimaMov = transactions.length > 0 ? transactions[0] : null;
 
-  // Calcula meses desde o início do ano para estimar mensalidades esperadas
-  const now = new Date();
-  const mesesDecorridos = now.getMonth() + 1; // jan=1
-  const mensalidadesPagas = transactions.filter((t) => {
-    if (t.tipo !== "mensalidade") return false;
-    const d = new Date(t.data + "T12:00:00");
-    return d.getFullYear() === now.getFullYear();
-  }).length;
-  const mensalidadesEmAberto = Math.max(0, mesesDecorridos - mensalidadesPagas);
-  const isAdimplente = mensalidadesEmAberto === 0;
+  // Situação: conta lançamentos "em_aberto"
+  const txEmAberto = transactions.filter((t) => t.status === "em_aberto");
+  const totalEmAberto = txEmAberto.reduce((s, t) => s + Number(t.valor), 0);
+  const isAdimplente = txEmAberto.length === 0;
 
   const handleLancamento = async () => {
     if (!selected) { toast.error("Selecione um irmão antes de registrar."); return; }
@@ -163,6 +165,7 @@ export function FinanceiroIrmao() {
       valor: v,
       descricao: descricao.trim() || tipoLabels[tipo],
       data: format(data, "yyyy-MM-dd"),
+      status: situacao,
     });
 
     if (error) {
@@ -173,6 +176,7 @@ export function FinanceiroIrmao() {
       setValor("");
       setDescricao("");
       setData(new Date());
+      setSituacao("pago");
       fetchTransactions(selectedId);
     }
     setSaving(false);
@@ -252,7 +256,7 @@ export function FinanceiroIrmao() {
                 </Badge>
               </div>
               {!isAdimplente && (
-                <p className="text-xs text-destructive mt-1">{mensalidadesEmAberto} mensalidade(s) em aberto no ano de {now.getFullYear()}</p>
+                <p className="text-xs text-destructive mt-1">{txEmAberto.length} lançamento(s) em aberto — {formatCurrency(totalEmAberto)}</p>
               )}
             </CardHeader>
             <CardContent>
@@ -269,7 +273,7 @@ export function FinanceiroIrmao() {
                     <AlertCircle className="h-4 w-4 text-destructive" />
                     <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">Em Aberto</p>
                   </div>
-                  <p className="text-lg font-bold font-serif">{mensalidadesEmAberto} mês(es)</p>
+                  <p className="text-lg font-bold font-serif">{formatCurrency(totalEmAberto)}</p>
                 </div>
                 <div className="space-y-1 p-3 rounded-lg bg-muted/50">
                   <div className="flex items-center gap-2">
@@ -304,7 +308,7 @@ export function FinanceiroIrmao() {
                 <CardTitle className="text-base font-sans font-semibold">Novo Lançamento</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
                   <div className="space-y-1.5">
                     <Label>Tipo *</Label>
                     <Select value={tipo} onValueChange={setTipo}>
@@ -335,6 +339,16 @@ export function FinanceiroIrmao() {
                     </Popover>
                   </div>
                   <div className="space-y-1.5">
+                    <Label>Situação</Label>
+                    <Select value={situacao} onValueChange={setSituacao}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pago">Pago</SelectItem>
+                        <SelectItem value="em_aberto">Em Aberto</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
                     <Label>Descrição</Label>
                     <Input placeholder="Descrição do lançamento" value={descricao} onChange={(e) => setDescricao(e.target.value)} maxLength={100} />
                   </div>
@@ -351,46 +365,115 @@ export function FinanceiroIrmao() {
 
           {/* Histórico */}
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <CardTitle className="text-base font-sans font-semibold">Histórico Financeiro</CardTitle>
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Filtro por período */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className={cn("h-8 text-xs gap-1.5", filterDateFrom && "border-primary/40")}>
+                      <CalendarIcon className="h-3.5 w-3.5" />
+                      {filterDateFrom ? format(filterDateFrom, "dd/MM/yy") : "De"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={filterDateFrom} onSelect={setFilterDateFrom} locale={ptBR} className="p-3 pointer-events-auto" />
+                  </PopoverContent>
+                </Popover>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className={cn("h-8 text-xs gap-1.5", filterDateTo && "border-primary/40")}>
+                      <CalendarIcon className="h-3.5 w-3.5" />
+                      {filterDateTo ? format(filterDateTo, "dd/MM/yy") : "Até"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={filterDateTo} onSelect={setFilterDateTo} locale={ptBR} className="p-3 pointer-events-auto" />
+                  </PopoverContent>
+                </Popover>
+                {/* Filtro por situação */}
+                <Select value={filterSituacao} onValueChange={setFilterSituacao}>
+                  <SelectTrigger className="h-8 w-[130px] text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas</SelectItem>
+                    <SelectItem value="pago">Pago</SelectItem>
+                    <SelectItem value="em_aberto">Em Aberto</SelectItem>
+                  </SelectContent>
+                </Select>
+                {/* Ordenação */}
+                <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={() => setSortAsc((p) => !p)}>
+                  {sortAsc ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />}
+                  {sortAsc ? "Mais antigo" : "Mais recente"}
+                </Button>
+                {/* Limpar filtros */}
+                {(filterDateFrom || filterDateTo || filterSituacao !== "all") && (
+                  <Button variant="ghost" size="sm" className="h-8 text-xs gap-1 text-muted-foreground" onClick={() => { setFilterDateFrom(undefined); setFilterDateTo(undefined); setFilterSituacao("all"); }}>
+                    <X className="h-3.5 w-3.5" /> Limpar
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               {loadingTx ? (
                 <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
-              ) : (
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Data</TableHead>
-                        <TableHead>Tipo</TableHead>
-                        <TableHead className="text-right">Valor</TableHead>
-                        <TableHead>Descrição</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {transactions.length === 0 ? (
+              ) : (() => {
+                const filteredTx = transactions
+                  .filter((t) => {
+                    const d = new Date(t.data + "T12:00:00");
+                    if (filterDateFrom && d < filterDateFrom) return false;
+                    if (filterDateTo) { const to = new Date(filterDateTo); to.setHours(23, 59, 59); if (d > to) return false; }
+                    if (filterSituacao !== "all" && t.status !== filterSituacao) return false;
+                    return true;
+                  })
+                  .sort((a, b) => {
+                    const da = new Date(a.data).getTime();
+                    const db = new Date(b.data).getTime();
+                    return sortAsc ? da - db : db - da;
+                  });
+
+                return (
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
                         <TableRow>
-                          <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                            Nenhum lançamento registrado para este irmão.
-                          </TableCell>
+                          <TableHead>Data</TableHead>
+                          <TableHead>Tipo</TableHead>
+                          <TableHead className="text-right">Valor</TableHead>
+                          <TableHead>Descrição</TableHead>
+                          <TableHead className="text-center">Situação</TableHead>
                         </TableRow>
-                      ) : (
-                        transactions.map((t) => (
-                          <TableRow key={t.id}>
-                            <TableCell className="font-medium">{format(new Date(t.data + "T12:00:00"), "dd/MM/yyyy")}</TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className={cn("text-[10px] px-2 py-0.5", tipoBadgeClass[t.tipo])}>{tipoLabels[t.tipo] || t.tipo}</Badge>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredTx.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                              {transactions.length === 0 ? "Nenhum lançamento registrado para este irmão." : "Nenhum lançamento encontrado para os filtros aplicados."}
                             </TableCell>
-                            <TableCell className="text-right font-medium">{formatCurrency(Number(t.valor))}</TableCell>
-                            <TableCell className="text-muted-foreground">{t.descricao}</TableCell>
                           </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
+                        ) : (
+                          filteredTx.map((t) => (
+                            <TableRow key={t.id}>
+                              <TableCell className="font-medium">{format(new Date(t.data + "T12:00:00"), "dd/MM/yyyy")}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className={cn("text-[10px] px-2 py-0.5", tipoBadgeClass[t.tipo])}>{tipoLabels[t.tipo] || t.tipo}</Badge>
+                              </TableCell>
+                              <TableCell className="text-right font-medium">{formatCurrency(Number(t.valor))}</TableCell>
+                              <TableCell className="text-muted-foreground">{t.descricao}</TableCell>
+                              <TableCell className="text-center">
+                                <Badge variant="outline" className={cn("text-[10px] px-2 py-0.5", t.status === "pago" ? "bg-success/10 text-success border-success/20" : "bg-destructive/10 text-destructive border-destructive/20")}>
+                                  {t.status === "pago" ? "Pago" : "Em Aberto"}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
         </>
