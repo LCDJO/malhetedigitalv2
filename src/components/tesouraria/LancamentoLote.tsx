@@ -16,13 +16,7 @@ import { cn } from "@/lib/utils";
 import { CalendarIcon, ChevronRight, ChevronLeft, CheckCircle2, Send, Eye, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 
-const irmaos = [
-  { id: 1, nome: "João Silva", cim: "123456" },
-  { id: 2, nome: "Carlos Mendes", cim: "234567" },
-  { id: 3, nome: "Pedro Alves", cim: "345678" },
-  { id: 4, nome: "Marcos Oliveira", cim: "456789" },
-  { id: 5, nome: "Antônio Souza", cim: "567890" },
-];
+const irmaos: { id: number; nome: string; cim: string }[] = [];
 
 const tipoLabels: Record<string, string> = { mensalidade: "Mensalidade", taxa: "Taxa" };
 const tipoBadge: Record<string, string> = {

@@ -17,13 +17,7 @@ interface Irmao {
   foto: string | null;
 }
 
-const initialData: Irmao[] = [
-  { id: 1, nome: "João Silva", cpf: "123.456.789-00", cim: "123456", foto: null },
-  { id: 2, nome: "Carlos Mendes", cpf: "234.567.890-11", cim: "234567", foto: null },
-  { id: 3, nome: "Pedro Alves", cpf: "345.678.901-22", cim: "345678", foto: null },
-  { id: 4, nome: "Marcos Oliveira", cpf: "456.789.012-33", cim: "456789", foto: null },
-  { id: 5, nome: "Antônio Souza", cpf: "567.890.123-44", cim: "567890", foto: null },
-];
+const initialData: Irmao[] = [];
 
 // ── helpers ──
 
