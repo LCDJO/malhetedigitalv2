@@ -1,0 +1,128 @@
+import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import type { User, Session } from "@supabase/supabase-js";
+
+export type AppRole = "veneravel" | "secretario" | "tesoureiro" | "orador" | "chanceler";
+
+export const roleLabels: Record<AppRole, string> = {
+  veneravel: "Venerável Mestre",
+  secretario: "Secretário",
+  tesoureiro: "Tesoureiro",
+  orador: "Orador",
+  chanceler: "Chanceler",
+};
+
+export const moduleAccess: Record<string, AppRole[]> = {
+  dashboard: ["veneravel", "secretario", "tesoureiro", "orador", "chanceler"],
+  secretaria: ["veneravel", "secretario"],
+  tesouraria: ["veneravel", "tesoureiro"],
+  chancelaria: ["veneravel", "chanceler"],
+  configuracoes: ["veneravel"],
+};
+
+interface AuthContextValue {
+  user: User | null;
+  session: Session | null;
+  profile: { full_name: string; avatar_url: string | null } | null;
+  role: AppRole | null;
+  isAdmin: boolean;
+  loading: boolean;
+  hasModuleAccess: (module: string) => boolean;
+  signOut: () => Promise<void>;
+  refreshRole: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextValue | null>(null);
+
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  return ctx;
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<{ full_name: string; avatar_url: string | null } | null>(null);
+  const [role, setRole] = useState<AppRole | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchProfileAndRole = useCallback(async (userId: string) => {
+    // Fetch profile
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("full_name, avatar_url")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (profileData) {
+      setProfile(profileData);
+    }
+
+    // Fetch role via RPC
+    const { data: roleData } = await supabase.rpc("get_user_role", { _user_id: userId });
+    if (roleData) {
+      setRole(roleData as AppRole);
+    } else {
+      setRole(null);
+    }
+  }, []);
+
+  const refreshRole = useCallback(async () => {
+    if (user) await fetchProfileAndRole(user.id);
+  }, [user, fetchProfileAndRole]);
+
+  useEffect(() => {
+    // Set up auth listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+
+      if (session?.user) {
+        // Use setTimeout to prevent potential deadlock with Supabase client
+        setTimeout(() => fetchProfileAndRole(session.user.id), 0);
+      } else {
+        setProfile(null);
+        setRole(null);
+      }
+      setLoading(false);
+    });
+
+    // THEN check existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchProfileAndRole(session.user.id);
+      }
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [fetchProfileAndRole]);
+
+  const isAdmin = role === "veneravel" || role === "secretario";
+
+  const hasModuleAccess = useCallback(
+    (module: string) => {
+      if (!role) return false;
+      const allowed = moduleAccess[module];
+      return allowed ? allowed.includes(role) : false;
+    },
+    [role]
+  );
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setSession(null);
+    setProfile(null);
+    setRole(null);
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, session, profile, role, isAdmin, loading, hasModuleAccess, signOut, refreshRole }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}

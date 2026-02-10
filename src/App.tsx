@@ -3,7 +3,10 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import Auth from "./pages/Auth";
 import Index from "./pages/Index";
 import Secretaria from "./pages/Secretaria";
 import Tesouraria from "./pages/Tesouraria";
@@ -11,27 +14,46 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const PlaceholderPage = ({ title }: { title: string }) => (
-  <div className="flex items-center justify-center h-full text-muted-foreground">
-    <p className="text-lg">Módulo <span className="font-semibold text-foreground">{title}</span> — em desenvolvimento</p>
-  </div>
-);
-
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <DashboardLayout>
+        <AuthProvider>
           <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/secretaria" element={<Secretaria />} />
-            <Route path="/tesouraria" element={<Tesouraria />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route
+              path="/*"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <Routes>
+                      <Route path="/" element={<Index />} />
+                      <Route
+                        path="/secretaria"
+                        element={
+                          <ProtectedRoute module="secretaria">
+                            <Secretaria />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/tesouraria"
+                        element={
+                          <ProtectedRoute module="tesouraria">
+                            <Tesouraria />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
           </Routes>
-        </DashboardLayout>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
