@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -11,9 +12,14 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { CalendarIcon, DollarSign, Clock, Plus, ShieldCheck } from "lucide-react";
+import { CalendarIcon, DollarSign, Clock, Plus, ShieldCheck, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { isencoesMock, getIsencaoAtiva } from "@/components/dashboard/DashboardData";
+
+interface MemberOption {
+  id: string;
+  full_name: string;
+  cim: string;
+}
 
 interface Lancamento {
   id: number;
@@ -21,13 +27,6 @@ interface Lancamento {
   tipo: "mensalidade" | "avulso" | "taxa";
   valor: number;
   descricao: string;
-}
-
-interface IrmaoFinanceiro {
-  id: number;
-  nome: string;
-  cim: string;
-  lancamentos: Lancamento[];
 }
 
 const tipoLabels: Record<string, string> = {
@@ -42,8 +41,6 @@ const tipoBadgeClass: Record<string, string> = {
   taxa: "bg-warning/10 text-warning border-warning/20",
 };
 
-const dados: IrmaoFinanceiro[] = [];
-
 function formatCurrency(value: number) {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
@@ -57,8 +54,12 @@ function currencyToNumber(raw: string): number {
 }
 
 export function FinanceiroIrmao() {
-  const [allData, setAllData] = useState(dados);
+  const [members, setMembers] = useState<MemberOption[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(true);
   const [selectedId, setSelectedId] = useState<string>("");
+
+  // Local lancamentos (will be DB-backed in future)
+  const [lancamentos, setLancamentos] = useState<Record<string, Lancamento[]>>({});
 
   // form
   const [tipo, setTipo] = useState<string>("");
@@ -66,17 +67,28 @@ export function FinanceiroIrmao() {
   const [descricao, setDescricao] = useState("");
   const [data, setData] = useState<Date>(new Date());
 
-  const selected = allData.find((d) => d.id.toString() === selectedId);
-  const isencaoAtiva = selected ? getIsencaoAtiva(selected.id, isencoesMock) : undefined;
+  const fetchMembers = useCallback(async () => {
+    setLoadingMembers(true);
+    const { data, error } = await supabase
+      .from("members")
+      .select("id, full_name, cim")
+      .eq("status", "ativo")
+      .order("full_name");
+    if (!error && data) setMembers(data);
+    setLoadingMembers(false);
+  }, []);
 
-  const totalPago = selected ? selected.lancamentos.reduce((s, l) => s + l.valor, 0) : 0;
-  const ultimaMov = selected && selected.lancamentos.length > 0
-    ? selected.lancamentos.reduce((latest, l) => (l.data > latest.data ? l : latest))
+  useEffect(() => { fetchMembers(); }, [fetchMembers]);
+
+  const selected = members.find((m) => m.id === selectedId);
+  const memberLancamentos = selectedId ? (lancamentos[selectedId] || []) : [];
+  const totalPago = memberLancamentos.reduce((s, l) => s + l.valor, 0);
+  const ultimaMov = memberLancamentos.length > 0
+    ? memberLancamentos.reduce((latest, l) => (l.data > latest.data ? l : latest))
     : null;
 
   const handleLancamento = () => {
     if (!selected) { toast.error("Selecione um irmão antes de registrar."); return; }
-    if (isencaoAtiva) { toast.error("Este irmão está isento. Não é possível gerar lançamentos automáticos."); return; }
     if (!tipo) { toast.error("Selecione o tipo de lançamento."); return; }
     const v = currencyToNumber(valor);
     if (v <= 0 || isNaN(v)) { toast.error("O valor deve ser maior que zero."); return; }
@@ -89,16 +101,15 @@ export function FinanceiroIrmao() {
       descricao: descricao.trim() || tipoLabels[tipo],
     };
 
-    setAllData((prev) =>
-      prev.map((d) =>
-        d.id === selected.id ? { ...d, lancamentos: [novo, ...d.lancamentos] } : d
-      )
-    );
+    setLancamentos((prev) => ({
+      ...prev,
+      [selectedId]: [novo, ...(prev[selectedId] || [])],
+    }));
     setTipo("");
     setValor("");
     setDescricao("");
     setData(new Date());
-    toast.success(`Lançamento de ${formatCurrency(v)} registrado para ${selected.nome}.`);
+    toast.success(`Lançamento de ${formatCurrency(v)} registrado para ${selected.full_name}.`);
   };
 
   return (
@@ -108,23 +119,29 @@ export function FinanceiroIrmao() {
         <CardContent className="pt-6">
           <div className="max-w-sm space-y-1.5">
             <Label>Selecione o Irmão</Label>
-            <Select value={selectedId} onValueChange={setSelectedId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Escolha um irmão" />
-              </SelectTrigger>
-              <SelectContent>
-                {allData.map((d) => (
-                  <SelectItem key={d.id} value={d.id.toString()}>
-                    {d.nome} — CIM {d.cim}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {loadingMembers ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground py-2"><Loader2 className="h-4 w-4 animate-spin" /> Carregando...</div>
+            ) : members.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-2">Nenhum irmão ativo cadastrado. Cadastre um irmão na aba "Cadastro de Irmãos".</p>
+            ) : (
+              <Select value={selectedId} onValueChange={setSelectedId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Escolha um irmão" />
+                </SelectTrigger>
+                <SelectContent>
+                  {members.map((m) => (
+                    <SelectItem key={m.id} value={m.id}>
+                      {m.full_name} — CIM {m.cim}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
         </CardContent>
       </Card>
 
-      {!selected && (
+      {!selected && members.length > 0 && (
         <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">
           Selecione um irmão para visualizar o financeiro.
         </div>
@@ -132,33 +149,6 @@ export function FinanceiroIrmao() {
 
       {selected && (
         <>
-          {/* Exemption Banner */}
-          {isencaoAtiva && (
-            <Card className="border-success/30 bg-success/5">
-              <CardContent className="flex items-start gap-3 pt-6">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-success/15">
-                  <ShieldCheck className="h-5 w-5 text-success" strokeWidth={1.6} />
-                </div>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-success">Irmão com Isenção Ativa</p>
-                    <Badge variant="outline" className="text-[10px] px-2 py-0 bg-success/10 text-success border-success/20">
-                      {isencaoAtiva.tipo === "permanente" ? "Permanente" : "Temporária"}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground">{isencaoAtiva.motivo}</p>
-                  <p className="text-[10px] text-muted-foreground">
-                    Desde {isencaoAtiva.dataInicio}
-                    {isencaoAtiva.dataFim ? ` até ${isencaoAtiva.dataFim}` : " — sem data de término"}
-                  </p>
-                  <p className="text-[10px] text-warning font-medium mt-1">
-                    ⚠ Lançamentos automáticos suspensos durante o período de isenção.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
           {/* Resumo financeiro */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Card>
@@ -205,16 +195,9 @@ export function FinanceiroIrmao() {
           </div>
 
           {/* Lançamento */}
-          <Card className={cn(isencaoAtiva && "opacity-60 pointer-events-none select-none")}>
+          <Card>
             <CardHeader>
-              <CardTitle className="text-base font-sans font-semibold flex items-center gap-2">
-                Novo Lançamento
-                {isencaoAtiva && (
-                  <Badge variant="outline" className="text-[10px] bg-warning/10 text-warning border-warning/20">
-                    Bloqueado — irmão isento
-                  </Badge>
-                )}
-              </CardTitle>
+              <CardTitle className="text-base font-sans font-semibold">Novo Lançamento</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
@@ -231,12 +214,7 @@ export function FinanceiroIrmao() {
                 </div>
                 <div className="space-y-1.5">
                   <Label>Valor (R$) *</Label>
-                  <Input
-                    placeholder="0,00"
-                    value={valor}
-                    onChange={(e) => setValor(parseCurrencyInput(e.target.value))}
-                    maxLength={12}
-                  />
+                  <Input placeholder="0,00" value={valor} onChange={(e) => setValor(parseCurrencyInput(e.target.value))} maxLength={12} />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Data</Label>
@@ -248,24 +226,13 @@ export function FinanceiroIrmao() {
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={data}
-                        onSelect={(d) => d && setData(d)}
-                        initialFocus
-                        className={cn("p-3 pointer-events-auto")}
-                      />
+                      <Calendar mode="single" selected={data} onSelect={(d) => d && setData(d)} initialFocus className={cn("p-3 pointer-events-auto")} />
                     </PopoverContent>
                   </Popover>
                 </div>
                 <div className="space-y-1.5">
                   <Label>Descrição</Label>
-                  <Input
-                    placeholder="Descrição do lançamento"
-                    value={descricao}
-                    onChange={(e) => setDescricao(e.target.value)}
-                    maxLength={100}
-                  />
+                  <Input placeholder="Descrição do lançamento" value={descricao} onChange={(e) => setDescricao(e.target.value)} maxLength={100} />
                 </div>
               </div>
               <div className="mt-4">
@@ -294,20 +261,18 @@ export function FinanceiroIrmao() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {selected.lancamentos.length === 0 ? (
+                    {memberLancamentos.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
                           Nenhum lançamento registrado
                         </TableCell>
                       </TableRow>
                     ) : (
-                      selected.lancamentos.map((l) => (
+                      memberLancamentos.map((l) => (
                         <TableRow key={l.id}>
                           <TableCell className="font-medium">{format(l.data, "dd/MM/yyyy")}</TableCell>
                           <TableCell>
-                            <Badge variant="outline" className={tipoBadgeClass[l.tipo]}>
-                              {tipoLabels[l.tipo]}
-                            </Badge>
+                            <Badge variant="outline" className={tipoBadgeClass[l.tipo]}>{tipoLabels[l.tipo]}</Badge>
                           </TableCell>
                           <TableCell className="text-right font-medium">{formatCurrency(l.valor)}</TableCell>
                           <TableCell className="text-muted-foreground">{l.descricao}</TableCell>

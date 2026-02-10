@@ -77,6 +77,69 @@ export type Database = {
         }
         Relationships: []
       }
+      members: {
+        Row: {
+          address: string | null
+          avatar_url: string | null
+          birth_date: string | null
+          cim: string
+          cpf: string
+          created_at: string
+          created_by: string | null
+          degree: string
+          elevation_date: string | null
+          email: string | null
+          exaltation_date: string | null
+          full_name: string
+          id: string
+          initiation_date: string | null
+          notes: string | null
+          phone: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          avatar_url?: string | null
+          birth_date?: string | null
+          cim: string
+          cpf: string
+          created_at?: string
+          created_by?: string | null
+          degree?: string
+          elevation_date?: string | null
+          email?: string | null
+          exaltation_date?: string | null
+          full_name: string
+          id?: string
+          initiation_date?: string | null
+          notes?: string | null
+          phone?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          avatar_url?: string | null
+          birth_date?: string | null
+          cim?: string
+          cpf?: string
+          created_at?: string
+          created_by?: string | null
+          degree?: string
+          elevation_date?: string | null
+          email?: string | null
+          exaltation_date?: string | null
+          full_name?: string
+          id?: string
+          initiation_date?: string | null
+          notes?: string | null
+          phone?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

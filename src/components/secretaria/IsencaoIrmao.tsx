@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,20 +14,27 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { CalendarIcon, Plus, ShieldCheck, ShieldOff, AlertTriangle, Trash2 } from "lucide-react";
+import { CalendarIcon, Plus, ShieldCheck, ShieldOff, AlertTriangle, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { ConfirmSensitiveAction } from "@/components/ConfirmSensitiveAction";
 import { useAuditLog } from "@/hooks/useAuditLog";
 import { PermissionGate } from "@/components/PermissionGate";
-import { type Isencao, type TipoIsencao, isencoesMock } from "@/components/dashboard/DashboardData";
+import { type Isencao, type TipoIsencao } from "@/components/dashboard/DashboardData";
 
-const irmaosDisponiveis: { id: number; nome: string; cim: string }[] = [];
+interface MemberOption {
+  id: string;
+  full_name: string;
+  cim: string;
+}
 
 export function IsencaoIrmao() {
   const { hasPermission } = useAuth();
   const { logAction } = useAuditLog();
-  const [isencoes, setIsencoes] = useState<Isencao[]>(isencoesMock);
+
+  const [members, setMembers] = useState<MemberOption[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(true);
+  const [isencoes, setIsencoes] = useState<Isencao[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [revogarTarget, setRevogarTarget] = useState<number | null>(null);
   const [concederConfirmOpen, setConcederConfirmOpen] = useState(false);
@@ -40,6 +48,19 @@ export function IsencaoIrmao() {
   const [motivo, setMotivo] = useState("");
   const [dataInicio, setDataInicio] = useState<Date | undefined>(new Date());
   const [dataFim, setDataFim] = useState<Date | undefined>(undefined);
+
+  const fetchMembers = useCallback(async () => {
+    setLoadingMembers(true);
+    const { data, error } = await supabase
+      .from("members")
+      .select("id, full_name, cim")
+      .eq("status", "ativo")
+      .order("full_name");
+    if (!error && data) setMembers(data);
+    setLoadingMembers(false);
+  }, []);
+
+  useEffect(() => { fetchMembers(); }, [fetchMembers]);
 
   const resetForm = () => {
     setIrmaoId("");
@@ -56,10 +77,10 @@ export function IsencaoIrmao() {
     if (!dataInicio) { toast.error("Informe a data de início."); return false; }
     if (tipoIsencao === "temporaria" && !dataFim) { toast.error("Isenções temporárias exigem data final."); return false; }
     if (tipoIsencao === "temporaria" && dataFim && dataFim <= dataInicio) { toast.error("A data final deve ser posterior à data inicial."); return false; }
-    const irmao = irmaosDisponiveis.find((i) => i.id.toString() === irmaoId);
+    const irmao = members.find((m) => m.id === irmaoId);
     if (!irmao) return false;
-    const existing = isencoes.find((i) => i.irmaoId === irmao.id && i.ativa);
-    if (existing) { toast.error(`${irmao.nome} já possui uma isenção ativa.`); return false; }
+    const existing = isencoes.find((i) => i.irmaoId.toString() === irmao.id && i.ativa);
+    if (existing) { toast.error(`${irmao.full_name} já possui uma isenção ativa.`); return false; }
     return true;
   };
 
@@ -69,18 +90,17 @@ export function IsencaoIrmao() {
       return;
     }
     if (!validateForm()) return;
-    // Require confirmation for this sensitive action
     setConcederConfirmOpen(true);
   };
 
   const handleSaveConfirmed = () => {
-    const irmao = irmaosDisponiveis.find((i) => i.id.toString() === irmaoId);
+    const irmao = members.find((m) => m.id === irmaoId);
     if (!irmao) return;
 
     const nova: Isencao = {
       id: Date.now(),
-      irmaoId: irmao.id,
-      irmaoNome: irmao.nome,
+      irmaoId: parseInt(irmaoId) || Date.now(),
+      irmaoNome: irmao.full_name,
       tipo: tipoIsencao as TipoIsencao,
       motivo: motivo.trim(),
       dataInicio: format(dataInicio!, "dd/MM/yyyy"),
@@ -89,8 +109,8 @@ export function IsencaoIrmao() {
     };
 
     setIsencoes((prev) => [nova, ...prev]);
-    toast.success(`Isenção ${tipoIsencao === "temporaria" ? "temporária" : "permanente"} registrada para ${irmao.nome}.`);
-    logAction({ action: "GRANT_EXEMPTION", targetTable: "isencoes", targetId: irmao.id.toString(), details: { irmao: irmao.nome, tipo: tipoIsencao, motivo: motivo.trim() } });
+    toast.success(`Isenção ${tipoIsencao === "temporaria" ? "temporária" : "permanente"} registrada para ${irmao.full_name}.`);
+    logAction({ action: "GRANT_EXEMPTION", targetTable: "isencoes", targetId: irmao.id, details: { irmao: irmao.full_name, tipo: tipoIsencao, motivo: motivo.trim() } });
     setDialogOpen(false);
     resetForm();
   };
@@ -192,12 +212,7 @@ export function IsencaoIrmao() {
                     <TableRow key={isencao.id} className={cn(!isencao.ativa && "opacity-50")}>
                       <TableCell className="font-medium text-sm">{isencao.irmaoNome}</TableCell>
                       <TableCell>
-                        <Badge variant="outline" className={cn(
-                          "text-[10px] px-2 py-0.5",
-                          isencao.tipo === "permanente"
-                            ? "bg-primary/8 text-primary border-primary/20"
-                            : "bg-warning/10 text-warning border-warning/20"
-                        )}>
+                        <Badge variant="outline" className={cn("text-[10px] px-2 py-0.5", isencao.tipo === "permanente" ? "bg-primary/8 text-primary border-primary/20" : "bg-warning/10 text-warning border-warning/20")}>
                           {isencao.tipo === "permanente" ? "Permanente" : "Temporária"}
                         </Badge>
                       </TableCell>
@@ -208,23 +223,13 @@ export function IsencaoIrmao() {
                         {isencao.tipo === "permanente" && <span className="text-muted-foreground"> → Indeterminado</span>}
                       </TableCell>
                       <TableCell className="text-center">
-                        <Badge variant="outline" className={cn(
-                          "text-[10px] px-2 py-0.5",
-                          isencao.ativa
-                            ? "bg-success/10 text-success border-success/20"
-                            : "bg-muted text-muted-foreground border-border"
-                        )}>
+                        <Badge variant="outline" className={cn("text-[10px] px-2 py-0.5", isencao.ativa ? "bg-success/10 text-success border-success/20" : "bg-muted text-muted-foreground border-border")}>
                           {isencao.ativa ? "Ativa" : "Revogada"}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
                         {isencao.ativa && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 text-xs gap-1 text-destructive hover:text-destructive hover:bg-destructive/10"
-                            onClick={() => handleRevogarClick(isencao.id)}
-                          >
+                          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleRevogarClick(isencao.id)}>
                             <Trash2 className="h-3.5 w-3.5" />
                             Revogar
                           </Button>
@@ -248,16 +253,20 @@ export function IsencaoIrmao() {
           <div className="grid gap-4 py-2">
             <div className="space-y-1.5">
               <Label>Irmão *</Label>
-              <Select value={irmaoId} onValueChange={setIrmaoId}>
-                <SelectTrigger><SelectValue placeholder="Selecione o irmão" /></SelectTrigger>
-                <SelectContent>
-                  {irmaosDisponiveis.map((i) => (
-                    <SelectItem key={i.id} value={i.id.toString()}>
-                      {i.nome} — CIM {i.cim}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {loadingMembers ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground py-2"><Loader2 className="h-4 w-4 animate-spin" /> Carregando...</div>
+              ) : (
+                <Select value={irmaoId} onValueChange={setIrmaoId}>
+                  <SelectTrigger><SelectValue placeholder="Selecione o irmão" /></SelectTrigger>
+                  <SelectContent>
+                    {members.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.full_name} — CIM {m.cim}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             <div className="space-y-1.5">
@@ -273,13 +282,7 @@ export function IsencaoIrmao() {
 
             <div className="space-y-1.5">
               <Label>Motivo da Isenção *</Label>
-              <Textarea
-                placeholder="Descreva o motivo da isenção..."
-                value={motivo}
-                onChange={(e) => setMotivo(e.target.value)}
-                maxLength={300}
-                rows={3}
-              />
+              <Textarea placeholder="Descreva o motivo da isenção..." value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={300} rows={3} />
               <p className="text-[10px] text-muted-foreground text-right">{motivo.length}/300</p>
             </div>
 
@@ -333,7 +336,7 @@ export function IsencaoIrmao() {
         </DialogContent>
       </Dialog>
 
-      {/* Confirmação de concessão de isenção */}
+      {/* Confirmação de concessão */}
       <ConfirmSensitiveAction
         open={concederConfirmOpen}
         onOpenChange={setConcederConfirmOpen}
