@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, Calendar, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, Calendar, TrendingUp, TrendingDown, DollarSign, Users, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -21,10 +22,30 @@ const meses = [
 ];
 
 interface Transaction {
+  id: string;
   tipo: string;
   valor: number;
+  descricao: string;
   data: string;
   status: string;
+  member_id: string;
+}
+
+interface Member {
+  id: string;
+  full_name: string;
+  cim: string;
+  status: string;
+}
+
+function getLabelTipo(tipo: string) {
+  switch (tipo) {
+    case "mensalidade": return "Mensalidade";
+    case "taxa": return "Taxa";
+    case "avulso": return "Avulso";
+    case "despesa": return "Despesa";
+    default: return tipo;
+  }
 }
 
 export default function RelatorioPrestacaoContas() {
@@ -36,7 +57,7 @@ export default function RelatorioPrestacaoContas() {
   const [ano, setAno] = useState(now.getFullYear().toString());
   const [loading, setLoading] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [activeCount, setActiveCount] = useState(0);
+  const [members, setMembers] = useState<Member[]>([]);
 
   const anos = Array.from({ length: 5 }, (_, i) => (now.getFullYear() - 2 + i).toString());
 
@@ -51,44 +72,51 @@ export default function RelatorioPrestacaoContas() {
 
       const [txRes, memRes] = await Promise.all([
         supabase.from("member_transactions")
-          .select("tipo, valor, data, status")
-          .gte("data", startDate).lte("data", endDate),
-        supabase.from("members").select("id").eq("status", "ativo"),
+          .select("id, tipo, valor, descricao, data, status, member_id")
+          .gte("data", startDate).lte("data", endDate)
+          .order("data", { ascending: true }),
+        supabase.from("members").select("id, full_name, cim, status"),
       ]);
       setTransactions(txRes.data ?? []);
-      setActiveCount(memRes.data?.length ?? 0);
+      setMembers(memRes.data ?? []);
       setLoading(false);
     })();
   }, [ano, mesInicio, mesFim]);
 
+  const membrosAtivos = members.filter((m) => m.status === "ativo");
   const receitas = transactions.filter((t) => t.tipo !== "despesa");
   const despesas = transactions.filter((t) => t.tipo === "despesa");
   const totalReceitas = receitas.reduce((s, t) => s + Number(t.valor), 0);
   const totalDespesas = despesas.reduce((s, t) => s + Number(t.valor), 0);
+  const totalPago = transactions.filter((t) => t.status === "pago" && t.tipo !== "despesa").reduce((s, t) => s + Number(t.valor), 0);
+  const totalEmAberto = transactions.filter((t) => t.status === "em_aberto").reduce((s, t) => s + Number(t.valor), 0);
   const saldo = totalReceitas - totalDespesas;
 
   const porTipo = ["mensalidade", "taxa", "avulso", "despesa"].map((tipo) => {
     const txs = transactions.filter((t) => t.tipo === tipo);
+    if (txs.length === 0) return null;
     return {
       tipo,
-      label: tipo === "mensalidade" ? "Mensalidades" : tipo === "taxa" ? "Taxas" : tipo === "avulso" ? "Avulsos" : "Despesas",
+      label: getLabelTipo(tipo) + "s",
       pago: txs.filter((t) => t.status === "pago").reduce((s, t) => s + Number(t.valor), 0),
       aberto: txs.filter((t) => t.status === "em_aberto").reduce((s, t) => s + Number(t.valor), 0),
       qtd: txs.length,
     };
-  }).filter((r) => r.qtd > 0);
+  }).filter(Boolean) as { tipo: string; label: string; pago: number; aberto: number; qtd: number }[];
 
   const periodoLabel = mesInicio === mesFim
     ? `${meses[parseInt(mesInicio) - 1]} de ${ano}`
     : `${meses[parseInt(mesInicio) - 1]} a ${meses[parseInt(mesFim) - 1]} de ${ano}`;
 
+  const getMember = (id: string) => members.find((m) => m.id === id);
+
   return (
     <div className="space-y-6">
       {/* Filtros */}
-      <Card>
+      <Card className="print:hidden">
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-sans font-semibold flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-primary" /> Filtros — Prestação de Contas
+            <Calendar className="h-4 w-4 text-primary" /> Período da Prestação de Contas
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -128,114 +156,254 @@ export default function RelatorioPrestacaoContas() {
         <div className="flex justify-center py-12"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
       ) : (
         <>
-          {/* Cabeçalho oficial para impressão */}
-          <div className="hidden print:block text-center space-y-1 mb-6">
-            <p className="text-lg font-bold font-serif">{config.lodge_name || "Loja Maçônica"}</p>
-            <p className="text-sm">Nº {config.lodge_number} — Or∴ de {config.orient}</p>
-            {config.potencia && <p className="text-xs text-muted-foreground">{config.potencia}</p>}
-            <Separator className="my-3" />
-            <p className="text-base font-semibold">PRESTAÇÃO DE CONTAS — {periodoLabel.toUpperCase()}</p>
-            <p className="text-xs text-muted-foreground">
-              Emitido em {format(now, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })} por {profile?.full_name}
-            </p>
-          </div>
-
-          {/* KPIs */}
-          <div className="grid grid-cols-3 gap-4">
-            <Card>
-              <CardContent className="pt-5 space-y-1">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-success" />
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Receitas</p>
-                </div>
-                <p className="text-xl font-bold font-serif">{formatCurrency(totalReceitas)}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-5 space-y-1">
-                <div className="flex items-center gap-2">
-                  <TrendingDown className="h-4 w-4 text-destructive" />
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Despesas</p>
-                </div>
-                <p className="text-xl font-bold font-serif">{formatCurrency(totalDespesas)}</p>
-              </CardContent>
-            </Card>
-            <Card className={saldo >= 0 ? "border-success/30" : "border-destructive/30"}>
-              <CardContent className="pt-5 space-y-1">
-                <div className="flex items-center gap-2">
-                  <DollarSign className="h-4 w-4" />
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Saldo</p>
-                </div>
-                <p className={`text-xl font-bold font-serif ${saldo >= 0 ? "text-success" : "text-destructive"}`}>
-                  {formatCurrency(saldo)}
+          {/* ═══ Cabeçalho institucional (tela + impressão) ═══ */}
+          <Card className="border-primary/20 bg-card">
+            <CardContent className="pt-6 pb-5">
+              <div className="text-center space-y-1.5">
+                <p className="text-lg font-bold font-serif tracking-wide">{config.lodge_name || "Loja Maçônica"}</p>
+                <p className="text-sm text-muted-foreground">Nº {config.lodge_number} — Or∴ de {config.orient}</p>
+                {config.potencia && <p className="text-xs text-muted-foreground">{config.potencia}</p>}
+                <Separator className="my-3" />
+                <p className="text-base font-semibold uppercase tracking-wider">
+                  Prestação de Contas — {periodoLabel}
                 </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Tabela por tipo */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base font-sans font-semibold">Demonstrativo por Categoria</CardTitle>
-              <CardDescription>{periodoLabel}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Categoria</TableHead>
-                      <TableHead className="text-right">Arrecadado</TableHead>
-                      <TableHead className="text-right">Em Aberto</TableHead>
-                      <TableHead className="text-right">Total</TableHead>
-                      <TableHead className="text-center">Qtd</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {porTipo.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                          Nenhuma movimentação no período selecionado.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      <>
-                        {porTipo.map((r) => (
-                          <TableRow key={r.tipo}>
-                            <TableCell className="font-medium">{r.label}</TableCell>
-                            <TableCell className="text-right text-success">{formatCurrency(r.pago)}</TableCell>
-                            <TableCell className="text-right text-destructive">{formatCurrency(r.aberto)}</TableCell>
-                            <TableCell className="text-right font-medium">{formatCurrency(r.pago + r.aberto)}</TableCell>
-                            <TableCell className="text-center">{r.qtd}</TableCell>
-                          </TableRow>
-                        ))}
-                        <TableRow className="bg-muted/30 font-semibold">
-                          <TableCell>Total</TableCell>
-                          <TableCell className="text-right text-success">
-                            {formatCurrency(porTipo.reduce((s, r) => s + r.pago, 0))}
-                          </TableCell>
-                          <TableCell className="text-right text-destructive">
-                            {formatCurrency(porTipo.reduce((s, r) => s + r.aberto, 0))}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {formatCurrency(porTipo.reduce((s, r) => s + r.pago + r.aberto, 0))}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            {porTipo.reduce((s, r) => s + r.qtd, 0)}
-                          </TableCell>
-                        </TableRow>
-                      </>
-                    )}
-                  </TableBody>
-                </Table>
+                <p className="text-xs text-muted-foreground">
+                  Emitido em {format(now, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })} por {profile?.full_name}
+                </p>
               </div>
             </CardContent>
           </Card>
 
-          {/* Rodapé oficial */}
-          <div className="text-center text-[10px] text-muted-foreground pt-4 border-t space-y-1 print:mt-8">
-            <p>Documento gerado automaticamente pelo sistema Malhete Digital</p>
+          {/* ═══ Seção I — Resumo Geral ═══ */}
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+              I — Resumo Geral
+            </p>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <Card>
+                <CardContent className="pt-5 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-success" />
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Receitas</p>
+                  </div>
+                  <p className="text-xl font-bold font-serif">{formatCurrency(totalReceitas)}</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-5 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <TrendingDown className="h-4 w-4 text-destructive" />
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Despesas</p>
+                  </div>
+                  <p className="text-xl font-bold font-serif">{formatCurrency(totalDespesas)}</p>
+                </CardContent>
+              </Card>
+              <Card className={saldo >= 0 ? "border-success/30" : "border-destructive/30"}>
+                <CardContent className="pt-5 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="h-4 w-4" />
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Saldo</p>
+                  </div>
+                  <p className={`text-xl font-bold font-serif ${saldo >= 0 ? "text-success" : "text-destructive"}`}>
+                    {formatCurrency(saldo)}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-5 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-primary" />
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Membros Ativos</p>
+                  </div>
+                  <p className="text-xl font-bold font-serif">{membrosAtivos.length}</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Resumo consolidado inline */}
+            <Card className="mt-4 border-primary/20">
+              <CardContent className="pt-5">
+                <div className="space-y-2.5">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Total arrecadado (receitas pagas)</span>
+                    <span className="font-bold text-success">{formatCurrency(totalPago)}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Total em aberto</span>
+                    <span className="font-bold text-warning">{formatCurrency(totalEmAberto)}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Total de despesas pagas</span>
+                    <span className="font-bold text-destructive">
+                      {formatCurrency(despesas.filter((t) => t.status === "pago").reduce((s, t) => s + Number(t.valor), 0))}
+                    </span>
+                  </div>
+                  <Separator className="border-primary/20" />
+                  <div className="flex justify-between items-center bg-muted/30 rounded-md px-3 py-2 -mx-3">
+                    <span className="text-sm font-semibold">Saldo do período</span>
+                    <span className={`text-lg font-bold font-serif ${saldo >= 0 ? "text-success" : "text-destructive"}`}>
+                      {formatCurrency(saldo)}
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* ═══ Seção II — Demonstrativo por Categoria ═══ */}
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+              II — Demonstrativo por Categoria
+            </p>
+            <Card>
+              <CardContent className="pt-5">
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Categoria</TableHead>
+                        <TableHead className="text-right">Arrecadado</TableHead>
+                        <TableHead className="text-right">Em Aberto</TableHead>
+                        <TableHead className="text-right">Total</TableHead>
+                        <TableHead className="text-center">Qtd</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {porTipo.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                            Nenhuma movimentação no período.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        <>
+                          {porTipo.map((r) => (
+                            <TableRow key={r.tipo}>
+                              <TableCell className="font-medium">{r.label}</TableCell>
+                              <TableCell className="text-right text-success">{formatCurrency(r.pago)}</TableCell>
+                              <TableCell className="text-right text-warning">{formatCurrency(r.aberto)}</TableCell>
+                              <TableCell className="text-right font-medium">{formatCurrency(r.pago + r.aberto)}</TableCell>
+                              <TableCell className="text-center">{r.qtd}</TableCell>
+                            </TableRow>
+                          ))}
+                          <TableRow className="bg-muted/30 font-semibold">
+                            <TableCell>Total Geral</TableCell>
+                            <TableCell className="text-right text-success">
+                              {formatCurrency(porTipo.reduce((s, r) => s + r.pago, 0))}
+                            </TableCell>
+                            <TableCell className="text-right text-warning">
+                              {formatCurrency(porTipo.reduce((s, r) => s + r.aberto, 0))}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {formatCurrency(porTipo.reduce((s, r) => s + r.pago + r.aberto, 0))}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {porTipo.reduce((s, r) => s + r.qtd, 0)}
+                            </TableCell>
+                          </TableRow>
+                        </>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* ═══ Seção III — Detalhamento de Lançamentos ═══ */}
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+              III — Detalhamento de Lançamentos
+            </p>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-sans font-semibold flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-primary" /> Lançamentos do Período
+                </CardTitle>
+                <CardDescription>
+                  {transactions.length} lançamento(s) registrado(s) entre {periodoLabel}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[100px]">Data</TableHead>
+                        <TableHead>Irmão</TableHead>
+                        <TableHead>Tipo</TableHead>
+                        <TableHead className="text-right">Valor</TableHead>
+                        <TableHead className="text-center">Situação</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {transactions.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                            Nenhum lançamento registrado no período selecionado.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        <>
+                          {transactions.map((t) => {
+                            const member = getMember(t.member_id);
+                            return (
+                              <TableRow key={t.id}>
+                                <TableCell className="whitespace-nowrap text-sm">
+                                  {format(new Date(t.data + "T12:00:00"), "dd/MM/yyyy")}
+                                </TableCell>
+                                <TableCell className="font-medium text-sm">{member?.full_name ?? "—"}</TableCell>
+                                <TableCell>
+                                  <Badge variant="outline" className="text-[10px]">
+                                    {getLabelTipo(t.tipo)}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-right font-medium text-sm">
+                                  {formatCurrency(Number(t.valor))}
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <Badge
+                                    variant="outline"
+                                    className={t.status === "pago"
+                                      ? "bg-success/10 text-success border-success/20 text-[10px]"
+                                      : "bg-destructive/10 text-destructive border-destructive/20 text-[10px]"
+                                    }
+                                  >
+                                    {t.status === "pago" ? "Pago" : "Em Aberto"}
+                                  </Badge>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                          {/* Totais */}
+                          <TableRow className="bg-muted/30 font-semibold">
+                            <TableCell colSpan={3} className="text-right text-sm">
+                              Total ({transactions.length} lançamentos)
+                            </TableCell>
+                            <TableCell className="text-right text-sm">
+                              {formatCurrency(transactions.reduce((s, t) => s + Number(t.valor), 0))}
+                            </TableCell>
+                            <TableCell />
+                          </TableRow>
+                        </>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* ═══ Rodapé institucional ═══ */}
+          <div className="text-center text-[10px] text-muted-foreground pt-6 border-t space-y-1">
+            <Separator className="mb-4" />
+            <p className="font-medium">Documento para leitura em Sessão de Loja</p>
+            <p>Gerado automaticamente pelo sistema Malhete Digital</p>
             <p>{config.lodge_name} — Nº {config.lodge_number} — Or∴ de {config.orient}</p>
+            <p>Emitido em {format(now, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })} por {profile?.full_name}</p>
           </div>
         </>
       )}
