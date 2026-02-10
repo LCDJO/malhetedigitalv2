@@ -77,6 +77,47 @@ export type Database = {
         }
         Relationships: []
       }
+      member_transactions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data: string
+          descricao: string
+          id: string
+          member_id: string
+          tipo: string
+          valor: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data?: string
+          descricao?: string
+          id?: string
+          member_id: string
+          tipo: string
+          valor: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data?: string
+          descricao?: string
+          id?: string
+          member_id?: string
+          tipo?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_transactions_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       members: {
         Row: {
           address: string | null
