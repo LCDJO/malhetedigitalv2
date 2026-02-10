@@ -54,7 +54,7 @@ const Index = () => {
       <DashboardInadimplencia filters={filters} />
 
       {/* 4. Resumo por Categorias */}
-      <DashboardCategorias />
+      <DashboardCategorias filters={filters} />
 
       {/* 5. Últimos Lançamentos */}
       <DashboardLancamentos filters={filters} />
