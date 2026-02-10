@@ -65,6 +65,12 @@ export const ultimosLancamentos: Lancamento[] = [
   { id: 6, descricao: "Mensalidade Jan/2026", irmao: "Ir∴ Paulo Freitas", tipo: "entrada", categoria: "mensalidade", situacao: "pago", valor: 280, data: "28/01/2026" },
   { id: 7, descricao: "Valor Avulso — Doação", irmao: "Ir∴ Marcos Oliveira", tipo: "entrada", categoria: "avulso", situacao: "pago", valor: 500, data: "25/01/2026" },
   { id: 8, descricao: "Taxa Administrativa", irmao: "Ir∴ Fernando Costa", tipo: "entrada", categoria: "taxa", situacao: "em_aberto", valor: 120, data: "20/01/2026" },
+  { id: 9, descricao: "Mensalidade Jan/2026", irmao: "Ir∴ Antônio Barros", tipo: "entrada", categoria: "mensalidade", situacao: "pago", valor: 280, data: "18/01/2026" },
+  { id: 10, descricao: "Mensalidade Jan/2026", irmao: "Ir∴ Sérgio Duarte", tipo: "entrada", categoria: "mensalidade", situacao: "em_aberto", valor: 280, data: "15/01/2026" },
+  { id: 11, descricao: "Conta de Água", irmao: "—", tipo: "saida", categoria: "despesa", situacao: "pago", valor: 320, data: "12/01/2026" },
+  { id: 12, descricao: "Mensalidade Jan/2026", irmao: "Ir∴ Ricardo Lima", tipo: "entrada", categoria: "mensalidade", situacao: "pago", valor: 280, data: "10/01/2026" },
+  { id: 13, descricao: "Taxa Semestral", irmao: "Ir∴ Pedro Alves", tipo: "entrada", categoria: "taxa", situacao: "em_aberto", valor: 180, data: "08/01/2026" },
+  { id: 14, descricao: "Mensalidade Dez/2025", irmao: "Ir∴ Gustavo Reis", tipo: "entrada", categoria: "mensalidade", situacao: "pago", valor: 280, data: "05/01/2026" },
 ];
 
 export const categoriasDespesa = [
