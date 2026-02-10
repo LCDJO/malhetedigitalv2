@@ -4,6 +4,8 @@ import type { User, Session } from "@supabase/supabase-js";
 
 export type AppRole = "administrador" | "veneravel" | "secretario" | "tesoureiro" | "orador" | "chanceler" | "consulta";
 
+export type PermissionAction = "read" | "write" | "approve" | "manage_users";
+
 export const roleLabels: Record<AppRole, string> = {
   administrador: "Administrador",
   veneravel: "Venerável Mestre",
@@ -14,13 +16,68 @@ export const roleLabels: Record<AppRole, string> = {
   consulta: "Usuário de Consulta",
 };
 
-export const moduleAccess: Record<string, AppRole[]> = {
-  dashboard: ["administrador", "veneravel", "secretario", "tesoureiro", "orador", "chanceler", "consulta"],
-  secretaria: ["administrador", "veneravel", "secretario"],
-  tesouraria: ["administrador", "veneravel", "tesoureiro"],
-  chancelaria: ["administrador", "veneravel", "chanceler"],
-  configuracoes: ["administrador", "veneravel"],
+// Granular permissions matrix: role → module → allowed actions
+export const permissionsMatrix: Record<AppRole, Record<string, PermissionAction[]>> = {
+  administrador: {
+    dashboard: ["read", "write", "approve", "manage_users"],
+    secretaria: ["read", "write", "approve", "manage_users"],
+    tesouraria: ["read", "write", "approve", "manage_users"],
+    chancelaria: ["read", "write", "approve", "manage_users"],
+    configuracoes: ["read", "write", "approve", "manage_users"],
+  },
+  veneravel: {
+    dashboard: ["read"],
+    secretaria: ["read"],
+    tesouraria: ["read", "approve"],
+    chancelaria: ["read"],
+    configuracoes: ["read"],
+  },
+  secretario: {
+    dashboard: ["read"],
+    secretaria: ["read", "write"],
+    tesouraria: ["read"],
+    chancelaria: [],
+    configuracoes: [],
+  },
+  tesoureiro: {
+    dashboard: ["read"],
+    secretaria: ["read"],
+    tesouraria: ["read", "write"],
+    chancelaria: [],
+    configuracoes: [],
+  },
+  orador: {
+    dashboard: ["read"],
+    secretaria: [],
+    tesouraria: [],
+    chancelaria: [],
+    configuracoes: [],
+  },
+  chanceler: {
+    dashboard: ["read"],
+    secretaria: [],
+    tesouraria: [],
+    chancelaria: ["read", "write"],
+    configuracoes: [],
+  },
+  consulta: {
+    dashboard: ["read"],
+    secretaria: [],
+    tesouraria: [],
+    chancelaria: [],
+    configuracoes: [],
+  },
 };
+
+// Derived module access (has at least "read" permission)
+export const moduleAccess: Record<string, AppRole[]> = Object.keys(
+  permissionsMatrix.administrador
+).reduce((acc, module) => {
+  acc[module] = (Object.keys(permissionsMatrix) as AppRole[]).filter(
+    (role) => (permissionsMatrix[role][module]?.length ?? 0) > 0
+  );
+  return acc;
+}, {} as Record<string, AppRole[]>);
 
 interface AuthContextValue {
   user: User | null;
@@ -30,6 +87,7 @@ interface AuthContextValue {
   isAdmin: boolean;
   loading: boolean;
   hasModuleAccess: (module: string) => boolean;
+  hasPermission: (module: string, action: PermissionAction) => boolean;
   signOut: () => Promise<void>;
   refreshRole: () => Promise<void>;
 }
@@ -114,6 +172,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [role]
   );
 
+  const hasPermission = useCallback(
+    (module: string, action: PermissionAction) => {
+      if (!role) return false;
+      const actions = permissionsMatrix[role]?.[module];
+      return actions ? actions.includes(action) : false;
+    },
+    [role]
+  );
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -123,7 +190,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, role, isAdmin, loading, hasModuleAccess, signOut, refreshRole }}>
+    <AuthContext.Provider value={{ user, session, profile, role, isAdmin, loading, hasModuleAccess, hasPermission, signOut, refreshRole }}>
       {children}
     </AuthContext.Provider>
   );
