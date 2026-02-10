@@ -85,6 +85,7 @@ interface Transaction {
   data: string;
   status: string;
   member_id: string;
+  created_at?: string;
 }
 
 export default function RelatorioBrothers() {
@@ -118,8 +119,9 @@ export default function RelatorioBrothers() {
       setLoadingTx(true);
       const { data } = await supabase
         .from("member_transactions")
-        .select("id, tipo, valor, descricao, data, status, member_id")
+        .select("id, tipo, valor, descricao, data, status, member_id, created_at")
         .eq("member_id", selectedMember)
+        .in("status", ["pago", "em_aberto"])
         .order("data", { ascending: false });
       setTransactions(data ?? []);
       setLoadingTx(false);
@@ -413,17 +415,19 @@ export default function RelatorioBrothers() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="w-[100px]">Data</TableHead>
+                          <TableHead className="w-[60px]">Ref.</TableHead>
+                          <TableHead className="w-[90px]">Data</TableHead>
                           <TableHead>Tipo</TableHead>
                           <TableHead className="text-right">Valor</TableHead>
                           <TableHead className="text-center">Situação</TableHead>
                           <TableHead>Observações</TableHead>
+                          <TableHead className="w-[100px]">Registrado</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {filtered.length === 0 ? (
                           <TableRow>
-                            <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                            <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                               Nenhum lançamento encontrado com os filtros aplicados.
                             </TableCell>
                           </TableRow>
@@ -431,6 +435,11 @@ export default function RelatorioBrothers() {
                           <>
                             {filtered.map((t) => (
                               <TableRow key={t.id}>
+                                <TableCell>
+                                  <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">
+                                    {t.id.slice(0, 8).toUpperCase()}
+                                  </code>
+                                </TableCell>
                                 <TableCell className="whitespace-nowrap text-sm">
                                   {format(new Date(t.data + "T12:00:00"), "dd/MM/yyyy")}
                                 </TableCell>
@@ -453,24 +462,35 @@ export default function RelatorioBrothers() {
                                     {t.status === "pago" ? "Pago" : "Em Aberto"}
                                   </Badge>
                                 </TableCell>
-                                <TableCell className="text-muted-foreground text-sm max-w-[220px] truncate">
+                                <TableCell className="text-muted-foreground text-sm max-w-[180px] truncate">
                                   {t.descricao || "—"}
+                                </TableCell>
+                                <TableCell className="text-[11px] text-muted-foreground whitespace-nowrap">
+                                  {t.created_at ? format(new Date(t.created_at), "dd/MM/yy HH:mm") : "—"}
                                 </TableCell>
                               </TableRow>
                             ))}
                             <TableRow className="bg-muted/30 font-semibold">
-                              <TableCell colSpan={2} className="text-right text-sm">
+                              <TableCell colSpan={3} className="text-right text-sm">
                                 Total ({filtered.length} lançamentos)
                               </TableCell>
                               <TableCell className="text-right text-sm">
                                 {formatCurrency(filtered.reduce((s, t) => s + Number(t.valor), 0))}
                               </TableCell>
-                              <TableCell colSpan={2} />
+                              <TableCell colSpan={3} />
                             </TableRow>
                           </>
                         )}
                       </TableBody>
                     </Table>
+                  </div>
+
+                  <div className="mt-3 flex items-start gap-2 text-[10px] text-muted-foreground">
+                    <FileText className="h-3 w-3 mt-0.5 shrink-0" />
+                    <p>
+                      Ref. = identificador único para rastreabilidade até o lançamento original.
+                      Apenas registros com status válido são exibidos.
+                    </p>
                   </div>
                 </CardContent>
               </Card>

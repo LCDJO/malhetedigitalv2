@@ -25,6 +25,8 @@ const meses = [
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
 ];
 
+const VALID_STATUSES = ["pago", "em_aberto"];
+
 interface Transaction {
   id: string;
   tipo: string;
@@ -33,6 +35,8 @@ interface Transaction {
   data: string;
   status: string;
   member_id: string;
+  created_by: string | null;
+  created_at: string;
 }
 
 interface Member {
@@ -64,7 +68,9 @@ export default function Relatorios() {
       const endDate = `${ano}-${mes.padStart(2, "0")}-${lastDay}`;
 
       const [txRes, memRes] = await Promise.all([
-        supabase.from("member_transactions").select("id, tipo, valor, descricao, data, status, member_id")
+        supabase.from("member_transactions")
+          .select("id, tipo, valor, descricao, data, status, member_id, created_by, created_at")
+          .in("status", VALID_STATUSES)
           .gte("data", startDate).lte("data", endDate),
         supabase.from("members").select("id, full_name, cim, status"),
       ]);

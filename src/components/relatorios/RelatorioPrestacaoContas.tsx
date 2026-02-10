@@ -21,6 +21,8 @@ const meses = [
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
 ];
 
+const VALID_STATUSES = ["pago", "em_aberto"];
+
 interface Transaction {
   id: string;
   tipo: string;
@@ -29,6 +31,7 @@ interface Transaction {
   data: string;
   status: string;
   member_id: string;
+  created_at: string;
 }
 
 interface Member {
@@ -72,7 +75,8 @@ export default function RelatorioPrestacaoContas() {
 
       const [txRes, memRes] = await Promise.all([
         supabase.from("member_transactions")
-          .select("id, tipo, valor, descricao, data, status, member_id")
+          .select("id, tipo, valor, descricao, data, status, member_id, created_at")
+          .in("status", VALID_STATUSES)
           .gte("data", startDate).lte("data", endDate)
           .order("data", { ascending: true }),
         supabase.from("members").select("id, full_name, cim, status"),
@@ -331,18 +335,20 @@ export default function RelatorioPrestacaoContas() {
                 <div className="rounded-md border">
                   <Table>
                     <TableHeader>
-                      <TableRow>
+                    <TableRow>
+                        <TableHead className="w-[60px]">Ref.</TableHead>
                         <TableHead className="w-[100px]">Data</TableHead>
                         <TableHead>Irmão</TableHead>
                         <TableHead>Tipo</TableHead>
                         <TableHead className="text-right">Valor</TableHead>
                         <TableHead className="text-center">Situação</TableHead>
+                        <TableHead className="w-[120px]">Registrado em</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {transactions.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                          <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                             Nenhum lançamento registrado no período selecionado.
                           </TableCell>
                         </TableRow>
@@ -352,6 +358,11 @@ export default function RelatorioPrestacaoContas() {
                             const member = getMember(t.member_id);
                             return (
                               <TableRow key={t.id}>
+                                <TableCell>
+                                  <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">
+                                    {t.id.slice(0, 8).toUpperCase()}
+                                  </code>
+                                </TableCell>
                                 <TableCell className="whitespace-nowrap text-sm">
                                   {format(new Date(t.data + "T12:00:00"), "dd/MM/yyyy")}
                                 </TableCell>
@@ -369,29 +380,39 @@ export default function RelatorioPrestacaoContas() {
                                     variant="outline"
                                     className={t.status === "pago"
                                       ? "bg-success/10 text-success border-success/20 text-[10px]"
-                                      : "bg-destructive/10 text-destructive border-destructive/20 text-[10px]"
+                                      : "bg-warning/10 text-warning border-warning/20 text-[10px]"
                                     }
                                   >
                                     {t.status === "pago" ? "Pago" : "Em Aberto"}
                                   </Badge>
                                 </TableCell>
+                                <TableCell className="text-[11px] text-muted-foreground whitespace-nowrap">
+                                  {format(new Date(t.created_at), "dd/MM/yy HH:mm")}
+                                </TableCell>
                               </TableRow>
                             );
                           })}
-                          {/* Totais */}
                           <TableRow className="bg-muted/30 font-semibold">
-                            <TableCell colSpan={3} className="text-right text-sm">
+                            <TableCell colSpan={4} className="text-right text-sm">
                               Total ({transactions.length} lançamentos)
                             </TableCell>
                             <TableCell className="text-right text-sm">
                               {formatCurrency(transactions.reduce((s, t) => s + Number(t.valor), 0))}
                             </TableCell>
-                            <TableCell />
+                            <TableCell colSpan={2} />
                           </TableRow>
                         </>
                       )}
                     </TableBody>
                   </Table>
+                </div>
+
+                <div className="mt-3 flex items-start gap-2 text-[10px] text-muted-foreground">
+                  <FileText className="h-3 w-3 mt-0.5 shrink-0" />
+                  <p>
+                    Ref. = identificador único do lançamento para rastreabilidade.
+                    Apenas lançamentos com status válido (Pago ou Em Aberto) são considerados.
+                  </p>
                 </div>
               </CardContent>
             </Card>

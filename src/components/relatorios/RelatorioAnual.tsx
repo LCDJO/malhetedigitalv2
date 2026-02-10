@@ -33,6 +33,8 @@ const mesesLabel = [
 
 const mesesAbrev = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
+const VALID_STATUSES = ["pago", "em_aberto"];
+
 interface Transaction {
   tipo: string;
   valor: number;
@@ -57,6 +59,7 @@ export default function RelatorioAnual() {
       const [txRes, memRes] = await Promise.all([
         supabase.from("member_transactions")
           .select("tipo, valor, data, status")
+          .in("status", VALID_STATUSES)
           .gte("data", `${ano}-01-01`)
           .lte("data", `${ano}-12-31`),
         supabase.from("members").select("id").eq("status", "ativo"),
