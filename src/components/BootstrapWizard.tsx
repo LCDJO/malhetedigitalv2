@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export default function BootstrapWizard({ onComplete }: Props) {
+  const navigate = useNavigate();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -64,8 +66,20 @@ export default function BootstrapWizard({ onComplete }: Props) {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      toast.success("Sistema inicializado! Faça login com suas credenciais.");
-      onComplete();
+      // Auto-login with the created credentials
+      const { error: loginError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+      if (loginError) {
+        toast.success("Sistema Malhete Digital ativado com sucesso! Faça login com suas credenciais.");
+        onComplete();
+        return;
+      }
+
+      toast.success("Sistema Malhete Digital ativado com sucesso!");
+      navigate("/", { replace: true });
     } catch (err: any) {
       toast.error(err.message || "Erro ao inicializar o sistema.");
     } finally {
