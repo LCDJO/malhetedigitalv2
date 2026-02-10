@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useLodgeConfig } from "@/hooks/useLodgeConfig";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -48,10 +49,18 @@ const emptyForm = { irmaoId: "", tipo: "", valor: "", descricao: "", data: new D
 export function LancamentoIndividual() {
   const { hasPermission } = useAuth();
   const { logAction } = useAuditLog();
+  const { config: lodgeConfig } = useLodgeConfig();
   const [members, setMembers] = useState<MemberOption[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
   const [historico, setHistorico] = useState<Lancamento[]>([]);
   const [form, setForm] = useState(emptyForm);
+
+  // Auto-fill valor when tipo changes to mensalidade
+  useEffect(() => {
+    if (form.tipo === "mensalidade" && !form.valor && lodgeConfig.mensalidade_padrao > 0) {
+      setForm((f) => ({ ...f, valor: lodgeConfig.mensalidade_padrao.toFixed(2).replace(".", ",") }));
+    }
+  }, [form.tipo, lodgeConfig.mensalidade_padrao]);
   const [comboOpen, setComboOpen] = useState(false);
 
   // Sensitive action state

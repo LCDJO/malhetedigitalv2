@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useLodgeConfig } from "@/hooks/useLodgeConfig";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -91,6 +92,7 @@ function getInitials(name: string) {
 }
 
 export function FinanceiroIrmao() {
+  const { config: lodgeConfig } = useLodgeConfig();
   const [members, setMembers] = useState<MemberDetail[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
   const [selectedId, setSelectedId] = useState<string>("");
@@ -110,6 +112,13 @@ export function FinanceiroIrmao() {
   const [descricao, setDescricao] = useState("");
   const [data, setData] = useState<Date>(new Date());
   const [situacao, setSituacao] = useState<string>("pago");
+
+  // Auto-fill valor when tipo changes to mensalidade (only if valor is empty)
+  useEffect(() => {
+    if (tipo === "mensalidade" && !valor && lodgeConfig.mensalidade_padrao > 0) {
+      setValor(lodgeConfig.mensalidade_padrao.toFixed(2).replace(".", ","));
+    }
+  }, [tipo, lodgeConfig.mensalidade_padrao]);
 
   const fetchMembers = useCallback(async () => {
     setLoadingMembers(true);
