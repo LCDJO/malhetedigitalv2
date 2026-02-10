@@ -53,26 +53,47 @@ export type Database = {
       lodge_config: {
         Row: {
           created_at: string
+          dia_vencimento: number
+          exigir_aprovacao_tesouraria: boolean
           id: string
           lodge_name: string
           lodge_number: string
+          mensalidade_padrao: number
+          meses_tolerancia_inadimplencia: number
+          notificar_inadimplencia: boolean
+          observacoes: string | null
           orient: string
+          permitir_lancamento_retroativo: boolean
           updated_at: string
         }
         Insert: {
           created_at?: string
+          dia_vencimento?: number
+          exigir_aprovacao_tesouraria?: boolean
           id?: string
           lodge_name: string
           lodge_number: string
+          mensalidade_padrao?: number
+          meses_tolerancia_inadimplencia?: number
+          notificar_inadimplencia?: boolean
+          observacoes?: string | null
           orient: string
+          permitir_lancamento_retroativo?: boolean
           updated_at?: string
         }
         Update: {
           created_at?: string
+          dia_vencimento?: number
+          exigir_aprovacao_tesouraria?: boolean
           id?: string
           lodge_name?: string
           lodge_number?: string
+          mensalidade_padrao?: number
+          meses_tolerancia_inadimplencia?: number
+          notificar_inadimplencia?: boolean
+          observacoes?: string | null
           orient?: string
+          permitir_lancamento_retroativo?: boolean
           updated_at?: string
         }
         Relationships: []

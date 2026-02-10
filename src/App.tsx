@@ -12,6 +12,7 @@ import Secretaria from "./pages/Secretaria";
 import Tesouraria from "./pages/Tesouraria";
 import GestaoUsuarios from "./pages/GestaoUsuarios";
 import LogAuditoria from "./pages/LogAuditoria";
+import Configuracoes from "./pages/Configuracoes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,14 @@ const App = () => (
                         element={
                           <ProtectedRoute module="tesouraria">
                             <Tesouraria />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/configuracoes"
+                        element={
+                          <ProtectedRoute module="configuracoes">
+                            <Configuracoes />
                           </ProtectedRoute>
                         }
                       />
