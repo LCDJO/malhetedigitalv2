@@ -4,8 +4,10 @@ import {
   Wallet,
   Settings,
   Lock,
+  LayoutDashboard,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
+import { useAuth, roleLabels } from "@/contexts/AuthContext";
 import {
   Sidebar,
   SidebarContent,
@@ -20,17 +22,24 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 
 const menuItems = [
-  { title: "Secretaria", url: "/secretaria", icon: BookOpen, disabled: false },
-  { title: "Chancelaria", url: "/chancelaria", icon: Stamp, disabled: true },
-  { title: "Tesouraria", url: "/tesouraria", icon: Wallet, disabled: false },
-  { title: "Configurações da Loja", url: "/configuracoes", icon: Settings, disabled: true },
+  { title: "Dashboard", url: "/", icon: LayoutDashboard, module: "dashboard" },
+  { title: "Secretaria", url: "/secretaria", icon: BookOpen, module: "secretaria" },
+  { title: "Chancelaria", url: "/chancelaria", icon: Stamp, module: "chancelaria" },
+  { title: "Tesouraria", url: "/tesouraria", icon: Wallet, module: "tesouraria" },
+  { title: "Configurações", url: "/configuracoes", icon: Settings, module: "configuracoes" },
 ];
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
+  const { profile, role, hasModuleAccess } = useAuth();
+
+  const initials = profile?.full_name
+    ? profile.full_name.split(" ").filter(Boolean).map((w) => w[0]).slice(0, 2).join("").toUpperCase()
+    : "??";
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
@@ -57,31 +66,35 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  {item.disabled ? (
-                    <SidebarMenuButton
-                      tooltip={`${item.title} (em breve)`}
-                      className="opacity-30 cursor-not-allowed pointer-events-none select-none"
-                    >
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                      {!collapsed && <Lock className="h-3 w-3 ml-auto opacity-60" />}
-                    </SidebarMenuButton>
-                  ) : (
-                    <SidebarMenuButton asChild tooltip={item.title}>
-                      <NavLink
-                        to={item.url}
-                        className="text-sidebar-foreground/65 hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground transition-all duration-150 rounded-md"
-                        activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold shadow-sm"
+              {menuItems.map((item) => {
+                const hasAccess = hasModuleAccess(item.module);
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    {!hasAccess ? (
+                      <SidebarMenuButton
+                        tooltip={`${item.title} (sem acesso)`}
+                        className="opacity-30 cursor-not-allowed pointer-events-none select-none"
                       >
                         <item.icon className="h-4 w-4" />
                         <span>{item.title}</span>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  )}
-                </SidebarMenuItem>
-              ))}
+                        {!collapsed && <Lock className="h-3 w-3 ml-auto opacity-60" />}
+                      </SidebarMenuButton>
+                    ) : (
+                      <SidebarMenuButton asChild tooltip={item.title}>
+                        <NavLink
+                          to={item.url}
+                          end={item.url === "/"}
+                          className="text-sidebar-foreground/65 hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground transition-all duration-150 rounded-md"
+                          activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold shadow-sm"
+                        >
+                          <item.icon className="h-4 w-4" />
+                          <span>{item.title}</span>
+                        </NavLink>
+                      </SidebarMenuButton>
+                    )}
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -91,12 +104,21 @@ export function AppSidebar() {
         <Separator className="bg-sidebar-border mb-3 opacity-50" />
         <div className="flex items-center gap-3 px-1">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sidebar-accent text-sidebar-accent-foreground text-[11px] font-semibold">
-            VS
+            {initials}
           </div>
           {!collapsed && (
             <div className="flex flex-col flex-1 min-w-0">
-              <span className="text-[12px] font-medium text-sidebar-accent-foreground truncate">Venerável Secretário</span>
-              <span className="text-[10px] text-sidebar-foreground/40 truncate">secretario@loja.org</span>
+              <span className="text-[12px] font-medium text-sidebar-accent-foreground truncate">
+                {profile?.full_name ?? "Carregando..."}
+              </span>
+              {role && (
+                <Badge variant="outline" className="mt-0.5 w-fit text-[9px] px-1.5 py-0 border-sidebar-border text-sidebar-foreground/60">
+                  {roleLabels[role]}
+                </Badge>
+              )}
+              {!role && (
+                <span className="text-[10px] text-sidebar-foreground/40 truncate">Sem cargo atribuído</span>
+              )}
             </div>
           )}
         </div>

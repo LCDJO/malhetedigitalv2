@@ -1,14 +1,22 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Bell } from "lucide-react";
+import { Bell, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth, roleLabels } from "@/contexts/AuthContext";
+import { Badge } from "@/components/ui/badge";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
+  const { profile, role, signOut } = useAuth();
+
+  const initials = profile?.full_name
+    ? profile.full_name.split(" ").filter(Boolean).map((w) => w[0]).slice(0, 2).join("").toUpperCase()
+    : "??";
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
@@ -29,13 +37,18 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <div className="h-4 w-px bg-border hidden sm:block" />
               <div className="flex items-center gap-2.5">
                 <div className="text-right hidden sm:block">
-                  <p className="text-[13px] font-medium leading-none text-foreground">Ir∴ João Silva</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">Secretário</p>
+                  <p className="text-[13px] font-medium leading-none text-foreground">{profile?.full_name ?? "..."}</p>
+                  {role && (
+                    <p className="text-[11px] text-muted-foreground mt-0.5">{roleLabels[role]}</p>
+                  )}
                 </div>
                 <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-primary text-primary-foreground text-[11px] font-semibold">JS</AvatarFallback>
+                  <AvatarFallback className="bg-primary text-primary-foreground text-[11px] font-semibold">{initials}</AvatarFallback>
                 </Avatar>
               </div>
+              <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground" onClick={signOut} title="Sair">
+                <LogOut className="h-[18px] w-[18px]" />
+              </Button>
             </div>
           </header>
 
