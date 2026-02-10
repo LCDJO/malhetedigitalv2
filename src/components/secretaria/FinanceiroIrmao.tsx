@@ -14,7 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { CalendarIcon, DollarSign, Clock, Plus, Loader2, User, FileText, TrendingUp, AlertCircle } from "lucide-react";
+import { CalendarIcon, DollarSign, Clock, Plus, Loader2, User, FileText, TrendingUp, AlertCircle, CheckCircle2, XCircle, Hash } from "lucide-react";
 import { toast } from "sonner";
 import { PermissionGate } from "@/components/PermissionGate";
 
@@ -136,7 +136,19 @@ export function FinanceiroIrmao() {
   const totalPago = transactions.reduce((s, t) => s + Number(t.valor), 0);
   const totalMensalidades = transactions.filter((t) => t.tipo === "mensalidade").reduce((s, t) => s + Number(t.valor), 0);
   const totalTaxas = transactions.filter((t) => t.tipo === "taxa").reduce((s, t) => s + Number(t.valor), 0);
+  const totalQtd = transactions.length;
   const ultimaMov = transactions.length > 0 ? transactions[0] : null;
+
+  // Calcula meses desde o início do ano para estimar mensalidades esperadas
+  const now = new Date();
+  const mesesDecorridos = now.getMonth() + 1; // jan=1
+  const mensalidadesPagas = transactions.filter((t) => {
+    if (t.tipo !== "mensalidade") return false;
+    const d = new Date(t.data + "T12:00:00");
+    return d.getFullYear() === now.getFullYear();
+  }).length;
+  const mensalidadesEmAberto = Math.max(0, mesesDecorridos - mensalidadesPagas);
+  const isAdimplente = mensalidadesEmAberto === 0;
 
   const handleLancamento = async () => {
     if (!selected) { toast.error("Selecione um irmão antes de registrar."); return; }
@@ -229,62 +241,61 @@ export function FinanceiroIrmao() {
             </CardContent>
           </Card>
 
-          {/* Resumo financeiro */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="pt-6 flex items-center gap-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-success/10">
-                  <DollarSign className="h-5 w-5 text-success" />
+          {/* Resumo Financeiro */}
+          <Card className={cn("border-l-4", isAdimplente ? "border-l-success" : "border-l-destructive")}>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base font-sans font-semibold">Resumo Financeiro</CardTitle>
+                <Badge variant="outline" className={cn("text-xs px-3 py-1 gap-1.5 font-medium", isAdimplente ? "bg-success/10 text-success border-success/20" : "bg-destructive/10 text-destructive border-destructive/20")}>
+                  {isAdimplente ? <CheckCircle2 className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
+                  {isAdimplente ? "Adimplente" : "Inadimplente"}
+                </Badge>
+              </div>
+              {!isAdimplente && (
+                <p className="text-xs text-destructive mt-1">{mensalidadesEmAberto} mensalidade(s) em aberto no ano de {now.getFullYear()}</p>
+              )}
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="space-y-1 p-3 rounded-lg bg-muted/50">
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="h-4 w-4 text-success" />
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">Total Pago</p>
+                  </div>
+                  <p className="text-lg font-bold font-serif">{formatCurrency(totalPago)}</p>
                 </div>
-                <div>
-                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">Total Pago</p>
-                  <p className="text-xl font-bold font-serif">{formatCurrency(totalPago)}</p>
+                <div className="space-y-1 p-3 rounded-lg bg-muted/50">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-destructive" />
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">Em Aberto</p>
+                  </div>
+                  <p className="text-lg font-bold font-serif">{mensalidadesEmAberto} mês(es)</p>
                 </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6 flex items-center gap-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                  <TrendingUp className="h-5 w-5 text-primary" />
+                <div className="space-y-1 p-3 rounded-lg bg-muted/50">
+                  <div className="flex items-center gap-2">
+                    <Hash className="h-4 w-4 text-primary" />
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">Lançamentos</p>
+                  </div>
+                  <p className="text-lg font-bold font-serif">{totalQtd}</p>
+                  <p className="text-[10px] text-muted-foreground">{transactions.filter(t => t.tipo === "mensalidade").length} mens. · {transactions.filter(t => t.tipo === "taxa").length} taxas · {transactions.filter(t => t.tipo === "avulso").length} avulsos</p>
                 </div>
-                <div>
-                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">Mensalidades</p>
-                  <p className="text-xl font-bold font-serif">{formatCurrency(totalMensalidades)}</p>
-                  <p className="text-[10px] text-muted-foreground">{transactions.filter((t) => t.tipo === "mensalidade").length} lançamento(s)</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6 flex items-center gap-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-warning/10">
-                  <AlertCircle className="h-5 w-5 text-warning" />
-                </div>
-                <div>
-                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">Taxas</p>
-                  <p className="text-xl font-bold font-serif">{formatCurrency(totalTaxas)}</p>
-                  <p className="text-[10px] text-muted-foreground">{transactions.filter((t) => t.tipo === "taxa").length} lançamento(s)</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6 flex items-center gap-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
-                  <Clock className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <div>
-                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">Última Movimentação</p>
+                <div className="space-y-1 p-3 rounded-lg bg-muted/50">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">Última Mov.</p>
+                  </div>
                   {ultimaMov ? (
                     <>
                       <p className="text-sm font-semibold">{format(new Date(ultimaMov.data + "T12:00:00"), "dd/MM/yyyy")}</p>
-                      <p className="text-[10px] text-muted-foreground truncate max-w-[140px]">{ultimaMov.descricao}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">{ultimaMov.descricao}</p>
                     </>
                   ) : (
-                    <p className="text-sm text-muted-foreground">Sem registros</p>
+                    <p className="text-sm text-muted-foreground">—</p>
                   )}
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Novo Lançamento */}
           <PermissionGate module="secretaria" action="write">
