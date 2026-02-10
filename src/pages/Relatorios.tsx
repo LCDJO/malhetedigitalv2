@@ -81,7 +81,7 @@ export default function Relatorios() {
   const anos = Array.from({ length: 5 }, (_, i) => (now.getFullYear() - 2 + i).toString());
 
   // Tabs that use shared month filter
-  const usesMonthFilter = ["balancete", "inadimplencia", "movimentacao"].includes(activeTab);
+  const usesMonthFilter = ["balancete", "movimentacao"].includes(activeTab);
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12">
@@ -173,23 +173,21 @@ export default function Relatorios() {
               />
             </TabsContent>
 
-            <TabsContent value="inadimplencia" className="mt-6">
-              <RelatorioInadimplencia
-                transactions={transactions}
-                members={members}
-                periodoLabel={periodoLabel}
-              />
-            </TabsContent>
-
-            <TabsContent value="movimentacao" className="mt-6">
-              <RelatorioMovimentacao
-                transactions={transactions}
-                members={members}
-                periodoLabel={periodoLabel}
-              />
-            </TabsContent>
           </>
         )}
+
+        {/* Self-managed tabs */}
+        <TabsContent value="inadimplencia" className="mt-6">
+          <RelatorioInadimplencia />
+        </TabsContent>
+
+        <TabsContent value="movimentacao" className="mt-6">
+          <RelatorioMovimentacao
+            transactions={transactions}
+            members={members}
+            periodoLabel={periodoLabel}
+          />
+        </TabsContent>
 
         {/* Self-managed tabs */}
         <TabsContent value="prestacao" className="mt-6">
