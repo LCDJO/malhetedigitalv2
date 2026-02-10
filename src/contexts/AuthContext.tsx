@@ -2,22 +2,24 @@ import { createContext, useContext, useEffect, useState, useCallback, type React
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 
-export type AppRole = "veneravel" | "secretario" | "tesoureiro" | "orador" | "chanceler";
+export type AppRole = "administrador" | "veneravel" | "secretario" | "tesoureiro" | "orador" | "chanceler" | "consulta";
 
 export const roleLabels: Record<AppRole, string> = {
+  administrador: "Administrador",
   veneravel: "Venerável Mestre",
   secretario: "Secretário",
   tesoureiro: "Tesoureiro",
   orador: "Orador",
   chanceler: "Chanceler",
+  consulta: "Usuário de Consulta",
 };
 
 export const moduleAccess: Record<string, AppRole[]> = {
-  dashboard: ["veneravel", "secretario", "tesoureiro", "orador", "chanceler"],
-  secretaria: ["veneravel", "secretario"],
-  tesouraria: ["veneravel", "tesoureiro"],
-  chancelaria: ["veneravel", "chanceler"],
-  configuracoes: ["veneravel"],
+  dashboard: ["administrador", "veneravel", "secretario", "tesoureiro", "orador", "chanceler", "consulta"],
+  secretaria: ["administrador", "veneravel", "secretario"],
+  tesouraria: ["administrador", "veneravel", "tesoureiro"],
+  chancelaria: ["administrador", "veneravel", "chanceler"],
+  configuracoes: ["administrador", "veneravel"],
 };
 
 interface AuthContextValue {
@@ -101,7 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, [fetchProfileAndRole]);
 
-  const isAdmin = role === "veneravel" || role === "secretario";
+  const isAdmin = role === "administrador" || role === "veneravel" || role === "secretario";
 
   const hasModuleAccess = useCallback(
     (module: string) => {
