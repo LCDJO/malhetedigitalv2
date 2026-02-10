@@ -13,6 +13,7 @@ import Tesouraria from "./pages/Tesouraria";
 import GestaoUsuarios from "./pages/GestaoUsuarios";
 import LogAuditoria from "./pages/LogAuditoria";
 import Configuracoes from "./pages/Configuracoes";
+import Relatorios from "./pages/Relatorios";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -54,6 +55,14 @@ const App = () => (
                         element={
                           <ProtectedRoute module="configuracoes">
                             <Configuracoes />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/relatorios"
+                        element={
+                          <ProtectedRoute module="dashboard">
+                            <Relatorios />
                           </ProtectedRoute>
                         }
                       />
