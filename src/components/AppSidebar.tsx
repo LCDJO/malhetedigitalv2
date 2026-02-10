@@ -3,7 +3,6 @@ import {
   Stamp,
   Wallet,
   Settings,
-  Lock,
   LayoutDashboard,
   Users,
   ScrollText,
@@ -72,30 +71,20 @@ export function AppSidebar() {
             <SidebarMenu>
               {menuItems.map((item) => {
                 const hasAccess = hasModuleAccess(item.module);
+                if (!hasAccess) return null; // Ocultar menus não autorizados
                 return (
                   <SidebarMenuItem key={item.title}>
-                    {!hasAccess ? (
-                      <SidebarMenuButton
-                        tooltip={`${item.title} (sem acesso)`}
-                        className="opacity-30 cursor-not-allowed pointer-events-none select-none"
+                    <SidebarMenuButton asChild tooltip={item.title}>
+                      <NavLink
+                        to={item.url}
+                        end={item.url === "/"}
+                        className="text-sidebar-foreground/65 hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground transition-all duration-150 rounded-md"
+                        activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold shadow-sm"
                       >
                         <item.icon className="h-4 w-4" />
                         <span>{item.title}</span>
-                        {!collapsed && <Lock className="h-3 w-3 ml-auto opacity-60" />}
-                      </SidebarMenuButton>
-                    ) : (
-                      <SidebarMenuButton asChild tooltip={item.title}>
-                        <NavLink
-                          to={item.url}
-                          end={item.url === "/"}
-                          className="text-sidebar-foreground/65 hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground transition-all duration-150 rounded-md"
-                          activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold shadow-sm"
-                        >
-                          <item.icon className="h-4 w-4" />
-                          <span>{item.title}</span>
-                        </NavLink>
-                      </SidebarMenuButton>
-                    )}
+                      </NavLink>
+                    </SidebarMenuButton>
                   </SidebarMenuItem>
                 );
               })}

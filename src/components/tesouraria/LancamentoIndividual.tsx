@@ -15,6 +15,7 @@ import { CalendarIcon, Check, ChevronsUpDown, Plus, RotateCcw, Lightbulb, Trash2
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { ConfirmSensitiveAction } from "@/components/ConfirmSensitiveAction";
+import { PermissionGate } from "@/components/PermissionGate";
 import { useAuditLog } from "@/hooks/useAuditLog";
 import {
   formatCurrency,
@@ -211,10 +212,12 @@ export function LancamentoIndividual() {
           </div>
 
           <div className="flex gap-2 pt-2">
-            <Button onClick={handleSalvar} className="gap-1.5">
-              <Plus className="h-4 w-4" />
-              Salvar Lançamento
-            </Button>
+            <PermissionGate module="tesouraria" action="write">
+              <Button onClick={handleSalvar} className="gap-1.5">
+                <Plus className="h-4 w-4" />
+                Salvar Lançamento
+              </Button>
+            </PermissionGate>
             <Button variant="outline" onClick={resetForm} className="gap-1.5">
               <RotateCcw className="h-4 w-4" />
               Cancelar

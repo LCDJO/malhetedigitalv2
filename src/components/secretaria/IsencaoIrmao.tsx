@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { ConfirmSensitiveAction } from "@/components/ConfirmSensitiveAction";
 import { useAuditLog } from "@/hooks/useAuditLog";
+import { PermissionGate } from "@/components/PermissionGate";
 import { type Isencao, type TipoIsencao, isencoesMock } from "@/components/dashboard/DashboardData";
 
 const irmaosDisponiveis = [
@@ -165,10 +166,12 @@ export function IsencaoIrmao() {
       <Card>
         <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <CardTitle className="text-base font-sans font-semibold">Registro de Isenções</CardTitle>
-          <Button size="sm" className="gap-1.5 h-9" onClick={() => { resetForm(); setDialogOpen(true); }}>
-            <Plus className="h-4 w-4" />
-            Nova Isenção
-          </Button>
+          <PermissionGate module="secretaria" action="write" message="Apenas perfis com permissão de escrita podem conceder isenções.">
+            <Button size="sm" className="gap-1.5 h-9" onClick={() => { resetForm(); setDialogOpen(true); }}>
+              <Plus className="h-4 w-4" />
+              Nova Isenção
+            </Button>
+          </PermissionGate>
         </CardHeader>
         <CardContent>
           <div className="rounded-md border">
