@@ -29,11 +29,13 @@ export const composicaoReceita = [
 ];
 
 export const inadimplentes = [
-  { nome: "Ir∴ Pedro Alves", meses: 3, valor: 840, categoria: "mensalidade" as const },
-  { nome: "Ir∴ Ricardo Lima", meses: 2, valor: 560, categoria: "mensalidade" as const },
-  { nome: "Ir∴ Fernando Costa", meses: 2, valor: 560, categoria: "taxa" as const },
-  { nome: "Ir∴ Marcos Oliveira", meses: 1, valor: 280, categoria: "mensalidade" as const },
-  { nome: "Ir∴ Gustavo Reis", meses: 1, valor: 280, categoria: "avulso" as const },
+  { nome: "Ir∴ Pedro Alves", meses: 3, valor: 840, categoria: "mensalidade" as const, lancamentosAtraso: 3 },
+  { nome: "Ir∴ Ricardo Lima", meses: 2, valor: 560, categoria: "mensalidade" as const, lancamentosAtraso: 2 },
+  { nome: "Ir∴ Fernando Costa", meses: 2, valor: 560, categoria: "taxa" as const, lancamentosAtraso: 4 },
+  { nome: "Ir∴ Marcos Oliveira", meses: 1, valor: 280, categoria: "mensalidade" as const, lancamentosAtraso: 1 },
+  { nome: "Ir∴ Gustavo Reis", meses: 1, valor: 280, categoria: "avulso" as const, lancamentosAtraso: 1 },
+  { nome: "Ir∴ Antônio Barros", meses: 2, valor: 520, categoria: "mensalidade" as const, lancamentosAtraso: 2 },
+  { nome: "Ir∴ Sérgio Duarte", meses: 1, valor: 280, categoria: "mensalidade" as const, lancamentosAtraso: 1 },
 ];
 
 export const fluxoCaixa = [
