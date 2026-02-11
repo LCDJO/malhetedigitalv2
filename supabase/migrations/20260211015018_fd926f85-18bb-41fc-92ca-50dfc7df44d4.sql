@@ -1,0 +1,1 @@
+ALTER TABLE public.members ADD COLUMN master_installed boolean NOT NULL DEFAULT false;
