@@ -15,10 +15,11 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { Search, Plus, Pencil, Eye, X, User, CalendarIcon, Loader2, ChevronLeft, ChevronRight, Filter } from "lucide-react";
+import { Search, Plus, Pencil, Eye, X, User, CalendarIcon, Loader2, ChevronLeft, ChevronRight, Filter, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { PermissionGate } from "@/components/PermissionGate";
 import { useAuth } from "@/contexts/AuthContext";
+import { ImportarCSV } from "./ImportarCSV";
 
 interface Member {
   id: string;
@@ -124,7 +125,7 @@ export function CadastroIrmaos() {
   const [viewMember, setViewMember] = useState<Member | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-
+  const [csvDialogOpen, setCsvDialogOpen] = useState(false);
   const fetchMembers = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
@@ -313,6 +314,10 @@ export function CadastroIrmaos() {
               </Button>
             )}
             <PermissionGate module="secretaria" action="write">
+              <Button variant="outline" size="sm" className="gap-1.5 h-9" onClick={() => setCsvDialogOpen(true)}>
+                <Upload className="h-4 w-4" />
+                Importar CSV
+              </Button>
               <Button size="sm" className="gap-1.5 h-9" onClick={openNew}>
                 <Plus className="h-4 w-4" />
                 Cadastrar Novo Irmão
@@ -555,6 +560,8 @@ export function CadastroIrmaos() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Dialog Importar CSV */}
+      <ImportarCSV open={csvDialogOpen} onOpenChange={setCsvDialogOpen} onSuccess={fetchMembers} />
     </>
   );
 }
