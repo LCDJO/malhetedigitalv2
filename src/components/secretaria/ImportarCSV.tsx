@@ -218,7 +218,7 @@ export function ImportarCSV({ open, onOpenChange, onSuccess }: ImportarCSVProps)
 
   const downloadTemplate = () => {
     const header = "nome_completo;cpf;cim;email;telefone;data_nascimento;endereco;grau;status;data_iniciacao;data_elevacao;data_exaltacao;observacoes";
-    const example = "João da Silva;123.456.789-09;100001;joao@email.com;(11) 99999-0000;01/01/1980;São Paulo, SP;aprendiz;ativo;15/03/2020;;;";
+    const example = "João da Silva;123.456.789-09;100001;joao@email.com;(11) 99999-0000;01/01/1980;Rua Example, 123 - Cidade, UF;aprendiz;ativo;15/03/2020;dd/mm/aaaa;dd/mm/aaaa;texto livre";
     const blob = new Blob([header + "\n" + example], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
