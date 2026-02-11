@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ interface Member {
   birth_date: string | null;
   address: string | null;
   degree: string;
+  master_installed: boolean;
   initiation_date: string | null;
   elevation_date: string | null;
   exaltation_date: string | null;
@@ -102,7 +104,7 @@ function getInitials(name: string) {
 const emptyForm = {
   full_name: "", cpf: "", cim: "", email: "", phone: "",
   birth_date: undefined as Date | undefined,
-  address: "", degree: "aprendiz", status: "ativo",
+  address: "", degree: "aprendiz", master_installed: false, status: "ativo",
   initiation_date: undefined as Date | undefined,
   elevation_date: undefined as Date | undefined,
   exaltation_date: undefined as Date | undefined,
@@ -197,6 +199,7 @@ export function CadastroIrmaos() {
       birth_date: form.birth_date ? format(form.birth_date, "yyyy-MM-dd") : null,
       address: form.address?.trim() || null,
       degree: form.degree,
+      master_installed: form.master_installed,
       status: form.status,
       initiation_date: form.initiation_date ? format(form.initiation_date, "yyyy-MM-dd") : null,
       elevation_date: form.elevation_date ? format(form.elevation_date, "yyyy-MM-dd") : null,
@@ -238,6 +241,7 @@ export function CadastroIrmaos() {
       birth_date: m.birth_date ? new Date(m.birth_date + "T12:00:00") : undefined,
       address: m.address || "",
       degree: m.degree,
+      master_installed: m.master_installed ?? false,
       status: m.status,
       initiation_date: m.initiation_date ? new Date(m.initiation_date + "T12:00:00") : undefined,
       elevation_date: m.elevation_date ? new Date(m.elevation_date + "T12:00:00") : undefined,
@@ -363,7 +367,10 @@ export function CadastroIrmaos() {
                           <TableCell className="text-muted-foreground text-sm">{m.cpf}</TableCell>
                           <TableCell className="text-muted-foreground text-sm">{m.cim}</TableCell>
                           <TableCell>
-                            <Badge variant="outline" className="text-[10px] px-2 py-0.5">{degreeLabels[m.degree] || m.degree}</Badge>
+                            <div className="flex items-center gap-1">
+                              <Badge variant="outline" className="text-[10px] px-2 py-0.5">{degreeLabels[m.degree] || m.degree}</Badge>
+                              {m.master_installed && <Badge variant="outline" className="text-[10px] px-2 py-0.5 border-primary/30 text-primary">MI</Badge>}
+                            </div>
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline" className={cn("text-[10px] px-2 py-0.5", statusBadge[m.status])}>{statusLabels[m.status] || m.status}</Badge>
@@ -499,7 +506,15 @@ export function CadastroIrmaos() {
                     {Object.entries(statusLabels).map(([k, v]) => (<SelectItem key={k} value={k}>{v}</SelectItem>))}
                   </SelectContent>
                 </Select>
-              </div>
+            </div>
+            <div className="flex items-center gap-2 mt-1">
+              <Checkbox
+                id="master_installed"
+                checked={form.master_installed}
+                onCheckedChange={(checked) => setForm({ ...form, master_installed: !!checked })}
+              />
+              <Label htmlFor="master_installed" className="text-sm font-normal cursor-pointer">Mestre Instalado</Label>
+            </div>
             </div>
             <div className="grid grid-cols-3 gap-4">
               <DateField label="Iniciação" value={form.initiation_date} onChange={(d) => setForm({ ...form, initiation_date: d })} />
@@ -537,6 +552,7 @@ export function CadastroIrmaos() {
                 <p className="font-semibold text-lg">{viewMember.full_name}</p>
                 <div className="flex gap-2">
                   <Badge variant="outline" className="text-[10px]">{degreeLabels[viewMember.degree]}</Badge>
+                  {viewMember.master_installed && <Badge variant="outline" className="text-[10px] border-primary/30 text-primary">Mestre Instalado</Badge>}
                   <Badge variant="outline" className={cn("text-[10px]", statusBadge[viewMember.status])}>{statusLabels[viewMember.status]}</Badge>
                 </div>
               </div>

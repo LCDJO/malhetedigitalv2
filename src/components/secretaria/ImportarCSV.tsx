@@ -23,6 +23,7 @@ interface ParsedRow {
   birth_date: string;
   address: string;
   degree: string;
+  master_installed: string;
   status: string;
   initiation_date: string;
   elevation_date: string;
@@ -39,7 +40,7 @@ interface RowValidation {
 
 const EXPECTED_HEADERS = [
   "nome_completo", "cpf", "cim", "email", "telefone",
-  "data_nascimento", "endereco", "grau", "status",
+  "data_nascimento", "endereco", "grau", "mestre_instalado", "status",
   "data_iniciacao", "data_elevacao", "data_exaltacao", "observacoes",
 ];
 
@@ -159,6 +160,7 @@ export function ImportarCSV({ open, onOpenChange, onSuccess }: ImportarCSVProps)
             birth_date: getCol("data_nascimento") || getCol("nascimento"),
             address: getCol("endereco") || getCol("endereço"),
             degree: getCol("grau") || getCol("degree"),
+            master_installed: getCol("mestre_instalado") || getCol("master_installed") || "",
             status: getCol("status"),
             initiation_date: getCol("data_iniciacao") || getCol("iniciacao"),
             elevation_date: getCol("data_elevacao") || getCol("elevacao"),
@@ -191,6 +193,7 @@ export function ImportarCSV({ open, onOpenChange, onSuccess }: ImportarCSVProps)
       birth_date: parseDate(r.row.birth_date),
       address: r.row.address || null,
       degree: (r.row.degree || "aprendiz").toLowerCase(),
+      master_installed: ["sim", "s", "yes", "y", "true", "1"].includes((r.row.master_installed || "").toLowerCase()),
       status: (r.row.status || "ativo").toLowerCase(),
       initiation_date: parseDate(r.row.initiation_date),
       elevation_date: parseDate(r.row.elevation_date),
@@ -215,8 +218,8 @@ export function ImportarCSV({ open, onOpenChange, onSuccess }: ImportarCSVProps)
   };
 
   const downloadTemplate = () => {
-    const header = "nome_completo;cpf;cim;email;telefone;data_nascimento;endereco;grau;status;data_iniciacao;data_elevacao;data_exaltacao;observacoes";
-    const example = "João da Silva;123.456.789-09;100001;joao@email.com;(11) 99999-0000;01/01/1980;Rua Example, 123 - Cidade, UF;aprendiz;ativo;15/03/2020;dd/mm/aaaa;dd/mm/aaaa;texto livre";
+    const header = "nome_completo;cpf;cim;email;telefone;data_nascimento;endereco;grau;mestre_instalado;status;data_iniciacao;data_elevacao;data_exaltacao;observacoes";
+    const example = "João da Silva;123.456.789-09;100001;joao@email.com;(11) 99999-0000;01/01/1980;Rua Example, 123 - Cidade, UF;aprendiz;nao;ativo;15/03/2020;dd/mm/aaaa;dd/mm/aaaa;texto livre";
     const blob = new Blob([header + "\n" + example], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");

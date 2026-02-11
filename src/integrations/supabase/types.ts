@@ -194,6 +194,7 @@ export type Database = {
           full_name: string
           id: string
           initiation_date: string | null
+          master_installed: boolean
           notes: string | null
           phone: string | null
           status: string
@@ -214,6 +215,7 @@ export type Database = {
           full_name: string
           id?: string
           initiation_date?: string | null
+          master_installed?: boolean
           notes?: string | null
           phone?: string | null
           status?: string
@@ -234,6 +236,7 @@ export type Database = {
           full_name?: string
           id?: string
           initiation_date?: string | null
+          master_installed?: boolean
           notes?: string | null
           phone?: string | null
           status?: string
