@@ -95,9 +95,7 @@ function validateCpfDigits(cpf: string): boolean {
 function validateRow(row: ParsedRow, index: number): RowValidation {
   const errors: string[] = [];
   if (!row.full_name) errors.push("Nome obrigatório");
-  if (!row.cpf) errors.push("CPF obrigatório");
-  else if (!validateCpfDigits(row.cpf)) errors.push("CPF inválido");
-  if (!row.cim) errors.push("CIM obrigatório");
+  if (row.cpf && !validateCpfDigits(row.cpf)) errors.push("CPF inválido");
   if (row.degree && !VALID_DEGREES.includes(row.degree.toLowerCase())) errors.push(`Grau inválido: ${row.degree}`);
   if (row.status && !VALID_STATUSES.includes(row.status.toLowerCase())) errors.push(`Status inválido: ${row.status}`);
   if (row.birth_date && !parseDate(row.birth_date)) errors.push("Data nascimento inválida");
