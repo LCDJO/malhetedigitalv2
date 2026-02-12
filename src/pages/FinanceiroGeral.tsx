@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { CancelarLancamento } from "@/components/tesouraria/CancelarLancamento";
+import { PermissionGate } from "@/components/PermissionGate";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -104,6 +106,8 @@ const FinanceiroGeral = () => {
   const [filterTipo, setFilterTipo] = useState<string>("todos");
   const [filterConta, setFilterConta] = useState<string>("todas");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [cancelTarget, setCancelTarget] = useState<Transaction | null>(null);
+  const [cancelOpen, setCancelOpen] = useState(false);
 
   const dateRange = useMemo(() => {
     if (preset === "personalizado") return { from: customFrom, to: customTo };
@@ -491,31 +495,47 @@ const FinanceiroGeral = () => {
                           <TableHead>Descrição</TableHead>
                           <TableHead className="text-right">Valor</TableHead>
                           <TableHead>Usuário</TableHead>
+                          <TableHead className="text-right">Ações</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {filteredTransactions.length === 0 ? (
                           <TableRow>
-                            <TableCell colSpan={6} className="text-center text-muted-foreground py-10">
+                            <TableCell colSpan={7} className="text-center text-muted-foreground py-10">
                               Nenhum lançamento encontrado no período.
                             </TableCell>
                           </TableRow>
                         ) : filteredTransactions.map((t) => {
                           const isDebito = t.status === "em aberto";
+                          const isCancelado = t.descricao.startsWith("[CANCELADO]") || t.descricao.startsWith("[CANCELAMENTO]");
                           return (
-                            <TableRow key={t.id}>
+                            <TableRow key={t.id} className={isCancelado ? "opacity-50" : ""}>
                               <TableCell className="text-sm">{format(new Date(t.data), "dd/MM/yyyy")}</TableCell>
                               <TableCell>
-                                <Badge variant="outline" className={cn("text-[10px]", isDebito ? "text-destructive border-destructive/30" : "text-success border-success/30")}>
-                                  {isDebito ? "Despesa" : "Receita"}
+                                <Badge variant="outline" className={cn("text-[10px]", isCancelado ? "text-muted-foreground border-muted" : isDebito ? "text-destructive border-destructive/30" : "text-success border-success/30")}>
+                                  {isCancelado ? "Cancelado" : isDebito ? "Despesa" : "Receita"}
                                 </Badge>
                               </TableCell>
                               <TableCell className="text-sm text-muted-foreground">{t.conta_nome}</TableCell>
                               <TableCell className="text-sm text-muted-foreground">{t.descricao || "—"}</TableCell>
-                              <TableCell className={cn("text-right text-sm font-medium", isDebito ? "text-destructive" : "text-success")}>
+                              <TableCell className={cn("text-right text-sm font-medium", isCancelado ? "text-muted-foreground line-through" : isDebito ? "text-destructive" : "text-success")}>
                                 {isDebito ? "−" : "+"} {fmt(Number(t.valor))}
                               </TableCell>
                               <TableCell className="text-sm text-muted-foreground">{t.created_by_name}</TableCell>
+                              <TableCell className="text-right">
+                                {!isCancelado && (
+                                  <PermissionGate module="tesouraria" action="write">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-7 text-xs text-destructive hover:text-destructive"
+                                      onClick={() => { setCancelTarget(t); setCancelOpen(true); }}
+                                    >
+                                      Cancelar
+                                    </Button>
+                                  </PermissionGate>
+                                )}
+                              </TableCell>
                             </TableRow>
                           );
                         })}
@@ -524,6 +544,13 @@ const FinanceiroGeral = () => {
                   </div>
                 </CardContent>
               </Card>
+
+              <CancelarLancamento
+                transaction={cancelTarget}
+                open={cancelOpen}
+                onOpenChange={setCancelOpen}
+                onCancelled={fetchData}
+              />
             </TabsContent>
 
             {/* Demonstrativo */}
