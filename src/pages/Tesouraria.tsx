@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,17 @@ interface MemberOption {
   initiation_date: string | null;
 }
 
+interface TransactionRow {
+  id: string;
+  data: string;
+  tipo: string;
+  descricao: string;
+  valor: number;
+  status: string;
+}
+
+const tipoLabels: Record<string, string> = { mensalidade: "Mensalidade", avulso: "Valor Avulso", taxa: "Taxa" };
+
 const Tesouraria = () => {
   const [members, setMembers] = useState<MemberOption[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
@@ -30,6 +42,7 @@ const Tesouraria = () => {
   const [comboOpen, setComboOpen] = useState(false);
   const [loadingPanel, setLoadingPanel] = useState(false);
   const [financeiro, setFinanceiro] = useState<{ debitos: number; creditos: number } | null>(null);
+  const [transactions, setTransactions] = useState<TransactionRow[]>([]);
 
   const fetchMembers = useCallback(async () => {
     setLoadingMembers(true);
@@ -49,23 +62,23 @@ const Tesouraria = () => {
   const fetchFinanceiro = useCallback(async (memberId: string) => {
     const { data } = await supabase
       .from("member_transactions")
-      .select("tipo, valor, status")
-      .eq("member_id", memberId);
+      .select("id, data, tipo, descricao, valor, status")
+      .eq("member_id", memberId)
+      .order("data", { ascending: true });
     
-    if (data) {
-      let debitos = 0;
-      let creditos = 0;
-      for (const t of data) {
-        if (t.status === "em aberto") {
-          debitos += Number(t.valor);
-        } else {
-          creditos += Number(t.valor);
-        }
+    const rows = data ?? [];
+    setTransactions(rows);
+
+    let debitos = 0;
+    let creditos = 0;
+    for (const t of rows) {
+      if (t.status === "em aberto") {
+        debitos += Number(t.valor);
+      } else {
+        creditos += Number(t.valor);
       }
-      setFinanceiro({ debitos, creditos });
-    } else {
-      setFinanceiro({ debitos: 0, creditos: 0 });
     }
+    setFinanceiro({ debitos, creditos });
   }, []);
 
   const handleSelect = (id: string) => {
@@ -266,6 +279,74 @@ const Tesouraria = () => {
                 </div>
               );
             })()}
+
+            {/* Demonstrativo Financeiro */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base font-sans font-semibold">Demonstrativo Financeiro</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Data</TableHead>
+                        <TableHead>Tipo</TableHead>
+                        <TableHead>Categoria</TableHead>
+                        <TableHead>Descrição</TableHead>
+                        <TableHead className="text-right">Valor</TableHead>
+                        <TableHead className="text-right">Saldo Acumulado</TableHead>
+                        <TableHead>Situação</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {transactions.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center text-muted-foreground py-10">
+                            Nenhuma movimentação registrada para este obreiro.
+                          </TableCell>
+                        </TableRow>
+                      ) : (() => {
+                        let saldoAcumulado = 0;
+                        const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+                        return transactions.map((t) => {
+                          const valor = Number(t.valor);
+                          const isDebito = t.status === "em aberto";
+                          if (isDebito) {
+                            saldoAcumulado -= valor;
+                          } else {
+                            saldoAcumulado += valor;
+                          }
+                          return (
+                            <TableRow key={t.id}>
+                              <TableCell className="text-sm">{format(new Date(t.data), "dd/MM/yyyy")}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className={cn("text-[10px]", isDebito ? "text-destructive border-destructive/30" : "text-success border-success/30")}>
+                                  {isDebito ? "Débito" : "Crédito"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-sm text-muted-foreground">{tipoLabels[t.tipo] ?? t.tipo}</TableCell>
+                              <TableCell className="text-sm text-muted-foreground">{t.descricao || "—"}</TableCell>
+                              <TableCell className={cn("text-right text-sm font-medium", isDebito ? "text-destructive" : "text-success")}>
+                                {isDebito ? "−" : "+"} {fmt(valor)}
+                              </TableCell>
+                              <TableCell className={cn("text-right text-sm font-semibold", saldoAcumulado < 0 ? "text-destructive" : "text-foreground")}>
+                                {fmt(saldoAcumulado)}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className={cn("text-[10px]", t.status === "pago" ? "text-success border-success/30" : "text-warning border-warning/30")}>
+                                  {t.status === "pago" ? "Pago" : "Em Aberto"}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        });
+                      })()}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
 
             <Tabs defaultValue="individual" className="space-y-4">
           <TabsList className="bg-muted/60">
