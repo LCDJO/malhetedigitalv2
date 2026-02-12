@@ -9,9 +9,10 @@ import { useEffect, useRef } from "react";
 interface Props {
   children: React.ReactNode;
   module?: string;
+  portalRedirect?: string;
 }
 
-export function ProtectedRoute({ children, module }: Props) {
+export function ProtectedRoute({ children, module, portalRedirect }: Props) {
   const { user, role, loading, hasModuleAccess, termsAccepted } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -39,7 +40,7 @@ export function ProtectedRoute({ children, module }: Props) {
   }
 
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to={portalRedirect || "/auth"} replace />;
   }
 
   // Block access until terms are accepted

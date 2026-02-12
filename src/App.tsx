@@ -21,6 +21,7 @@ import GestaoTermos from "./pages/GestaoTermos";
 import ControleAceites from "./pages/ControleAceites";
 import NotFound from "./pages/NotFound";
 
+import PortalAuth from "./pages/portal/PortalAuth";
 import PortalCadastro from "./pages/portal/PortalCadastro";
 import PortalFinanceiro from "./pages/portal/PortalFinanceiro";
 import PortalPrestacaoContas from "./pages/portal/PortalPrestacaoContas";
@@ -37,12 +38,13 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/portal/auth" element={<PortalAuth />} />
 
             {/* Portal do Irmão */}
             <Route
               path="/portal/*"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute portalRedirect="/portal/auth">
                   <PortalLayout>
                     <Routes>
                       <Route path="/" element={<PortalCadastro />} />
