@@ -14,6 +14,38 @@ export type Database = {
   }
   public: {
     Tables: {
+      aceites_termos: {
+        Row: {
+          data_hora_aceite: string
+          id: string
+          ip: string | null
+          termo_id: string
+          usuario_id: string
+        }
+        Insert: {
+          data_hora_aceite?: string
+          id?: string
+          ip?: string | null
+          termo_id: string
+          usuario_id: string
+        }
+        Update: {
+          data_hora_aceite?: string
+          id?: string
+          ip?: string | null
+          termo_id?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aceites_termos_termo_id_fkey"
+            columns: ["termo_id"]
+            isOneToOne: false
+            referencedRelation: "termos_uso"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           action: string
@@ -244,6 +276,33 @@ export type Database = {
         }
         Relationships: []
       }
+      politicas_privacidade: {
+        Row: {
+          ativo: boolean
+          conteudo: string
+          created_at: string
+          data_publicacao: string
+          id: string
+          versao: string
+        }
+        Insert: {
+          ativo?: boolean
+          conteudo: string
+          created_at?: string
+          data_publicacao?: string
+          id?: string
+          versao: string
+        }
+        Update: {
+          ativo?: boolean
+          conteudo?: string
+          created_at?: string
+          data_publicacao?: string
+          id?: string
+          versao?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -268,6 +327,72 @@ export type Database = {
           id?: string
           is_active?: boolean
           updated_at?: string
+        }
+        Relationships: []
+      }
+      solicitacoes_titular: {
+        Row: {
+          created_at: string
+          data_solicitacao: string
+          descricao: string | null
+          id: string
+          respondido_em: string | null
+          respondido_por: string | null
+          resposta: string | null
+          solicitante_id: string
+          status: Database["public"]["Enums"]["status_solicitacao"]
+          tipo: Database["public"]["Enums"]["tipo_solicitacao_titular"]
+        }
+        Insert: {
+          created_at?: string
+          data_solicitacao?: string
+          descricao?: string | null
+          id?: string
+          respondido_em?: string | null
+          respondido_por?: string | null
+          resposta?: string | null
+          solicitante_id: string
+          status?: Database["public"]["Enums"]["status_solicitacao"]
+          tipo: Database["public"]["Enums"]["tipo_solicitacao_titular"]
+        }
+        Update: {
+          created_at?: string
+          data_solicitacao?: string
+          descricao?: string | null
+          id?: string
+          respondido_em?: string | null
+          respondido_por?: string | null
+          resposta?: string | null
+          solicitante_id?: string
+          status?: Database["public"]["Enums"]["status_solicitacao"]
+          tipo?: Database["public"]["Enums"]["tipo_solicitacao_titular"]
+        }
+        Relationships: []
+      }
+      termos_uso: {
+        Row: {
+          ativo: boolean
+          conteudo: string
+          created_at: string
+          data_publicacao: string
+          id: string
+          versao: string
+        }
+        Insert: {
+          ativo?: boolean
+          conteudo: string
+          created_at?: string
+          data_publicacao?: string
+          id?: string
+          versao: string
+        }
+        Update: {
+          ativo?: boolean
+          conteudo?: string
+          created_at?: string
+          data_publicacao?: string
+          id?: string
+          versao?: string
         }
         Relationships: []
       }
@@ -326,6 +451,12 @@ export type Database = {
         | "chanceler"
         | "administrador"
         | "consulta"
+      status_solicitacao:
+        | "pendente"
+        | "em_andamento"
+        | "concluida"
+        | "rejeitada"
+      tipo_solicitacao_titular: "correcao" | "exclusao" | "exportacao"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -462,6 +593,13 @@ export const Constants = {
         "administrador",
         "consulta",
       ],
+      status_solicitacao: [
+        "pendente",
+        "em_andamento",
+        "concluida",
+        "rejeitada",
+      ],
+      tipo_solicitacao_titular: ["correcao", "exclusao", "exportacao"],
     },
   },
 } as const
