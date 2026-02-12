@@ -309,6 +309,50 @@ export type Database = {
         }
         Relationships: []
       }
+      plano_contas: {
+        Row: {
+          codigo: string
+          conta_pai_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          nome: string
+          status: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          codigo: string
+          conta_pai_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nome: string
+          status?: string
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          codigo?: string
+          conta_pai_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nome?: string
+          status?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plano_contas_conta_pai_id_fkey"
+            columns: ["conta_pai_id"]
+            isOneToOne: false
+            referencedRelation: "plano_contas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       politicas_privacidade: {
         Row: {
           ativo: boolean
