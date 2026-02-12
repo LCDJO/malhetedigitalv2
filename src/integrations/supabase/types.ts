@@ -199,6 +199,30 @@ export type Database = {
         }
         Relationships: []
       }
+      login_attempts: {
+        Row: {
+          created_at: string
+          id: string
+          identifier: string
+          ip_address: string | null
+          success: boolean
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          identifier: string
+          ip_address?: string | null
+          success?: boolean
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          identifier?: string
+          ip_address?: string | null
+          success?: boolean
+        }
+        Relationships: []
+      }
       member_transactions: {
         Row: {
           conta_plano_id: string | null
@@ -515,6 +539,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      count_failed_attempts: { Args: { _identifier: string }; Returns: number }
       financial_kpis: {
         Args: { _from: string; _to: string }
         Returns: {
@@ -538,7 +563,9 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_active_member: { Args: { _email: string }; Returns: boolean }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      lookup_email_by_cpf: { Args: { _cpf: string }; Returns: string }
       member_financial_summary: {
         Args: { _member_id: string }
         Returns: {
