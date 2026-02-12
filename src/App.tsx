@@ -10,7 +10,7 @@ import Auth from "./pages/Auth";
 import Index from "./pages/Index";
 import Secretaria from "./pages/Secretaria";
 import Tesouraria from "./pages/Tesouraria";
-import FinanceiroGeral from "./pages/FinanceiroGeral";
+
 import GestaoUsuarios from "./pages/GestaoUsuarios";
 import LogAuditoria from "./pages/LogAuditoria";
 import Configuracoes from "./pages/Configuracoes";
@@ -51,14 +51,6 @@ const App = () => (
                         element={
                           <ProtectedRoute module="tesouraria">
                             <Tesouraria />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/financeiro-geral"
-                        element={
-                          <ProtectedRoute module="tesouraria">
-                            <FinanceiroGeral />
                           </ProtectedRoute>
                         }
                       />

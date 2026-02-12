@@ -2,7 +2,6 @@ import {
   BookOpen,
   Stamp,
   Wallet,
-  DollarSign,
   Settings,
   LayoutDashboard,
   Users,
@@ -35,7 +34,7 @@ const menuItems = [
   { title: "Secretaria", url: "/secretaria", icon: BookOpen, module: "secretaria" },
   { title: "Chancelaria", url: "/chancelaria", icon: Stamp, module: "chancelaria" },
   { title: "Tesouraria", url: "/tesouraria", icon: Wallet, module: "tesouraria" },
-  { title: "Financeiro Geral", url: "/financeiro-geral", icon: DollarSign, module: "tesouraria" },
+  
   { title: "Relatórios", url: "/relatorios", icon: FileBarChart, module: "dashboard" },
   { title: "Configurações", url: "/configuracoes", icon: Settings, module: "configuracoes" },
   { title: "Gestão de Usuários", url: "/gestao-usuarios", icon: Users, module: "configuracoes" },
