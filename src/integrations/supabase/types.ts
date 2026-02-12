@@ -183,8 +183,8 @@ export type Database = {
           address: string | null
           avatar_url: string | null
           birth_date: string | null
-          cim: string
-          cpf: string
+          cim: string | null
+          cpf: string | null
           created_at: string
           created_by: string | null
           degree: string
@@ -204,8 +204,8 @@ export type Database = {
           address?: string | null
           avatar_url?: string | null
           birth_date?: string | null
-          cim: string
-          cpf: string
+          cim?: string | null
+          cpf?: string | null
           created_at?: string
           created_by?: string | null
           degree?: string
@@ -225,8 +225,8 @@ export type Database = {
           address?: string | null
           avatar_url?: string | null
           birth_date?: string | null
-          cim?: string
-          cpf?: string
+          cim?: string | null
+          cpf?: string | null
           created_at?: string
           created_by?: string | null
           degree?: string

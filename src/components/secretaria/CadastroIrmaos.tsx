@@ -186,14 +186,13 @@ export function CadastroIrmaos() {
 
   const handleSave = async () => {
     if (!form.full_name.trim()) { toast.error("O campo Nome completo é obrigatório."); return; }
-    if (!validateCpf(form.cpf)) { toast.error("CPF inválido. Verifique os dígitos informados."); return; }
-    if (!form.cim.trim()) { toast.error("O campo CIM é obrigatório."); return; }
+    if (form.cpf && !validateCpf(form.cpf)) { toast.error("CPF inválido. Verifique os dígitos informados."); return; }
 
     setSaving(true);
     const payload = {
       full_name: form.full_name.trim(),
-      cpf: form.cpf,
-      cim: form.cim.trim(),
+      cpf: form.cpf || '',
+      cim: form.cim?.trim() || '',
       email: form.email?.trim() || null,
       phone: form.phone?.trim() || null,
       birth_date: form.birth_date ? format(form.birth_date, "yyyy-MM-dd") : null,
@@ -460,11 +459,11 @@ export function CadastroIrmaos() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="cpf">CPF *</Label>
+                <Label htmlFor="cpf">CPF</Label>
                 <Input id="cpf" value={form.cpf} onChange={(e) => setForm({ ...form, cpf: formatCpf(e.target.value) })} placeholder="000.000.000-00" maxLength={14} />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="cim">CIM *</Label>
+                <Label htmlFor="cim">CIM</Label>
                 <Input id="cim" value={form.cim} onChange={(e) => setForm({ ...form, cim: e.target.value })} maxLength={20} placeholder="Ex: 123456" />
               </div>
             </div>
