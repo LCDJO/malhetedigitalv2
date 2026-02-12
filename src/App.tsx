@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { PortalLayout } from "@/components/portal/PortalLayout";
 import Auth from "./pages/Auth";
 import Index from "./pages/Index";
 import Secretaria from "./pages/Secretaria";
@@ -20,6 +21,11 @@ import GestaoTermos from "./pages/GestaoTermos";
 import ControleAceites from "./pages/ControleAceites";
 import NotFound from "./pages/NotFound";
 
+import PortalCadastro from "./pages/portal/PortalCadastro";
+import PortalFinanceiro from "./pages/portal/PortalFinanceiro";
+import PortalPrestacaoContas from "./pages/portal/PortalPrestacaoContas";
+import PortalPerfil from "./pages/portal/PortalPerfil";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -31,6 +37,26 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/auth" element={<Auth />} />
+
+            {/* Portal do Irmão */}
+            <Route
+              path="/portal/*"
+              element={
+                <ProtectedRoute>
+                  <PortalLayout>
+                    <Routes>
+                      <Route path="/" element={<PortalCadastro />} />
+                      <Route path="/financeiro" element={<PortalFinanceiro />} />
+                      <Route path="/prestacao-contas" element={<PortalPrestacaoContas />} />
+                      <Route path="/perfil" element={<PortalPerfil />} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </PortalLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Painel Administrativo */}
             <Route
               path="/*"
               element={
