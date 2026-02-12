@@ -186,8 +186,8 @@ export function ImportarCSV({ open, onOpenChange, onSuccess }: ImportarCSVProps)
     setImporting(true);
     const payload = validRows.map((r) => ({
       full_name: r.row.full_name.trim(),
-      cpf: r.row.cpf ? formatCpfForStorage(r.row.cpf) : '',
-      cim: r.row.cim?.trim() || '',
+      cpf: r.row.cpf?.trim() ? formatCpfForStorage(r.row.cpf) : null,
+      cim: r.row.cim?.trim() || null,
       email: r.row.email || null,
       phone: r.row.phone || null,
       birth_date: parseDate(r.row.birth_date),

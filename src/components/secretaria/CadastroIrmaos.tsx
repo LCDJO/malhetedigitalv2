@@ -193,8 +193,8 @@ export function CadastroIrmaos() {
     setSaving(true);
     const payload = {
       full_name: form.full_name.trim(),
-      cpf: form.cpf || '',
-      cim: form.cim?.trim() || '',
+      cpf: form.cpf?.trim() || null,
+      cim: form.cim?.trim() || null,
       email: form.email?.trim() || null,
       phone: form.phone?.trim() || null,
       birth_date: form.birth_date ? format(form.birth_date, "yyyy-MM-dd") : null,
