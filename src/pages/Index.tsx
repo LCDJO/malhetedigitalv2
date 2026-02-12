@@ -1,81 +1,187 @@
-import { useState, useMemo } from "react";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, Wallet } from "lucide-react";
-import { Link } from "react-router-dom";
-import { DashboardFilterBar } from "@/components/dashboard/DashboardFilterBar";
-import { DashboardKPIs } from "@/components/dashboard/DashboardKPIs";
-import { DashboardAlerts } from "@/components/dashboard/DashboardAlerts";
-import { DashboardCharts } from "@/components/dashboard/DashboardCharts";
-import { DashboardInadimplencia } from "@/components/dashboard/DashboardInadimplencia";
-import { DashboardCategorias } from "@/components/dashboard/DashboardCategorias";
-import { DashboardLancamentos } from "@/components/dashboard/DashboardLancamentos";
-import { type DashboardFilters, defaultFilters } from "@/components/dashboard/DashboardFilterTypes";
+import { Users, UserCheck, GraduationCap, Shield, Activity } from "lucide-react";
+import { StatCard } from "@/components/StatCard";
+import { useLodgeConfig } from "@/hooks/useLodgeConfig";
+import { formatCurrency } from "@/components/dashboard/DashboardData";
+import { SectionHeader } from "@/components/dashboard/SectionHeader";
 
-const periodoLabel: Record<string, string> = {
-  mes_atual: "Fevereiro 2026",
-  ultimo_trimestre: "Dez 2025 – Fev 2026",
-  personalizado: "Período personalizado",
+const grauLabels: Record<string, string> = {
+  aprendiz: "Aprendiz (1°)",
+  companheiro: "Companheiro (2°)",
+  mestre: "Mestre (3°)",
 };
 
 const Index = () => {
-  const [filters, setFilters] = useState<DashboardFilters>(defaultFilters);
+  const { config } = useLodgeConfig();
+  const [stats, setStats] = useState({
+    totalAtivos: 0,
+    totalInativos: 0,
+    totalMembros: 0,
+    porGrau: {} as Record<string, number>,
+    mestresInstalados: 0,
+    inadimplentes: 0,
+  });
+  const [recentMembers, setRecentMembers] = useState<{ id: string; full_name: string; degree: string; status: string; created_at: string }[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const isFiltered = filters.periodo !== "mes_atual" || filters.tipoLancamento !== "todos" || filters.situacao !== "todos";
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+
+      const [activeRes, inactiveRes, allRes, inadRes, recentRes] = await Promise.all([
+        supabase.from("members").select("id", { count: "exact", head: true }).eq("status", "ativo"),
+        supabase.from("members").select("id", { count: "exact", head: true }).neq("status", "ativo"),
+        supabase.from("members").select("id, degree, master_installed").eq("status", "ativo"),
+        supabase.from("member_transactions").select("member_id").eq("status", "em_aberto"),
+        supabase.from("members").select("id, full_name, degree, status, created_at").order("created_at", { ascending: false }).limit(5),
+      ]);
+
+      const porGrau: Record<string, number> = {};
+      let mestresInstalados = 0;
+      if (allRes.data) {
+        for (const m of allRes.data) {
+          porGrau[m.degree] = (porGrau[m.degree] || 0) + 1;
+          if (m.master_installed) mestresInstalados++;
+        }
+      }
+
+      const inadSet = new Set(inadRes.data?.map((t) => t.member_id) ?? []);
+
+      setStats({
+        totalAtivos: activeRes.count ?? 0,
+        totalInativos: inactiveRes.count ?? 0,
+        totalMembros: (activeRes.count ?? 0) + (inactiveRes.count ?? 0),
+        porGrau,
+        mestresInstalados,
+        inadimplentes: inadSet.size,
+      });
+
+      setRecentMembers(recentRes.data ?? []);
+      setLoading(false);
+    })();
+  }, []);
+
+  const adimplencia = stats.totalAtivos > 0
+    ? ((stats.totalAtivos - stats.inadimplentes) / stats.totalAtivos * 100).toFixed(1)
+    : "100.0";
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto pb-12">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-serif font-bold">Dashboard Financeiro</h1>
-          <div className="flex items-center gap-2 mt-1">
-            <p className="text-sm text-muted-foreground">
-              Visão consolidada — {periodoLabel[filters.periodo] ?? "Todos os períodos"}
-            </p>
-            {isFiltered && (
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                Filtros ativos
-              </Badge>
-            )}
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Link to="/secretaria">
-            <Button variant="outline" size="sm" className="gap-1.5">
-              <BookOpen className="h-3.5 w-3.5" />
-              Secretaria
-            </Button>
-          </Link>
-          <Link to="/tesouraria">
-            <Button variant="outline" size="sm" className="gap-1.5">
-              <Wallet className="h-3.5 w-3.5" />
-              Tesouraria
-            </Button>
-          </Link>
-        </div>
+      <div>
+        <h1 className="text-2xl font-serif font-bold">Painel da Loja</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Visão geral — {config.lodge_name || "Loja"} nº {config.lodge_number || "—"} · Or∴ de {config.orient || "—"}
+        </p>
       </div>
 
-      {/* Filtros Globais */}
-      <DashboardFilterBar filters={filters} onChange={setFilters} />
+      {/* KPIs principais */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          title="Obreiros Ativos"
+          value={String(stats.totalAtivos)}
+          description={`${stats.totalMembros} total no quadro`}
+          icon={Users}
+          trend={{ value: `${stats.totalInativos} inativos`, positive: stats.totalInativos === 0 }}
+          className="[animation-delay:0ms]"
+        />
+        <StatCard
+          title="Taxa de Adimplência"
+          value={`${adimplencia}%`}
+          description={`${stats.inadimplentes} irmão(s) com pendência`}
+          icon={UserCheck}
+          trend={{ value: stats.inadimplentes === 0 ? "Quadro em dia" : `${stats.inadimplentes} inadimplente(s)`, positive: stats.inadimplentes === 0 }}
+          className="[animation-delay:80ms]"
+        />
+        <StatCard
+          title="Mestres Instalados"
+          value={String(stats.mestresInstalados)}
+          description="Mestres com instalação registrada"
+          icon={Shield}
+          trend={{ value: `de ${stats.totalAtivos} ativos`, positive: true }}
+          className="[animation-delay:160ms]"
+        />
+        <StatCard
+          title="Mensalidade Padrão"
+          value={formatCurrency(config.mensalidade_padrao)}
+          description={`Vencimento dia ${config.dia_vencimento}`}
+          icon={Activity}
+          trend={{ value: `Potência: ${config.potencia || "—"}`, positive: true }}
+          className="[animation-delay:240ms]"
+        />
+      </div>
 
-      {/* 1. KPIs */}
-      <DashboardKPIs filters={filters} />
+      {/* Distribuição por grau */}
+      <section className="space-y-4">
+        <SectionHeader title="Quadro de Obreiros" subtitle="Distribuição por grau maçônico" />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {(["aprendiz", "companheiro", "mestre"] as const).map((grau) => (
+            <Card key={grau}>
+              <CardContent className="flex items-center gap-4 p-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                  <GraduationCap className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{grauLabels[grau]}</p>
+                  <p className="text-2xl font-serif font-bold">{stats.porGrau[grau] ?? 0}</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {stats.totalAtivos > 0
+                      ? `${((stats.porGrau[grau] ?? 0) / stats.totalAtivos * 100).toFixed(0)}% do quadro`
+                      : "—"}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
 
-      {/* Alertas Estratégicos */}
-      <DashboardAlerts filters={filters} />
+      {/* Últimos membros cadastrados */}
+      <section className="space-y-4">
+        <SectionHeader title="Últimos Cadastros" subtitle="Obreiros adicionados recentemente" />
+        <Card>
+          <CardContent className="p-0">
+            {recentMembers.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <Users className="h-8 w-8 text-muted-foreground/40 mb-2" />
+                <p className="text-sm text-muted-foreground">Nenhum membro cadastrado ainda</p>
+              </div>
+            ) : (
+              <div className="divide-y">
+                {recentMembers.map((m) => (
+                  <div key={m.id} className="flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors">
+                    <div>
+                      <p className="text-sm font-medium">{m.full_name}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {grauLabels[m.degree] ?? m.degree} · Cadastrado em {new Date(m.created_at).toLocaleDateString("pt-BR")}
+                      </p>
+                    </div>
+                    <Badge variant={m.status === "ativo" ? "default" : "secondary"} className="text-[10px]">
+                      {m.status === "ativo" ? "Ativo" : "Inativo"}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </section>
 
-      {/* 2. Gráficos de Evolução */}
-      <DashboardCharts filters={filters} />
-
-      {/* 3. Indicadores de Inadimplência */}
-      <DashboardInadimplencia filters={filters} />
-
-      {/* 4. Resumo por Categorias */}
-      <DashboardCategorias filters={filters} />
-
-      {/* 5. Últimos Lançamentos */}
-      <DashboardLancamentos filters={filters} />
+      {/* Info da Loja */}
+      <section className="space-y-4">
+        <SectionHeader title="Dados da Loja" subtitle="Informações institucionais" />
+        <Card>
+          <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 text-sm">
+            <div><span className="text-muted-foreground">Nome:</span> <strong>{config.lodge_name || "—"}</strong></div>
+            <div><span className="text-muted-foreground">Nº:</span> <strong>{config.lodge_number || "—"}</strong></div>
+            <div><span className="text-muted-foreground">Oriente:</span> <strong>{config.orient || "—"}</strong></div>
+            <div><span className="text-muted-foreground">Potência:</span> <strong>{config.potencia || "—"}</strong></div>
+          </CardContent>
+        </Card>
+      </section>
     </div>
   );
 };
