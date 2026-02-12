@@ -11,8 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { format, startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from "date-fns";
 import { cn } from "@/lib/utils";
 import {
   TrendingUp,
@@ -65,39 +64,25 @@ interface ConsolidadoNode {
 const tipoLabels: Record<string, string> = { mensalidade: "Mensalidade", avulso: "Valor Avulso", taxa: "Taxa" };
 
 const presetPeriods = [
-  { value: "mes_atual", label: "Mês atual" },
-  { value: "mes_anterior", label: "Mês anterior" },
-  { value: "trimestre", label: "Último trimestre" },
-  { value: "semestre", label: "Último semestre" },
-  { value: "ano_atual", label: "Ano atual" },
+  { value: "mes", label: "Mês" },
+  { value: "ano", label: "Ano" },
   { value: "personalizado", label: "Personalizado" },
+];
+
+const meses = [
+  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
 ];
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-function getDateRange(preset: string): { from: Date; to: Date } {
-  const now = new Date();
-  switch (preset) {
-    case "mes_anterior": {
-      const prev = subMonths(now, 1);
-      return { from: startOfMonth(prev), to: endOfMonth(prev) };
-    }
-    case "trimestre":
-      return { from: startOfMonth(subMonths(now, 2)), to: endOfMonth(now) };
-    case "semestre":
-      return { from: startOfMonth(subMonths(now, 5)), to: endOfMonth(now) };
-    case "ano_atual":
-      return { from: startOfYear(now), to: endOfYear(now) };
-    case "mes_atual":
-    default:
-      return { from: startOfMonth(now), to: endOfMonth(now) };
-  }
-}
-
 const FinanceiroGeral = () => {
-  const [preset, setPreset] = useState("mes_atual");
-  const [customFrom, setCustomFrom] = useState<Date>(startOfMonth(new Date()));
-  const [customTo, setCustomTo] = useState<Date>(endOfMonth(new Date()));
+  const now = new Date();
+  const [preset, setPreset] = useState("mes");
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
+  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
+  const [customFrom, setCustomFrom] = useState<Date>(startOfMonth(now));
+  const [customTo, setCustomTo] = useState<Date>(endOfMonth(now));
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [planoContas, setPlanoContas] = useState<ContaPlano[]>([]);
@@ -108,9 +93,16 @@ const FinanceiroGeral = () => {
   const [cancelOpen, setCancelOpen] = useState(false);
 
   const dateRange = useMemo(() => {
-    if (preset === "personalizado") return { from: customFrom, to: customTo };
-    return getDateRange(preset);
-  }, [preset, customFrom, customTo]);
+    if (preset === "mes") {
+      const d = new Date(selectedYear, selectedMonth, 1);
+      return { from: startOfMonth(d), to: endOfMonth(d) };
+    }
+    if (preset === "ano") {
+      const d = new Date(selectedYear, 0, 1);
+      return { from: startOfYear(d), to: endOfYear(d) };
+    }
+    return { from: customFrom, to: customTo };
+  }, [preset, selectedMonth, selectedYear, customFrom, customTo]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -312,9 +304,11 @@ const FinanceiroGeral = () => {
       .map(([mes, v]) => ({ mes, ...v, resultado: v.receitas - v.despesas }));
   }, [transactions]);
 
-  const periodLabel = preset === "personalizado"
-    ? `${format(dateRange.from, "dd/MM/yyyy")} — ${format(dateRange.to, "dd/MM/yyyy")}`
-    : presetPeriods.find((p) => p.value === preset)?.label ?? "";
+  const periodLabel = useMemo(() => {
+    if (preset === "mes") return `${meses[selectedMonth]} de ${selectedYear}`;
+    if (preset === "ano") return `Ano ${selectedYear}`;
+    return `${format(dateRange.from, "dd/MM/yyyy")} — ${format(dateRange.to, "dd/MM/yyyy")}`;
+  }, [preset, selectedMonth, selectedYear, dateRange]);
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
@@ -328,9 +322,9 @@ const FinanceiroGeral = () => {
         <CardContent className="p-4">
           <div className="flex flex-wrap items-end gap-4">
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Período</label>
+              <label className="text-sm font-medium">Filtrar por</label>
               <Select value={preset} onValueChange={setPreset}>
-                <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {presetPeriods.map((p) => (
                     <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
@@ -338,6 +332,36 @@ const FinanceiroGeral = () => {
                 </SelectContent>
               </Select>
             </div>
+
+            {(preset === "mes" || preset === "ano") && (
+              <>
+                {preset === "mes" && (
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium">Mês</label>
+                    <Select value={String(selectedMonth)} onValueChange={(v) => setSelectedMonth(Number(v))}>
+                      <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {meses.map((m, i) => (
+                          <SelectItem key={i} value={String(i)}>{m}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Ano</label>
+                  <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
+                    <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 10 }, (_, i) => now.getFullYear() - i).map((y) => (
+                        <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
+
             {preset === "personalizado" && (
               <>
                 <div className="space-y-1.5">
