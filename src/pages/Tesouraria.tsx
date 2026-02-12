@@ -89,6 +89,10 @@ const Tesouraria = () => {
     fetchFinanceiro(id).finally(() => setLoadingPanel(false));
   };
 
+  const refreshFinanceiro = useCallback(() => {
+    if (selectedMemberId) fetchFinanceiro(selectedMemberId);
+  }, [selectedMemberId, fetchFinanceiro]);
+
   const formatCpfPreview = (cpf: string | null) => {
     if (!cpf) return "";
     const digits = cpf.replace(/\D/g, "");
@@ -365,7 +369,7 @@ const Tesouraria = () => {
           </TabsList>
 
           <TabsContent value="individual">
-            <LancamentoIndividual />
+            <LancamentoIndividual onLancamentoSaved={refreshFinanceiro} />
           </TabsContent>
 
           <TabsContent value="lote">

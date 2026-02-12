@@ -46,7 +46,11 @@ const tipoBadge: Record<string, string> = {
 
 const emptyForm = { irmaoId: "", tipo: "", valor: "", descricao: "", data: new Date() };
 
-export function LancamentoIndividual() {
+interface LancamentoIndividualProps {
+  onLancamentoSaved?: () => void;
+}
+
+export function LancamentoIndividual({ onLancamentoSaved }: LancamentoIndividualProps = {}) {
   const { hasPermission } = useAuth();
   const { logAction } = useAuditLog();
   const { config: lodgeConfig } = useLodgeConfig();
@@ -107,6 +111,7 @@ export function LancamentoIndividual() {
     setHistorico((prev) => [novo, ...prev]);
     resetForm();
     toast.success(`Lançamento de ${formatCurrency(v)} registrado para ${irmao.full_name}.`);
+    onLancamentoSaved?.();
   };
 
   return (
