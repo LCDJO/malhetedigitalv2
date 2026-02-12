@@ -96,7 +96,7 @@ function validateCpfDigits(cpf: string): boolean {
 function validateRow(row: ParsedRow, index: number): RowValidation {
   const errors: string[] = [];
   if (!row.full_name) errors.push("Nome obrigatório");
-  if (row.cpf && !validateCpfDigits(row.cpf)) errors.push("CPF inválido");
+  if (row.cpf && row.cpf.trim() && !validateCpfDigits(row.cpf)) errors.push("CPF inválido");
   if (row.degree && !VALID_DEGREES.includes(row.degree.toLowerCase())) errors.push(`Grau inválido: ${row.degree}`);
   if (row.status && !VALID_STATUSES.includes(row.status.toLowerCase())) errors.push(`Status inválido: ${row.status}`);
   if (row.birth_date && !parseDate(row.birth_date)) errors.push("Data nascimento inválida");
@@ -186,8 +186,8 @@ export function ImportarCSV({ open, onOpenChange, onSuccess }: ImportarCSVProps)
     setImporting(true);
     const payload = validRows.map((r) => ({
       full_name: r.row.full_name.trim(),
-      cpf: formatCpfForStorage(r.row.cpf),
-      cim: r.row.cim.trim(),
+      cpf: r.row.cpf ? formatCpfForStorage(r.row.cpf) : '',
+      cim: r.row.cim?.trim() || '',
       email: r.row.email || null,
       phone: r.row.phone || null,
       birth_date: parseDate(r.row.birth_date),
@@ -244,7 +244,7 @@ export function ImportarCSV({ open, onOpenChange, onSuccess }: ImportarCSVProps)
               <Alert>
                 <AlertDescription className="text-sm space-y-2">
                   <p>Faça upload de um arquivo CSV com os dados dos irmãos. Use <strong>ponto e vírgula (;)</strong> ou <strong>vírgula (,)</strong> como separador.</p>
-                  <p className="text-xs text-muted-foreground">Colunas esperadas: nome_completo*, cpf*, cim*, email, telefone, data_nascimento, endereco, grau, status, data_iniciacao, data_elevacao, data_exaltacao, observacoes</p>
+                  <p className="text-xs text-muted-foreground">Colunas esperadas: nome_completo*, cpf, cim, email, telefone, data_nascimento, endereco, grau, status, data_iniciacao, data_elevacao, data_exaltacao, observacoes</p>
                   <p className="text-xs text-muted-foreground">Datas no formato dd/MM/aaaa ou aaaa-MM-dd. Campos com * são obrigatórios.</p>
                 </AlertDescription>
               </Alert>
