@@ -219,14 +219,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const acceptTerms = useCallback(async (termoId: string): Promise<boolean> => {
     if (!user) return false;
-    const { error } = await supabase.from("aceites_termos").insert({
+    const { error, data } = await supabase.from("aceites_termos").insert({
       usuario_id: user.id,
       termo_id: termoId,
-    });
+    }).select("id").single();
     if (error) return false;
+
+    // Audit log
+    await supabase.from("audit_log").insert({
+      user_id: user.id,
+      user_name: profile?.full_name ?? user.email,
+      action: "ACEITE_TERMO",
+      target_table: "aceites_termos",
+      target_id: data.id,
+      details: { termo_id: termoId },
+    });
+
     setTermsAccepted(true);
     return true;
-  }, [user]);
+  }, [user, profile]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
