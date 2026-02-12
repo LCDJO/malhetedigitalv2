@@ -16,7 +16,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { Search, Plus, Pencil, Eye, X, User, CalendarIcon, Loader2, ChevronLeft, ChevronRight, Filter, Upload, Trash2 } from "lucide-react";
+import { Search, Plus, Pencil, Eye, X, User, Users, CalendarIcon, Loader2, ChevronLeft, ChevronRight, Filter, Upload, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { PermissionGate } from "@/components/PermissionGate";
 import { useAuth } from "@/contexts/AuthContext";
@@ -119,7 +119,7 @@ const emptyForm = {
   notes: "", avatar_url: null as string | null,
 };
 
-const ITEMS_PER_PAGE = 10;
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 0] as const; // 0 = todos
 
 export function CadastroIrmaos() {
   const { hasPermission } = useAuth();
@@ -129,6 +129,7 @@ export function CadastroIrmaos() {
   const [filterDegree, setFilterDegree] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -154,23 +155,25 @@ export function CadastroIrmaos() {
   useEffect(() => { fetchMembers(); }, [fetchMembers]);
 
   // Reset page when filters change
-  useEffect(() => { setCurrentPage(1); }, [search, filterDegree, filterStatus]);
+  useEffect(() => { setCurrentPage(1); }, [search, filterDegree, filterStatus, pageSize]);
 
   const filtered = members.filter((m) => {
     const q = search.toLowerCase();
     const matchesSearch =
       m.full_name.toLowerCase().includes(q) ||
-      m.cpf.replace(/\D/g, "").includes(q.replace(/\D/g, "")) ||
-      m.cim.toLowerCase().includes(q);
+      (m.cpf || "").replace(/\D/g, "").includes(q.replace(/\D/g, "")) ||
+      (m.cim || "").toLowerCase().includes(q);
     const matchesDegree = filterDegree === "all" || m.degree === filterDegree;
     const matchesStatus = filterStatus === "all" || m.status === filterStatus;
     return matchesSearch && matchesDegree && matchesStatus;
   });
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  const effectivePageSize = pageSize === 0 ? filtered.length : pageSize;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / (effectivePageSize || 1)));
   const safePage = Math.min(currentPage, totalPages);
-  const paginated = filtered.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE);
+  const paginated = pageSize === 0 ? filtered : filtered.slice((safePage - 1) * effectivePageSize, safePage * effectivePageSize);
   const activeFilters = (filterDegree !== "all" ? 1 : 0) + (filterStatus !== "all" ? 1 : 0);
+  const activeCount = members.filter((m) => m.status === "ativo").length;
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -291,6 +294,13 @@ export function CadastroIrmaos() {
 
   return (
     <>
+      <div className="flex items-center gap-3 px-1 py-2">
+        <Badge variant="outline" className="text-xs px-3 py-1 gap-1.5 bg-success/10 text-success border-success/20">
+          <Users className="h-3.5 w-3.5" /> {activeCount} obreiro(s) ativo(s)
+        </Badge>
+        <span className="text-xs text-muted-foreground">de {members.length} cadastrado(s)</span>
+      </div>
+
       <Card>
         <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -400,37 +410,53 @@ export function CadastroIrmaos() {
               </div>
 
               {/* Pagination */}
-              {filtered.length > ITEMS_PER_PAGE && (
-                <div className="flex items-center justify-between pt-4">
-                  <p className="text-xs text-muted-foreground">
-                    Exibindo {((safePage - 1) * ITEMS_PER_PAGE) + 1}–{Math.min(safePage * ITEMS_PER_PAGE, filtered.length)} de {filtered.length} registro(s)
-                  </p>
-                  <div className="flex items-center gap-1">
-                    <Button variant="outline" size="icon" className="h-8 w-8" disabled={safePage <= 1} onClick={() => setCurrentPage((p) => p - 1)}>
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1)
-                      .filter((p) => p === 1 || p === totalPages || Math.abs(p - safePage) <= 1)
-                      .reduce<(number | "ellipsis")[]>((acc, p, idx, arr) => {
-                        if (idx > 0 && p - (arr[idx - 1]) > 1) acc.push("ellipsis");
-                        acc.push(p);
-                        return acc;
-                      }, [])
-                      .map((item, idx) =>
-                        item === "ellipsis" ? (
-                          <span key={`e-${idx}`} className="px-1 text-xs text-muted-foreground">…</span>
-                        ) : (
-                          <Button key={item} variant={item === safePage ? "default" : "outline"} size="icon" className="h-8 w-8 text-xs" onClick={() => setCurrentPage(item)}>
-                            {item}
-                          </Button>
-                        )
-                      )}
-                    <Button variant="outline" size="icon" className="h-8 w-8" disabled={safePage >= totalPages} onClick={() => setCurrentPage((p) => p + 1)}>
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
+              <div className="flex items-center justify-between pt-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Exibir</span>
+                  <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+                    <SelectTrigger className="w-[80px] h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PAGE_SIZE_OPTIONS.map((opt) => (
+                        <SelectItem key={opt} value={String(opt)}>{opt === 0 ? "Todos" : String(opt)}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <span className="text-xs text-muted-foreground">por página</span>
                 </div>
-              )}
+                {pageSize > 0 && filtered.length > pageSize && (
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs text-muted-foreground">
+                      {((safePage - 1) * effectivePageSize) + 1}–{Math.min(safePage * effectivePageSize, filtered.length)} de {filtered.length}
+                    </p>
+                    <div className="flex items-center gap-1">
+                      <Button variant="outline" size="icon" className="h-8 w-8" disabled={safePage <= 1} onClick={() => setCurrentPage((p) => p - 1)}>
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter((p) => p === 1 || p === totalPages || Math.abs(p - safePage) <= 1)
+                        .reduce<(number | "ellipsis")[]>((acc, p, idx, arr) => {
+                          if (idx > 0 && p - (arr[idx - 1]) > 1) acc.push("ellipsis");
+                          acc.push(p);
+                          return acc;
+                        }, [])
+                        .map((item, idx) =>
+                          item === "ellipsis" ? (
+                            <span key={`e-${idx}`} className="px-1 text-xs text-muted-foreground">…</span>
+                          ) : (
+                            <Button key={item} variant={item === safePage ? "default" : "outline"} size="icon" className="h-8 w-8 text-xs" onClick={() => setCurrentPage(item as number)}>
+                              {item}
+                            </Button>
+                          )
+                        )}
+                      <Button variant="outline" size="icon" className="h-8 w-8" disabled={safePage >= totalPages} onClick={() => setCurrentPage((p) => p + 1)}>
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </>
           )}
         </CardContent>
