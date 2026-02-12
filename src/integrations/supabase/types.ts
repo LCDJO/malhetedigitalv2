@@ -82,6 +82,39 @@ export type Database = {
         }
         Relationships: []
       }
+      incidentes: {
+        Row: {
+          acoes_tomadas: string | null
+          created_at: string
+          dados_afetados: string | null
+          data_incidente: string
+          descricao: string
+          id: string
+          registrado_por: string | null
+          updated_at: string
+        }
+        Insert: {
+          acoes_tomadas?: string | null
+          created_at?: string
+          dados_afetados?: string | null
+          data_incidente?: string
+          descricao: string
+          id?: string
+          registrado_por?: string | null
+          updated_at?: string
+        }
+        Update: {
+          acoes_tomadas?: string | null
+          created_at?: string
+          dados_afetados?: string | null
+          data_incidente?: string
+          descricao?: string
+          id?: string
+          registrado_por?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lodge_config: {
         Row: {
           categorias_financeiras: Json

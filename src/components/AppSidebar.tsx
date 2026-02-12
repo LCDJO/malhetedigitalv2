@@ -7,6 +7,7 @@ import {
   Users,
   ScrollText,
   FileBarChart,
+  ShieldAlert,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth, roleLabels } from "@/contexts/AuthContext";
@@ -35,6 +36,7 @@ const menuItems = [
   { title: "Configurações", url: "/configuracoes", icon: Settings, module: "configuracoes" },
   { title: "Gestão de Usuários", url: "/gestao-usuarios", icon: Users, module: "configuracoes" },
   { title: "Log de Auditoria", url: "/log-auditoria", icon: ScrollText, module: "configuracoes" },
+  { title: "Incidentes", url: "/incidentes", icon: ShieldAlert, module: "configuracoes" },
 ];
 
 export function AppSidebar() {
