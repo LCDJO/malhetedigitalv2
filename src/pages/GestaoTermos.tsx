@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +13,8 @@ import { format } from "date-fns";
 import { Plus, Loader2, Eye, Pencil, Send, FileText, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmSensitiveAction } from "@/components/ConfirmSensitiveAction";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { useAuditLog } from "@/hooks/useAuditLog";
 
 interface Termo {
   id: string;
@@ -34,6 +35,7 @@ interface Politica {
 }
 
 const GestaoTermos = () => {
+  const { logAction } = useAuditLog();
   const [termos, setTermos] = useState<Termo[]>([]);
   const [politicas, setPoliticas] = useState<Politica[]>([]);
   const [loading, setLoading] = useState(true);
@@ -125,7 +127,6 @@ const GestaoTermos = () => {
     if (!publishItem) return;
     const table = publishItem.type === "termo" ? "termos_uso" : "politicas_privacidade";
 
-    // The DB trigger automatically deactivates previous active terms
     const { error } = await supabase.from(table).update({
       ativo: true,
       data_publicacao: new Date().toISOString(),
@@ -135,6 +136,12 @@ const GestaoTermos = () => {
       toast.error("Erro ao publicar: " + error.message);
     } else {
       toast.success(`Versão ${publishItem.versao} publicada com sucesso. Todos os usuários deverão aceitar no próximo acesso.`);
+      logAction({
+        action: "PUBLICAR_DOCUMENTO",
+        targetTable: table,
+        targetId: publishItem.id,
+        details: { versao: publishItem.versao, tipo: publishItem.type },
+      });
       fetchAll();
     }
     setPublishItem(null);
@@ -272,15 +279,12 @@ const GestaoTermos = () => {
             </div>
             <div className="space-y-1.5">
               <Label>Conteúdo *</Label>
-              <Textarea
+              <RichTextEditor
                 value={conteudo}
-                onChange={(e) => setConteudo(e.target.value)}
+                onChange={setConteudo}
                 placeholder="Digite o conteúdo completo do documento..."
-                rows={15}
-                className="font-mono text-sm"
                 maxLength={50000}
               />
-              <p className="text-[10px] text-muted-foreground text-right">{conteudo.length} / 50.000 caracteres</p>
             </div>
           </div>
           <DialogFooter>
