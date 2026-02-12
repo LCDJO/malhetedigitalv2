@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,8 +9,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { format } from "date-fns";
-import { Plus, Loader2, Eye, Pencil, Send, FileText, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { Plus, Loader2, Eye, Pencil, Send, FileText, ShieldCheck, CheckCircle2, AlertTriangle, Users, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmSensitiveAction } from "@/components/ConfirmSensitiveAction";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
@@ -40,6 +42,11 @@ const GestaoTermos = () => {
   const [politicas, setPoliticas] = useState<Politica[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Compliance stats
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [acceptedUsers, setAcceptedUsers] = useState(0);
+  const [pendingUserNames, setPendingUserNames] = useState<string[]>([]);
+
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogType, setDialogType] = useState<"termo" | "politica">("termo");
@@ -56,12 +63,35 @@ const GestaoTermos = () => {
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
-    const [termosRes, politicasRes] = await Promise.all([
+    const [termosRes, politicasRes, profilesRes, aceitesRes] = await Promise.all([
       supabase.from("termos_uso").select("*").order("data_publicacao", { ascending: false }),
       supabase.from("politicas_privacidade").select("*").order("data_publicacao", { ascending: false }),
+      supabase.from("profiles").select("id, full_name"),
+      supabase.from("aceites_termos").select("usuario_id, termo_id"),
     ]);
     if (termosRes.data) setTermos(termosRes.data);
     if (politicasRes.data) setPoliticas(politicasRes.data);
+
+    // Compute compliance stats for active term
+    const profiles = profilesRes.data ?? [];
+    const aceites = aceitesRes.data ?? [];
+    const activeTermo = (termosRes.data ?? []).find((t) => t.ativo);
+
+    setTotalUsers(profiles.length);
+
+    if (activeTermo) {
+      const acceptedIds = new Set(
+        aceites.filter((a) => a.termo_id === activeTermo.id).map((a) => a.usuario_id)
+      );
+      setAcceptedUsers(acceptedIds.size);
+      setPendingUserNames(
+        profiles.filter((p) => !acceptedIds.has(p.id)).map((p) => p.full_name)
+      );
+    } else {
+      setAcceptedUsers(0);
+      setPendingUserNames([]);
+    }
+
     setLoading(false);
   }, []);
 
@@ -214,6 +244,85 @@ const GestaoTermos = () => {
           Gerencie Termos de Uso e Política de Privacidade — versionamento, publicação e conformidade LGPD
         </p>
       </div>
+
+      {/* Compliance indicators */}
+      {!loading && totalUsers > 0 && termos.some((t) => t.ativo) && (() => {
+        const pct = totalUsers > 0 ? Math.round((acceptedUsers / totalUsers) * 100) : 0;
+        const pendingCount = pendingUserNames.length;
+        return (
+          <div className="space-y-4">
+            {/* KPI cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Card>
+                <CardContent className="flex items-center gap-3 p-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                    <Users className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-2xl font-bold">{pct}%</p>
+                    <p className="text-xs text-muted-foreground">Aceites atualizados</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="flex items-center gap-3 p-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10">
+                    <CheckCircle2 className="h-5 w-5 text-success" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{acceptedUsers}</p>
+                    <p className="text-xs text-muted-foreground">Usuários em dia</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="flex items-center gap-3 p-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10">
+                    <Clock className="h-5 w-5 text-warning" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{pendingCount}</p>
+                    <p className="text-xs text-muted-foreground">Pendentes de aceite</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Progress bar */}
+            <Card>
+              <CardContent className="p-4 space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Conformidade de aceites</span>
+                  <span className="font-semibold">{acceptedUsers}/{totalUsers} ({pct}%)</span>
+                </div>
+                <Progress value={pct} className="h-2" />
+              </CardContent>
+            </Card>
+
+            {/* Alert + pending list */}
+            {pendingCount > 0 && (
+              <Alert variant="destructive" className="border-warning/40 bg-warning/5 text-foreground">
+                <AlertTriangle className="h-4 w-4 !text-warning" />
+                <AlertTitle className="text-warning font-semibold">
+                  {pendingCount} usuário(s) pendente(s) de aceite
+                </AlertTitle>
+                <AlertDescription className="mt-2">
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Os seguintes usuários ainda não aceitaram a versão ativa dos Termos de Uso:
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {pendingUserNames.map((name) => (
+                      <Badge key={name} variant="outline" className="text-xs border-warning/30 text-warning">
+                        {name}
+                      </Badge>
+                    ))}
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
+        );
+      })()}
 
       <Tabs defaultValue="termos" className="space-y-4">
         <TabsList className="bg-muted/60">
