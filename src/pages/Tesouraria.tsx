@@ -15,6 +15,8 @@ import { LancamentoLote } from "@/components/tesouraria/LancamentoLote";
 import { TaxasMaconicas } from "@/components/tesouraria/TaxasMaconicas";
 import { NovoDebito } from "@/components/tesouraria/NovoDebito";
 import { NovoCredito } from "@/components/tesouraria/NovoCredito";
+import { NovoLancamento } from "@/components/tesouraria/NovoLancamento";
+import { PermissionGate } from "@/components/PermissionGate";
 
 interface MemberOption {
   id: string;
@@ -372,6 +374,12 @@ const Tesouraria = () => {
 
             <NovoDebito memberId={selectedMemberId} memberName={selectedMember.full_name} onDebitoSaved={refreshFinanceiro} />
             <NovoCredito memberId={selectedMemberId} memberName={selectedMember.full_name} onCreditoSaved={refreshFinanceiro} />
+
+            <div className="flex items-center gap-3">
+              <PermissionGate module="tesouraria" action="write">
+                <NovoLancamento memberId={selectedMemberId} memberName={selectedMember.full_name} onLancamentoSaved={refreshFinanceiro} />
+              </PermissionGate>
+            </div>
 
             <Tabs defaultValue="individual" className="space-y-4">
           <TabsList className="bg-muted/60">
