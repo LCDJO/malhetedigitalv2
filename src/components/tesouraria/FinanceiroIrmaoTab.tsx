@@ -391,42 +391,6 @@ export function FinanceiroIrmaoTab() {
               </div>
             </PermissionGate>
 
-            <Tabs defaultValue="individual" className="space-y-4">
-              <TabsList className="bg-muted/60">
-                <TabsTrigger value="individual" className="gap-2 data-[state=active]:bg-card data-[state=active]:shadow-sm">
-                  <User className="h-4 w-4" />
-                  Lançamento Individual
-                </TabsTrigger>
-                <TabsTrigger value="lote" className="gap-2 data-[state=active]:bg-card data-[state=active]:shadow-sm">
-                  <Users className="h-4 w-4" />
-                  Lançamento em Lote
-                </TabsTrigger>
-                <TabsTrigger value="taxas" className="gap-2 data-[state=active]:bg-card data-[state=active]:shadow-sm">
-                  <Receipt className="h-4 w-4" />
-                  Taxas Maçônicas
-                </TabsTrigger>
-                <TabsTrigger value="isencoes" className="gap-2 data-[state=active]:bg-card data-[state=active]:shadow-sm">
-                  <ShieldCheck className="h-4 w-4" />
-                  Isenções
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="individual">
-                <LancamentoIndividual onLancamentoSaved={refreshFinanceiro} />
-              </TabsContent>
-
-              <TabsContent value="lote">
-                <LancamentoLote />
-              </TabsContent>
-
-              <TabsContent value="taxas">
-                <TaxasMaconicas />
-              </TabsContent>
-
-              <TabsContent value="isencoes">
-                <IsencaoIrmao />
-              </TabsContent>
-            </Tabs>
           </>
         );
       })()}
