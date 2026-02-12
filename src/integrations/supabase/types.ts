@@ -201,10 +201,12 @@ export type Database = {
       }
       member_transactions: {
         Row: {
+          conta_plano_id: string | null
           created_at: string
           created_by: string | null
           data: string
           descricao: string
+          forma_pagamento: string | null
           id: string
           member_id: string
           status: string
@@ -212,10 +214,12 @@ export type Database = {
           valor: number
         }
         Insert: {
+          conta_plano_id?: string | null
           created_at?: string
           created_by?: string | null
           data?: string
           descricao?: string
+          forma_pagamento?: string | null
           id?: string
           member_id: string
           status?: string
@@ -223,10 +227,12 @@ export type Database = {
           valor: number
         }
         Update: {
+          conta_plano_id?: string | null
           created_at?: string
           created_by?: string | null
           data?: string
           descricao?: string
+          forma_pagamento?: string | null
           id?: string
           member_id?: string
           status?: string
@@ -234,6 +240,13 @@ export type Database = {
           valor?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "member_transactions_conta_plano_id_fkey"
+            columns: ["conta_plano_id"]
+            isOneToOne: false
+            referencedRelation: "plano_contas"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "member_transactions_member_id_fkey"
             columns: ["member_id"]
