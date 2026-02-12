@@ -2,11 +2,13 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { User, Users, Receipt, ChevronsUpDown, Check, Loader2, Wallet } from "lucide-react";
+import { User, Users, Receipt, ChevronsUpDown, Check, Loader2, Wallet, GraduationCap, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 import { LancamentoIndividual } from "@/components/tesouraria/LancamentoIndividual";
 import { LancamentoLote } from "@/components/tesouraria/LancamentoLote";
 import { TaxasMaconicas } from "@/components/tesouraria/TaxasMaconicas";
@@ -17,6 +19,8 @@ interface MemberOption {
   cim: string | null;
   cpf: string | null;
   degree: string;
+  status: string;
+  initiation_date: string | null;
 }
 
 const Tesouraria = () => {
@@ -30,7 +34,7 @@ const Tesouraria = () => {
     setLoadingMembers(true);
     const { data } = await supabase
       .from("members")
-      .select("id, full_name, cim, cpf, degree")
+      .select("id, full_name, cim, cpf, degree, status, initiation_date")
       .eq("status", "ativo")
       .order("full_name");
     if (data) setMembers(data);
@@ -142,8 +146,47 @@ const Tesouraria = () => {
       )}
 
       {/* Conteúdo financeiro — só aparece com obreiro selecionado */}
-      {selectedMemberId && !loadingPanel && (
-        <Tabs defaultValue="individual" className="space-y-4">
+      {selectedMemberId && !loadingPanel && selectedMember && (() => {
+        const degreeLabels: Record<string, string> = {
+          aprendiz: "Aprendiz",
+          companheiro: "Companheiro",
+          mestre: "Mestre",
+        };
+        const statusLabels: Record<string, { label: string; cls: string }> = {
+          ativo: { label: "Ativo", cls: "bg-success/10 text-success border-success/20" },
+          afastado: { label: "Afastado", cls: "bg-warning/10 text-warning border-warning/20" },
+          inativo: { label: "Inativo", cls: "bg-muted text-muted-foreground" },
+        };
+        const st = statusLabels[selectedMember.status] ?? { label: selectedMember.status, cls: "" };
+
+        return (
+          <>
+            {/* Card institucional do obreiro */}
+            <Card className="border-l-4 border-l-primary/40">
+              <CardContent className="p-4">
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-semibold">{selectedMember.full_name}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">{degreeLabels[selectedMember.degree] ?? selectedMember.degree}</span>
+                  </div>
+                  <Badge variant="outline" className={cn("text-[10px]", st.cls)}>{st.label}</Badge>
+                  {selectedMember.initiation_date && (
+                    <div className="flex items-center gap-1.5">
+                      <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">
+                        Ingresso: {format(new Date(selectedMember.initiation_date), "dd/MM/yyyy")}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Tabs defaultValue="individual" className="space-y-4">
           <TabsList className="bg-muted/60">
             <TabsTrigger value="individual" className="gap-2 data-[state=active]:bg-card data-[state=active]:shadow-sm">
               <User className="h-4 w-4" />
@@ -171,7 +214,9 @@ const Tesouraria = () => {
             <TaxasMaconicas />
           </TabsContent>
         </Tabs>
-      )}
+          </>
+        );
+      })()}
     </div>
   );
 };
