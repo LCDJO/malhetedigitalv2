@@ -546,7 +546,7 @@ const FinanceiroGeral = () => {
                               <TableCell className="text-sm text-muted-foreground">{t.created_by_name}</TableCell>
                               <TableCell className="text-right">
                                 {!isCancelado && (
-                                  <PermissionGate module="tesouraria" action="write">
+                                  <PermissionGate module="tesouraria" action="write" hide>
                                     <Button
                                       variant="ghost"
                                       size="sm"

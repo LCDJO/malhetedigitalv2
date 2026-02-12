@@ -372,14 +372,18 @@ const Tesouraria = () => {
               </CardContent>
             </Card>
 
-            <NovoDebito memberId={selectedMemberId} memberName={selectedMember.full_name} onDebitoSaved={refreshFinanceiro} />
-            <NovoCredito memberId={selectedMemberId} memberName={selectedMember.full_name} onCreditoSaved={refreshFinanceiro} />
+            <PermissionGate module="tesouraria" action="write" hide>
+              <NovoDebito memberId={selectedMemberId} memberName={selectedMember.full_name} onDebitoSaved={refreshFinanceiro} />
+            </PermissionGate>
+            <PermissionGate module="tesouraria" action="write" hide>
+              <NovoCredito memberId={selectedMemberId} memberName={selectedMember.full_name} onCreditoSaved={refreshFinanceiro} />
+            </PermissionGate>
 
-            <div className="flex items-center gap-3">
-              <PermissionGate module="tesouraria" action="write">
+            <PermissionGate module="tesouraria" action="write" hide>
+              <div className="flex items-center gap-3">
                 <NovoLancamento memberId={selectedMemberId} memberName={selectedMember.full_name} onLancamentoSaved={refreshFinanceiro} />
-              </PermissionGate>
-            </div>
+              </div>
+            </PermissionGate>
 
             <Tabs defaultValue="individual" className="space-y-4">
           <TabsList className="bg-muted/60">
