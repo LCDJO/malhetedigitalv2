@@ -13,6 +13,7 @@ import { format } from "date-fns";
 import { LancamentoIndividual } from "@/components/tesouraria/LancamentoIndividual";
 import { LancamentoLote } from "@/components/tesouraria/LancamentoLote";
 import { TaxasMaconicas } from "@/components/tesouraria/TaxasMaconicas";
+import { NovoDebito } from "@/components/tesouraria/NovoDebito";
 
 interface MemberOption {
   id: string;
@@ -351,6 +352,8 @@ const Tesouraria = () => {
                 </div>
               </CardContent>
             </Card>
+
+            <NovoDebito memberId={selectedMemberId} memberName={selectedMember.full_name} onDebitoSaved={refreshFinanceiro} />
 
             <Tabs defaultValue="individual" className="space-y-4">
           <TabsList className="bg-muted/60">
