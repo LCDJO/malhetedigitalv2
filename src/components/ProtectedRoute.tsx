@@ -1,8 +1,10 @@
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate, useLocation } from "react-router-dom";
 import { useAuth, roleLabels } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { ShieldAlert, ArrowLeft } from "lucide-react";
 import { AceiteTermos } from "@/components/AceiteTermos";
+import { useAuditLog } from "@/hooks/useAuditLog";
+import { useEffect, useRef } from "react";
 
 interface Props {
   children: React.ReactNode;
@@ -12,6 +14,21 @@ interface Props {
 export function ProtectedRoute({ children, module }: Props) {
   const { user, role, loading, hasModuleAccess, termsAccepted } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { logAction } = useAuditLog();
+  const loggedRef = useRef(false);
+
+  // Log blocked access attempt when terms are pending
+  useEffect(() => {
+    if (user && termsAccepted === false && !loggedRef.current) {
+      loggedRef.current = true;
+      logAction({
+        action: "ACESSO_BLOQUEADO_TERMO_PENDENTE",
+        targetTable: "termos_uso",
+        details: { rota_tentada: location.pathname },
+      });
+    }
+  }, [user, termsAccepted, location.pathname, logAction]);
 
   if (loading) {
     return (
