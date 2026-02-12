@@ -16,6 +16,8 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { CalendarIcon, ChevronRight, ChevronLeft, CheckCircle2, Send, Eye, Settings2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { useAuditLog } from "@/hooks/useAuditLog";
 
 interface MemberOption { id: string; full_name: string; cim: string; }
 
@@ -32,6 +34,8 @@ function formatCurrency(v: number) {
 }
 
 export function LancamentoLote() {
+  const { session } = useAuth();
+  const { logAction } = useAuditLog();
   const [step, setStep] = useState<Step>("config");
   const [members, setMembers] = useState<MemberOption[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
@@ -85,6 +89,20 @@ export function LancamentoLote() {
     }));
     setRegistrosGerados(novos);
     setStep("done");
+
+    logAction({
+      action: "CREATE_BATCH",
+      targetTable: "member_transactions",
+      details: {
+        tipo,
+        valor: valorNum,
+        total_membros: novos.length,
+        total_geral: valorNum * novos.length,
+        data: format(data, "yyyy-MM-dd"),
+        descricao: descricao || tipoLabels[tipo],
+      },
+    });
+
     toast.success(`${novos.length} lançamento(s) individual(is) gerado(s) com sucesso.`);
   };
 

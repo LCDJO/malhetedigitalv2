@@ -19,6 +19,7 @@ import { CalendarIcon, DollarSign, Clock, Plus, Loader2, User, FileText, Trendin
 import { toast } from "sonner";
 import { PermissionGate } from "@/components/PermissionGate";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAuditLog } from "@/hooks/useAuditLog";
 
 interface MemberDetail {
   id: string;
@@ -102,6 +103,7 @@ function maskCpfSimple(cpf: string | null | undefined): string {
 export function FinanceiroIrmao() {
   const { config: lodgeConfig } = useLodgeConfig();
   const { hasPermission } = useAuth();
+  const { logAction } = useAuditLog();
   const canViewCpf = hasPermission("secretaria", "write");
   const [members, setMembers] = useState<MemberDetail[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
@@ -190,6 +192,18 @@ export function FinanceiroIrmao() {
     if (error) {
       toast.error("Erro ao registrar lançamento.");
     } else {
+      logAction({
+        action: situacao === "pago" ? "CREATE_CREDIT" : "CREATE_DEBIT",
+        targetTable: "member_transactions",
+        targetId: selectedId,
+        details: {
+          member: selected.full_name,
+          tipo,
+          valor: v,
+          descricao: descricao.trim() || tipoLabels[tipo],
+          situacao,
+        },
+      });
       toast.success(`Lançamento de ${formatCurrency(v)} registrado para ${selected.full_name}.`);
       setTipo("");
       setValor("");
