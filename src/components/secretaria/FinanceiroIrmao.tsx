@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { CalendarIcon, DollarSign, Clock, Plus, Loader2, User, FileText, TrendingUp, AlertCircle, CheckCircle2, XCircle, Hash, ArrowUpDown, ArrowUp, ArrowDown, X } from "lucide-react";
 import { toast } from "sonner";
 import { PermissionGate } from "@/components/PermissionGate";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface MemberDetail {
   id: string;
@@ -91,8 +92,17 @@ function getInitials(name: string) {
   return name.split(" ").filter(Boolean).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
 }
 
+function maskCpfSimple(cpf: string | null | undefined): string {
+  if (!cpf) return "—";
+  const digits = cpf.replace(/\D/g, "");
+  if (digits.length !== 11) return "•••.•••.•••-••";
+  return `•••.${digits.slice(3, 6)}.•••-••`;
+}
+
 export function FinanceiroIrmao() {
   const { config: lodgeConfig } = useLodgeConfig();
+  const { hasPermission } = useAuth();
+  const canViewCpf = hasPermission("secretaria", "write");
   const [members, setMembers] = useState<MemberDetail[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
   const [selectedId, setSelectedId] = useState<string>("");
@@ -244,7 +254,7 @@ export function FinanceiroIrmao() {
                     <Badge variant="outline" className={cn("text-[10px] px-2 py-0.5", statusBadge[selected.status])}>{statusLabels[selected.status] || selected.status}</Badge>
                   </div>
                   <div className="flex flex-wrap gap-x-6 gap-y-1 mt-2 text-xs text-muted-foreground">
-                    <span>CPF: <span className="text-foreground font-medium">{selected.cpf}</span></span>
+                    <span>CPF: <span className="text-foreground font-medium">{canViewCpf ? (selected.cpf || "—") : maskCpfSimple(selected.cpf)}</span></span>
                     <span>CIM: <span className="text-foreground font-medium">{selected.cim}</span></span>
                     {selected.email && <span>Email: <span className="text-foreground font-medium">{selected.email}</span></span>}
                     {selected.phone && <span>Tel: <span className="text-foreground font-medium">{selected.phone}</span></span>}

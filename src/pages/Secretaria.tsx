@@ -3,6 +3,7 @@ import { Users, DollarSign, ShieldCheck } from "lucide-react";
 import { CadastroIrmaos } from "@/components/secretaria/CadastroIrmaos";
 import { FinanceiroIrmao } from "@/components/secretaria/FinanceiroIrmao";
 import { IsencaoIrmao } from "@/components/secretaria/IsencaoIrmao";
+import { PermissionGate } from "@/components/PermissionGate";
 
 const Secretaria = () => {
   return (
