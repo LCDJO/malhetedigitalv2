@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { User, Users, Receipt, ChevronsUpDown, Check, Loader2, Wallet, GraduationCap, CalendarDays } from "lucide-react";
+import { User, Users, Receipt, ChevronsUpDown, Check, Loader2, Wallet, GraduationCap, CalendarDays, TrendingDown, TrendingUp, Scale, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { LancamentoIndividual } from "@/components/tesouraria/LancamentoIndividual";
@@ -29,6 +29,7 @@ const Tesouraria = () => {
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [comboOpen, setComboOpen] = useState(false);
   const [loadingPanel, setLoadingPanel] = useState(false);
+  const [financeiro, setFinanceiro] = useState<{ debitos: number; creditos: number } | null>(null);
 
   const fetchMembers = useCallback(async () => {
     setLoadingMembers(true);
@@ -45,12 +46,34 @@ const Tesouraria = () => {
 
   const selectedMember = members.find((m) => m.id === selectedMemberId);
 
+  const fetchFinanceiro = useCallback(async (memberId: string) => {
+    const { data } = await supabase
+      .from("member_transactions")
+      .select("tipo, valor, status")
+      .eq("member_id", memberId);
+    
+    if (data) {
+      let debitos = 0;
+      let creditos = 0;
+      for (const t of data) {
+        if (t.status === "em aberto") {
+          debitos += Number(t.valor);
+        } else {
+          creditos += Number(t.valor);
+        }
+      }
+      setFinanceiro({ debitos, creditos });
+    } else {
+      setFinanceiro({ debitos: 0, creditos: 0 });
+    }
+  }, []);
+
   const handleSelect = (id: string) => {
     setSelectedMemberId(id);
     setComboOpen(false);
     setLoadingPanel(true);
-    // Simulate loading for panel transition
-    setTimeout(() => setLoadingPanel(false), 600);
+    setFinanceiro(null);
+    fetchFinanceiro(id).finally(() => setLoadingPanel(false));
   };
 
   const formatCpfPreview = (cpf: string | null) => {
@@ -185,6 +208,64 @@ const Tesouraria = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* KPIs financeiros */}
+            {financeiro && (() => {
+              const saldo = financeiro.creditos - financeiro.debitos;
+              const adimplente = financeiro.debitos === 0;
+              const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+              return (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <Card>
+                    <CardContent className="flex items-center gap-3 p-4">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-destructive/10">
+                        <TrendingDown className="h-5 w-5 text-destructive" />
+                      </div>
+                      <div>
+                        <p className="text-xl font-bold text-destructive">{fmt(financeiro.debitos)}</p>
+                        <p className="text-xs text-muted-foreground">Total de Débitos</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="flex items-center gap-3 p-4">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10">
+                        <TrendingUp className="h-5 w-5 text-success" />
+                      </div>
+                      <div>
+                        <p className="text-xl font-bold text-success">{fmt(financeiro.creditos)}</p>
+                        <p className="text-xs text-muted-foreground">Total de Créditos</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className={saldo < 0 ? "border-destructive/30 bg-destructive/5" : ""}>
+                    <CardContent className="flex items-center gap-3 p-4">
+                      <div className={cn("flex h-10 w-10 items-center justify-center rounded-lg", saldo < 0 ? "bg-destructive/10" : "bg-primary/10")}>
+                        <Scale className={cn("h-5 w-5", saldo < 0 ? "text-destructive" : "text-primary")} />
+                      </div>
+                      <div>
+                        <p className={cn("text-xl font-bold", saldo < 0 ? "text-destructive" : "text-foreground")}>{fmt(saldo)}</p>
+                        <p className="text-xs text-muted-foreground">Saldo Atual</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="flex items-center gap-3 p-4">
+                      <div className={cn("flex h-10 w-10 items-center justify-center rounded-lg", adimplente ? "bg-success/10" : "bg-destructive/10")}>
+                        <ShieldCheck className={cn("h-5 w-5", adimplente ? "text-success" : "text-destructive")} />
+                      </div>
+                      <div>
+                        <p className={cn("text-base font-bold", adimplente ? "text-success" : "text-destructive")}>
+                          {adimplente ? "Adimplente" : "Inadimplente"}
+                        </p>
+                        <p className="text-xs text-muted-foreground">Situação Financeira</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              );
+            })()}
 
             <Tabs defaultValue="individual" className="space-y-4">
           <TabsList className="bg-muted/60">
