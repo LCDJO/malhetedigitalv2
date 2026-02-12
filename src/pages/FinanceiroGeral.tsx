@@ -24,6 +24,8 @@ import {
   ChevronRight,
   ChevronDown,
   FolderOpen,
+  ArrowUpDown,
+  Filter,
 } from "lucide-react";
 
 interface Transaction {
@@ -35,6 +37,10 @@ interface Transaction {
   status: string;
   member_id: string;
   member_name?: string;
+  conta_plano_id: string | null;
+  conta_nome?: string;
+  created_by: string | null;
+  created_by_name?: string;
 }
 
 interface ContaPlano {
@@ -95,6 +101,9 @@ const FinanceiroGeral = () => {
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [planoContas, setPlanoContas] = useState<ContaPlano[]>([]);
+  const [filterTipo, setFilterTipo] = useState<string>("todos");
+  const [filterConta, setFilterConta] = useState<string>("todas");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   const dateRange = useMemo(() => {
     if (preset === "personalizado") return { from: customFrom, to: customTo };
@@ -109,7 +118,7 @@ const FinanceiroGeral = () => {
     const [txResult, contasResult] = await Promise.all([
       supabase
         .from("member_transactions")
-        .select("id, data, tipo, descricao, valor, status, member_id")
+        .select("id, data, tipo, descricao, valor, status, member_id, conta_plano_id, created_by")
         .gte("data", fromStr)
         .lte("data", toStr)
         .order("data", { ascending: true }),
@@ -120,16 +129,30 @@ const FinanceiroGeral = () => {
         .order("codigo", { ascending: true }),
     ]);
 
-    setPlanoContas(contasResult.data ?? []);
+    const contasData = contasResult.data ?? [];
+    setPlanoContas(contasData);
+    const contaMap = new Map(contasData.map((c) => [c.id, c.nome]));
 
     if (txResult.data) {
       const memberIds = [...new Set(txResult.data.map((t) => t.member_id))];
-      const { data: members } = await supabase
-        .from("members")
-        .select("id, full_name")
-        .in("id", memberIds);
-      const nameMap = new Map(members?.map((m) => [m.id, m.full_name]) ?? []);
-      setTransactions(txResult.data.map((t) => ({ ...t, member_name: nameMap.get(t.member_id) ?? "—" })));
+      const createdByIds = [...new Set(txResult.data.map((t) => t.created_by).filter(Boolean))] as string[];
+      
+      const [membersRes, profilesRes] = await Promise.all([
+        supabase.from("members").select("id, full_name").in("id", memberIds),
+        createdByIds.length > 0
+          ? supabase.from("profiles").select("id, full_name").in("id", createdByIds)
+          : Promise.resolve({ data: [] as { id: string; full_name: string }[] }),
+      ]);
+
+      const nameMap = new Map(membersRes.data?.map((m) => [m.id, m.full_name]) ?? []);
+      const profileMap = new Map(profilesRes.data?.map((p) => [p.id, p.full_name]) ?? []);
+
+      setTransactions(txResult.data.map((t) => ({
+        ...t,
+        member_name: nameMap.get(t.member_id) ?? "—",
+        conta_nome: t.conta_plano_id ? contaMap.get(t.conta_plano_id) ?? "—" : "—",
+        created_by_name: t.created_by ? profileMap.get(t.created_by) ?? "—" : "—",
+      })));
     }
     setLoading(false);
   }, [dateRange]);
@@ -150,6 +173,25 @@ const FinanceiroGeral = () => {
     const resultado = receitas - despesas;
     return { receitas, despesas, resultado };
   }, [transactions]);
+
+  // Filtered and sorted transactions for Lançamentos tab
+  const filteredTransactions = useMemo(() => {
+    let list = [...transactions];
+    if (filterTipo !== "todos") {
+      list = list.filter((t) => (filterTipo === "receita" ? t.status === "pago" : t.status === "em aberto"));
+    }
+    if (filterConta !== "todas") {
+      list = list.filter((t) => t.conta_plano_id === filterConta);
+    }
+    list.sort((a, b) => sortDir === "asc" ? a.data.localeCompare(b.data) : b.data.localeCompare(a.data));
+    return list;
+  }, [transactions, filterTipo, filterConta, sortDir]);
+
+  // Contas used in transactions for filter dropdown
+  const contasEmUso = useMemo(() => {
+    const ids = new Set(transactions.map((t) => t.conta_plano_id).filter(Boolean));
+    return planoContas.filter((c) => ids.has(c.id));
+  }, [transactions, planoContas]);
 
   // Cumulative balance for demonstrativo
   const transactionsWithSaldo = useMemo(() => {
@@ -405,7 +447,38 @@ const FinanceiroGeral = () => {
             <TabsContent value="lancamentos">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base font-sans font-semibold">Lançamentos — {periodLabel}</CardTitle>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <CardTitle className="text-base font-sans font-semibold">Lançamentos — {periodLabel}</CardTitle>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Select value={filterTipo} onValueChange={setFilterTipo}>
+                        <SelectTrigger className="w-36 h-8 text-xs">
+                          <Filter className="h-3 w-3 mr-1" />
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="todos">Todos os tipos</SelectItem>
+                          <SelectItem value="receita">Receita</SelectItem>
+                          <SelectItem value="despesa">Despesa</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Select value={filterConta} onValueChange={setFilterConta}>
+                        <SelectTrigger className="w-44 h-8 text-xs">
+                          <Filter className="h-3 w-3 mr-1" />
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="todas">Todas as contas</SelectItem>
+                          {contasEmUso.map((c) => (
+                            <SelectItem key={c.id} value={c.id}>{c.codigo} — {c.nome}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button variant="ghost" size="sm" className="h-8 gap-1 text-xs" onClick={() => setSortDir((d) => d === "asc" ? "desc" : "asc")}>
+                        <ArrowUpDown className="h-3 w-3" />
+                        {sortDir === "asc" ? "Mais antigos" : "Mais recentes"}
+                      </Button>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="rounded-md border">
@@ -413,42 +486,36 @@ const FinanceiroGeral = () => {
                       <TableHeader>
                         <TableRow>
                           <TableHead>Data</TableHead>
-                          <TableHead>Obreiro</TableHead>
                           <TableHead>Tipo</TableHead>
-                          <TableHead>Categoria</TableHead>
+                          <TableHead>Conta</TableHead>
                           <TableHead>Descrição</TableHead>
                           <TableHead className="text-right">Valor</TableHead>
-                          <TableHead>Situação</TableHead>
+                          <TableHead>Usuário</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {transactions.length === 0 ? (
+                        {filteredTransactions.length === 0 ? (
                           <TableRow>
-                            <TableCell colSpan={7} className="text-center text-muted-foreground py-10">
+                            <TableCell colSpan={6} className="text-center text-muted-foreground py-10">
                               Nenhum lançamento encontrado no período.
                             </TableCell>
                           </TableRow>
-                        ) : transactions.map((t) => {
+                        ) : filteredTransactions.map((t) => {
                           const isDebito = t.status === "em aberto";
                           return (
                             <TableRow key={t.id}>
                               <TableCell className="text-sm">{format(new Date(t.data), "dd/MM/yyyy")}</TableCell>
-                              <TableCell className="text-sm font-medium">{t.member_name}</TableCell>
                               <TableCell>
                                 <Badge variant="outline" className={cn("text-[10px]", isDebito ? "text-destructive border-destructive/30" : "text-success border-success/30")}>
-                                  {isDebito ? "Débito" : "Crédito"}
+                                  {isDebito ? "Despesa" : "Receita"}
                                 </Badge>
                               </TableCell>
-                              <TableCell className="text-sm text-muted-foreground">{tipoLabels[t.tipo] ?? t.tipo}</TableCell>
+                              <TableCell className="text-sm text-muted-foreground">{t.conta_nome}</TableCell>
                               <TableCell className="text-sm text-muted-foreground">{t.descricao || "—"}</TableCell>
                               <TableCell className={cn("text-right text-sm font-medium", isDebito ? "text-destructive" : "text-success")}>
                                 {isDebito ? "−" : "+"} {fmt(Number(t.valor))}
                               </TableCell>
-                              <TableCell>
-                                <Badge variant="outline" className={cn("text-[10px]", t.status === "pago" ? "text-success border-success/30" : "text-warning border-warning/30")}>
-                                  {t.status === "pago" ? "Pago" : "Em Aberto"}
-                                </Badge>
-                              </TableCell>
+                              <TableCell className="text-sm text-muted-foreground">{t.created_by_name}</TableCell>
                             </TableRow>
                           );
                         })}
