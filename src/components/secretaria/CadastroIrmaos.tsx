@@ -102,6 +102,13 @@ function getInitials(name: string) {
   return name.split(" ").filter(Boolean).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
 }
 
+function maskCpf(cpf: string | null | undefined): string {
+  if (!cpf) return "—";
+  const digits = cpf.replace(/\D/g, "");
+  if (digits.length !== 11) return "•••.•••.•••-••";
+  return `•••.${digits.slice(3, 6)}.•••-••`;
+}
+
 const emptyForm = {
   full_name: "", cpf: "", cim: "", email: "", phone: "",
   birth_date: undefined as Date | undefined,
@@ -365,7 +372,7 @@ export function CadastroIrmaos() {
                             </Avatar>
                           </TableCell>
                           <TableCell className="font-medium">{m.full_name}</TableCell>
-                          <TableCell className="text-muted-foreground text-sm">{m.cpf}</TableCell>
+                          <TableCell className="text-muted-foreground text-sm">{hasPermission("secretaria", "write") ? (m.cpf || "—") : maskCpf(m.cpf)}</TableCell>
                           <TableCell className="text-muted-foreground text-sm">{m.cim}</TableCell>
                           <TableCell>
                             <div className="flex items-center gap-1">
@@ -561,7 +568,7 @@ export function CadastroIrmaos() {
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="bg-muted/50 rounded-lg p-3"><p className="text-muted-foreground text-xs">CPF</p><p className="font-medium">{viewMember.cpf}</p></div>
+                <div className="bg-muted/50 rounded-lg p-3"><p className="text-muted-foreground text-xs">CPF</p><p className="font-medium">{hasPermission("secretaria", "write") ? (viewMember.cpf || "—") : maskCpf(viewMember.cpf)}</p></div>
                 <div className="bg-muted/50 rounded-lg p-3"><p className="text-muted-foreground text-xs">CIM</p><p className="font-medium">{viewMember.cim}</p></div>
                 {viewMember.email && <div className="bg-muted/50 rounded-lg p-3 col-span-2"><p className="text-muted-foreground text-xs">Email</p><p className="font-medium">{viewMember.email}</p></div>}
                 {viewMember.phone && <div className="bg-muted/50 rounded-lg p-3"><p className="text-muted-foreground text-xs">Telefone</p><p className="font-medium">{viewMember.phone}</p></div>}
