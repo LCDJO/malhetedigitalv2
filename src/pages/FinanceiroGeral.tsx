@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CancelarLancamento } from "@/components/tesouraria/CancelarLancamento";
 import { PermissionGate } from "@/components/PermissionGate";
+import { DemonstrativoTab } from "@/components/financeiro/DemonstrativoTab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,9 +24,6 @@ import {
   FileText,
   BarChart3,
   Loader2,
-  ChevronRight,
-  ChevronDown,
-  FolderOpen,
   ArrowUpDown,
   Filter,
 } from "lucide-react";
@@ -555,112 +553,11 @@ const FinanceiroGeral = () => {
 
             {/* Demonstrativo */}
             <TabsContent value="demonstrativo">
-              <div className="space-y-6">
-                {/* Consolidated by Plano de Contas */}
-                {flatConsolidado.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base font-sans font-semibold">Demonstrativo Consolidado — {periodLabel}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-0.5">
-                        {flatConsolidado.map((node) => {
-                          const hasChildren = node.children.length > 0;
-                          const isReceita = node.tipo === "receita";
-                          return (
-                            <div
-                              key={node.id}
-                              className={cn(
-                                "flex items-center gap-2 rounded-md px-3 py-2 transition-colors",
-                                node.depth === 0 && "bg-muted/40 font-semibold",
-                                hasChildren && node.depth > 0 && "bg-muted/20"
-                              )}
-                              style={{ paddingLeft: `${node.depth * 24 + 12}px` }}
-                            >
-                              {hasChildren ? (
-                                <FolderOpen className={cn("h-4 w-4 shrink-0", isReceita ? "text-success" : "text-destructive")} />
-                              ) : (
-                                <ChevronRight className={cn("h-3.5 w-3.5 shrink-0", isReceita ? "text-success/60" : "text-destructive/60")} />
-                              )}
-                              <span className="text-xs font-mono text-muted-foreground w-16 shrink-0">{node.codigo}</span>
-                              <span className={cn("text-sm flex-1", hasChildren ? "font-semibold" : "font-medium")}>{node.nome}</span>
-                              <Badge variant="outline" className={cn("text-[9px] shrink-0", isReceita ? "text-success border-success/30" : "text-destructive border-destructive/30")}>
-                                {isReceita ? "Receita" : "Despesa"}
-                              </Badge>
-                              <span className={cn("text-sm font-bold w-32 text-right shrink-0", node.total > 0 ? (isReceita ? "text-success" : "text-destructive") : "text-muted-foreground")}>
-                                {fmt(node.total)}
-                              </span>
-                            </div>
-                          );
-                        })}
-                        {/* Resultado */}
-                        <div className="flex items-center gap-2 rounded-md px-3 py-2 bg-muted/60 mt-2 border-t">
-                          <Scale className={cn("h-4 w-4 shrink-0", kpis.resultado >= 0 ? "text-success" : "text-destructive")} />
-                          <span className="text-sm font-bold flex-1">Resultado do Período</span>
-                          <Badge variant="outline" className={cn("text-[9px]", kpis.resultado >= 0 ? "text-success border-success/30" : "text-destructive border-destructive/30")}>
-                            {kpis.resultado >= 0 ? "Superávit" : "Déficit"}
-                          </Badge>
-                          <span className={cn("text-sm font-bold w-32 text-right", kpis.resultado >= 0 ? "text-success" : "text-destructive")}>
-                            {fmt(kpis.resultado)}
-                          </span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Detailed table */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base font-sans font-semibold">Movimentações Detalhadas — {periodLabel}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="rounded-md border">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Data</TableHead>
-                            <TableHead>Obreiro</TableHead>
-                            <TableHead>Tipo</TableHead>
-                            <TableHead>Descrição</TableHead>
-                            <TableHead className="text-right">Valor</TableHead>
-                            <TableHead className="text-right">Saldo Acumulado</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {transactionsWithSaldo.length === 0 ? (
-                            <TableRow>
-                              <TableCell colSpan={6} className="text-center text-muted-foreground py-10">
-                                Nenhuma movimentação no período.
-                              </TableCell>
-                            </TableRow>
-                          ) : transactionsWithSaldo.map((t) => {
-                            const isDebito = t.status === "em aberto";
-                            return (
-                              <TableRow key={t.id}>
-                                <TableCell className="text-sm">{format(new Date(t.data), "dd/MM/yyyy")}</TableCell>
-                                <TableCell className="text-sm font-medium">{t.member_name}</TableCell>
-                                <TableCell>
-                                  <Badge variant="outline" className={cn("text-[10px]", isDebito ? "text-destructive border-destructive/30" : "text-success border-success/30")}>
-                                    {isDebito ? "Débito" : "Crédito"}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell className="text-sm text-muted-foreground">{t.descricao || "—"}</TableCell>
-                                <TableCell className={cn("text-right text-sm font-medium", isDebito ? "text-destructive" : "text-success")}>
-                                  {isDebito ? "−" : "+"} {fmt(Number(t.valor))}
-                                </TableCell>
-                                <TableCell className={cn("text-right text-sm font-semibold", t.saldoAcumulado < 0 ? "text-destructive" : "text-foreground")}>
-                                  {fmt(t.saldoAcumulado)}
-                                </TableCell>
-                              </TableRow>
-                            );
-                          })}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+              <DemonstrativoTab
+                periodLabel={periodLabel}
+                kpis={kpis}
+                flatConsolidado={flatConsolidado}
+              />
             </TabsContent>
 
             {/* Fluxo de Caixa */}
