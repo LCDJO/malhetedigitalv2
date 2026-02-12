@@ -14,6 +14,7 @@ import { LancamentoIndividual } from "@/components/tesouraria/LancamentoIndividu
 import { LancamentoLote } from "@/components/tesouraria/LancamentoLote";
 import { TaxasMaconicas } from "@/components/tesouraria/TaxasMaconicas";
 import { NovoDebito } from "@/components/tesouraria/NovoDebito";
+import { NovoCredito } from "@/components/tesouraria/NovoCredito";
 
 interface MemberOption {
   id: string;
@@ -354,6 +355,7 @@ const Tesouraria = () => {
             </Card>
 
             <NovoDebito memberId={selectedMemberId} memberName={selectedMember.full_name} onDebitoSaved={refreshFinanceiro} />
+            <NovoCredito memberId={selectedMemberId} memberName={selectedMember.full_name} onCreditoSaved={refreshFinanceiro} />
 
             <Tabs defaultValue="individual" className="space-y-4">
           <TabsList className="bg-muted/60">
