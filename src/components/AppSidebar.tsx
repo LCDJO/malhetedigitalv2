@@ -9,6 +9,7 @@ import {
   FileBarChart,
   ShieldAlert,
   Scale,
+  ClipboardCheck,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth, roleLabels } from "@/contexts/AuthContext";
@@ -39,6 +40,7 @@ const menuItems = [
   { title: "Log de Auditoria", url: "/log-auditoria", icon: ScrollText, module: "configuracoes" },
   { title: "Incidentes", url: "/incidentes", icon: ShieldAlert, module: "configuracoes" },
   { title: "Termos e LGPD", url: "/gestao-termos", icon: Scale, module: "configuracoes" },
+  { title: "Controle de Aceites", url: "/controle-aceites", icon: ClipboardCheck, module: "configuracoes" },
 ];
 
 export function AppSidebar() {
