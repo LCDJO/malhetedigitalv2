@@ -91,6 +91,9 @@ const FinanceiroGeral = () => {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [cancelTarget, setCancelTarget] = useState<Transaction | null>(null);
   const [cancelOpen, setCancelOpen] = useState(false);
+  const [serverKpis, setServerKpis] = useState<{ receitas: number; despesas: number; total: number } | null>(null);
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 50;
 
   const dateRange = useMemo(() => {
     if (preset === "mes") {
@@ -109,19 +112,32 @@ const FinanceiroGeral = () => {
     const fromStr = format(dateRange.from, "yyyy-MM-dd");
     const toStr = format(dateRange.to, "yyyy-MM-dd");
 
-    const [txResult, contasResult] = await Promise.all([
+    // Fetch KPIs via server-side aggregate + transactions + contas in parallel
+    const [kpiResult, txResult, contasResult] = await Promise.all([
+      supabase.rpc("financial_kpis", { _from: fromStr, _to: toStr }),
       supabase
         .from("member_transactions")
         .select("id, data, tipo, descricao, valor, status, member_id, conta_plano_id, created_by")
         .gte("data", fromStr)
         .lte("data", toStr)
-        .order("data", { ascending: true }),
+        .order("data", { ascending: true })
+        .limit(1000),
       supabase
         .from("plano_contas")
         .select("id, codigo, nome, tipo, conta_pai_id, status")
         .eq("status", "ativo")
         .order("codigo", { ascending: true }),
     ]);
+
+    // Store server-side KPIs
+    if (kpiResult.data && kpiResult.data.length > 0) {
+      const k = kpiResult.data[0];
+      setServerKpis({
+        receitas: Number(k.total_receitas),
+        despesas: Number(k.total_despesas),
+        total: Number(k.total_transacoes),
+      });
+    }
 
     const contasData = contasResult.data ?? [];
     setPlanoContas(contasData);
@@ -132,7 +148,9 @@ const FinanceiroGeral = () => {
       const createdByIds = [...new Set(txResult.data.map((t) => t.created_by).filter(Boolean))] as string[];
       
       const [membersRes, profilesRes] = await Promise.all([
-        supabase.from("members").select("id, full_name").in("id", memberIds),
+        memberIds.length > 0
+          ? supabase.from("members").select("id, full_name").in("id", memberIds)
+          : Promise.resolve({ data: [] as { id: string; full_name: string }[] }),
         createdByIds.length > 0
           ? supabase.from("profiles").select("id, full_name").in("id", createdByIds)
           : Promise.resolve({ data: [] as { id: string; full_name: string }[] }),
@@ -153,20 +171,21 @@ const FinanceiroGeral = () => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // KPI calculations
+  // KPI calculations — prefer server-side aggregates (accurate even with row limit)
   const kpis = useMemo(() => {
+    if (serverKpis) {
+      const resultado = serverKpis.receitas - serverKpis.despesas;
+      return { receitas: serverKpis.receitas, despesas: serverKpis.despesas, resultado };
+    }
+    // Fallback: client-side from loaded transactions
     let receitas = 0;
     let despesas = 0;
     for (const t of transactions) {
-      if (t.status === "pago") {
-        receitas += Number(t.valor);
-      } else {
-        despesas += Number(t.valor);
-      }
+      if (t.status === "pago") receitas += Number(t.valor);
+      else despesas += Number(t.valor);
     }
-    const resultado = receitas - despesas;
-    return { receitas, despesas, resultado };
-  }, [transactions]);
+    return { receitas, despesas, resultado: receitas - despesas };
+  }, [serverKpis, transactions]);
 
   // Filtered and sorted transactions for Lançamentos tab
   const filteredTransactions = useMemo(() => {
@@ -180,6 +199,15 @@ const FinanceiroGeral = () => {
     list.sort((a, b) => sortDir === "asc" ? a.data.localeCompare(b.data) : b.data.localeCompare(a.data));
     return list;
   }, [transactions, filterTipo, filterConta, sortDir]);
+
+  // Reset page when filters change
+  useEffect(() => { setPage(0); }, [filterTipo, filterConta, sortDir, dateRange]);
+
+  const totalPages = Math.ceil(filteredTransactions.length / PAGE_SIZE);
+  const paginatedTransactions = useMemo(
+    () => filteredTransactions.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE),
+    [filteredTransactions, page, PAGE_SIZE]
+  );
 
   // Contas used in transactions for filter dropdown
   const contasEmUso = useMemo(() => {
@@ -527,7 +555,7 @@ const FinanceiroGeral = () => {
                               Nenhum lançamento encontrado no período.
                             </TableCell>
                           </TableRow>
-                        ) : filteredTransactions.map((t) => {
+                        ) : paginatedTransactions.map((t) => {
                           const isDebito = t.status === "em aberto";
                           const isCancelado = t.descricao.startsWith("[CANCELADO]") || t.descricao.startsWith("[CANCELAMENTO]");
                           return (
@@ -564,6 +592,22 @@ const FinanceiroGeral = () => {
                       </TableBody>
                     </Table>
                   </div>
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-between pt-4">
+                      <p className="text-xs text-muted-foreground">
+                        {filteredTransactions.length} lançamento(s) — Página {page + 1} de {totalPages}
+                      </p>
+                      <div className="flex gap-1">
+                        <Button variant="outline" size="sm" className="h-7 text-xs" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
+                          Anterior
+                        </Button>
+                        <Button variant="outline" size="sm" className="h-7 text-xs" disabled={page >= totalPages - 1} onClick={() => setPage((p) => p + 1)}>
+                          Próximo
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
