@@ -2,6 +2,7 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth, roleLabels } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { ShieldAlert, ArrowLeft } from "lucide-react";
+import { AceiteTermos } from "@/components/AceiteTermos";
 
 interface Props {
   children: React.ReactNode;
@@ -9,7 +10,7 @@ interface Props {
 }
 
 export function ProtectedRoute({ children, module }: Props) {
-  const { user, role, loading, hasModuleAccess } = useAuth();
+  const { user, role, loading, hasModuleAccess, termsAccepted } = useAuth();
   const navigate = useNavigate();
 
   if (loading) {
@@ -22,6 +23,20 @@ export function ProtectedRoute({ children, module }: Props) {
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // Block access until terms are accepted
+  if (termsAccepted === false) {
+    return <AceiteTermos />;
+  }
+
+  // Still checking terms acceptance
+  if (termsAccepted === null) {
+    return (
+      <div className="flex items-center justify-center h-full py-20">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
   }
 
   if (module && !hasModuleAccess(module)) {

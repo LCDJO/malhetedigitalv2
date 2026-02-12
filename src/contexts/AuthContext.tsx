@@ -86,10 +86,12 @@ interface AuthContextValue {
   role: AppRole | null;
   isAdmin: boolean;
   loading: boolean;
+  termsAccepted: boolean | null; // null = still checking, true/false = resolved
   hasModuleAccess: (module: string) => boolean;
   hasPermission: (module: string, action: PermissionAction) => boolean;
   signOut: () => Promise<void>;
   refreshRole: () => Promise<void>;
+  acceptTerms: (termoId: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -106,6 +108,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<{ full_name: string; avatar_url: string | null } | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
   const [loading, setLoading] = useState(true);
+  const [termsAccepted, setTermsAccepted] = useState<boolean | null>(null);
+
+  const checkTermsAcceptance = useCallback(async (userId: string) => {
+    // Find the active term
+    const { data: activeTerm } = await supabase
+      .from("termos_uso")
+      .select("id")
+      .eq("ativo", true)
+      .order("data_publicacao", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (!activeTerm) {
+      // No active term exists — no blocking needed
+      setTermsAccepted(true);
+      return;
+    }
+
+    // Check if user has accepted this specific term
+    const { data: acceptance } = await supabase
+      .from("aceites_termos")
+      .select("id")
+      .eq("usuario_id", userId)
+      .eq("termo_id", activeTerm.id)
+      .limit(1)
+      .maybeSingle();
+
+    setTermsAccepted(!!acceptance);
+  }, []);
 
   const fetchProfileAndRole = useCallback(async (userId: string) => {
     // Fetch profile
@@ -140,10 +171,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (session?.user) {
         // Use setTimeout to prevent potential deadlock with Supabase client
-        setTimeout(() => fetchProfileAndRole(session.user.id), 0);
+        setTimeout(() => {
+          fetchProfileAndRole(session.user.id);
+          checkTermsAcceptance(session.user.id);
+        }, 0);
       } else {
         setProfile(null);
         setRole(null);
+        setTermsAccepted(null);
       }
       setLoading(false);
     });
@@ -154,12 +189,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
       if (session?.user) {
         fetchProfileAndRole(session.user.id);
+        checkTermsAcceptance(session.user.id);
       }
       setLoading(false);
     });
 
     return () => subscription.unsubscribe();
-  }, [fetchProfileAndRole]);
+  }, [fetchProfileAndRole, checkTermsAcceptance]);
 
   const isAdmin = role === "administrador" || role === "veneravel" || role === "secretario";
 
@@ -181,16 +217,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [role]
   );
 
+  const acceptTerms = useCallback(async (termoId: string): Promise<boolean> => {
+    if (!user) return false;
+    const { error } = await supabase.from("aceites_termos").insert({
+      usuario_id: user.id,
+      termo_id: termoId,
+    });
+    if (error) return false;
+    setTermsAccepted(true);
+    return true;
+  }, [user]);
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
     setProfile(null);
     setRole(null);
+    setTermsAccepted(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, role, isAdmin, loading, hasModuleAccess, hasPermission, signOut, refreshRole }}>
+    <AuthContext.Provider value={{ user, session, profile, role, isAdmin, loading, termsAccepted, hasModuleAccess, hasPermission, signOut, refreshRole, acceptTerms }}>
       {children}
     </AuthContext.Provider>
   );
