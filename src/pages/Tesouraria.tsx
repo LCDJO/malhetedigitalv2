@@ -43,7 +43,7 @@ const Tesouraria = () => {
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [comboOpen, setComboOpen] = useState(false);
   const [loadingPanel, setLoadingPanel] = useState(false);
-  const [financeiro, setFinanceiro] = useState<{ debitos: number; creditos: number } | null>(null);
+  const [financeiro, setFinanceiro] = useState<{ debitos: number; creditos: number; mesesAtraso: number } | null>(null);
   const [transactions, setTransactions] = useState<TransactionRow[]>([]);
 
   const fetchMembers = useCallback(async () => {
@@ -73,14 +73,20 @@ const Tesouraria = () => {
 
     let debitos = 0;
     let creditos = 0;
+    const now = new Date();
+    const mesesSet = new Set<string>();
     for (const t of rows) {
       if (t.status === "em aberto") {
         debitos += Number(t.valor);
+        const d = new Date(t.data);
+        if (d <= now) {
+          mesesSet.add(`${d.getFullYear()}-${d.getMonth()}`);
+        }
       } else {
         creditos += Number(t.valor);
       }
     }
-    setFinanceiro({ debitos, creditos });
+    setFinanceiro({ debitos, creditos, mesesAtraso: mesesSet.size });
   }, []);
 
   const handleSelect = (id: string) => {
@@ -232,6 +238,13 @@ const Tesouraria = () => {
             {financeiro && (() => {
               const saldo = financeiro.creditos - financeiro.debitos;
               const adimplente = financeiro.debitos === 0;
+              const mesesAtraso = financeiro.mesesAtraso;
+              // Verde: sem débitos | Amarelo: 1-2 meses | Vermelho: 3+
+              const situacao = adimplente
+                ? { label: "Adimplente", color: "text-success", bg: "bg-success/10", border: "", dot: "bg-success" }
+                : mesesAtraso <= 2
+                  ? { label: "Atenção", color: "text-warning", bg: "bg-warning/10", border: "border-warning/30 bg-warning/5", dot: "bg-warning" }
+                  : { label: "Inadimplente", color: "text-destructive", bg: "bg-destructive/10", border: "border-destructive/30 bg-destructive/5", dot: "bg-destructive" };
               const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
               return (
@@ -269,16 +282,19 @@ const Tesouraria = () => {
                       </div>
                     </CardContent>
                   </Card>
-                  <Card>
+                  <Card className={situacao.border}>
                     <CardContent className="flex items-center gap-3 p-4">
-                      <div className={cn("flex h-10 w-10 items-center justify-center rounded-lg", adimplente ? "bg-success/10" : "bg-destructive/10")}>
-                        <ShieldCheck className={cn("h-5 w-5", adimplente ? "text-success" : "text-destructive")} />
+                      <div className={cn("flex h-10 w-10 items-center justify-center rounded-lg", situacao.bg)}>
+                        <ShieldCheck className={cn("h-5 w-5", situacao.color)} />
                       </div>
                       <div>
-                        <p className={cn("text-base font-bold", adimplente ? "text-success" : "text-destructive")}>
-                          {adimplente ? "Adimplente" : "Inadimplente"}
+                        <div className="flex items-center gap-2">
+                          <span className={cn("inline-block h-2.5 w-2.5 rounded-full", situacao.dot)} />
+                          <p className={cn("text-base font-bold", situacao.color)}>{situacao.label}</p>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {adimplente ? "Sem débitos em aberto" : `${mesesAtraso} ${mesesAtraso === 1 ? "mês" : "meses"} em atraso`}
                         </p>
-                        <p className="text-xs text-muted-foreground">Situação Financeira</p>
                       </div>
                     </CardContent>
                   </Card>
