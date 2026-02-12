@@ -26,6 +26,7 @@ import {
   ArrowUpDown,
   Filter,
 } from "lucide-react";
+import { NovoLancamentoLoja } from "@/components/tesouraria/NovoLancamentoLoja";
 
 interface Transaction {
   id: string;
@@ -350,6 +351,12 @@ const FinanceiroGeral = ({ embedded = false }: FinanceiroGeralProps) => {
           <p className="text-sm text-muted-foreground mt-1">Visão consolidada das finanças da Loja</p>
         </div>
       )}
+
+      {/* Action buttons */}
+      <div className="flex flex-wrap gap-2">
+        <NovoLancamentoLoja tipo="receita" onSaved={fetchData} />
+        <NovoLancamentoLoja tipo="despesa" onSaved={fetchData} />
+      </div>
 
       {/* Period filter */}
       <Card>
