@@ -76,7 +76,11 @@ const meses = [
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-const FinanceiroGeral = () => {
+interface FinanceiroGeralProps {
+  embedded?: boolean;
+}
+
+const FinanceiroGeral = ({ embedded = false }: FinanceiroGeralProps) => {
   const now = new Date();
   const [preset, setPreset] = useState("mes");
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
@@ -339,11 +343,13 @@ const FinanceiroGeral = () => {
   }, [preset, selectedMonth, selectedYear, dateRange]);
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
-      <div>
-        <h1 className="text-2xl font-serif font-bold">Financeiro Geral</h1>
-        <p className="text-sm text-muted-foreground mt-1">Visão consolidada das finanças da Loja</p>
-      </div>
+    <div className={embedded ? "space-y-6" : "space-y-6 max-w-6xl mx-auto"}>
+      {!embedded && (
+        <div>
+          <h1 className="text-2xl font-serif font-bold">Financeiro Geral</h1>
+          <p className="text-sm text-muted-foreground mt-1">Visão consolidada das finanças da Loja</p>
+        </div>
+      )}
 
       {/* Period filter */}
       <Card>
