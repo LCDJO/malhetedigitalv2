@@ -665,57 +665,110 @@ const FinanceiroGeral = () => {
 
             {/* Fluxo de Caixa */}
             <TabsContent value="fluxo">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base font-sans font-semibold">Fluxo de Caixa Mensal — {periodLabel}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Mês</TableHead>
-                          <TableHead className="text-right">Receitas</TableHead>
-                          <TableHead className="text-right">Despesas</TableHead>
-                          <TableHead className="text-right">Resultado</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {fluxoMensal.length === 0 ? (
+              <div className="space-y-4">
+                {/* KPI resumo do fluxo */}
+                {(() => {
+                  const saldoFinal = transactionsWithSaldo.length > 0 ? transactionsWithSaldo[transactionsWithSaldo.length - 1].saldoAcumulado : 0;
+                  const saldoInicial = saldoFinal - kpis.receitas + kpis.despesas;
+                  return (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <Card>
+                        <CardContent className="flex items-center gap-3 p-4">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                            <Wallet className="h-5 w-5 text-primary" />
+                          </div>
+                          <div>
+                            <p className="text-xl font-bold">{fmt(saldoInicial)}</p>
+                            <p className="text-xs text-muted-foreground">Saldo Inicial</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="flex items-center gap-3 p-4">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10">
+                            <TrendingUp className="h-5 w-5 text-success" />
+                          </div>
+                          <div>
+                            <p className="text-xl font-bold text-success">{fmt(kpis.receitas)}</p>
+                            <p className="text-xs text-muted-foreground">Total Receitas</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="flex items-center gap-3 p-4">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-destructive/10">
+                            <TrendingDown className="h-5 w-5 text-destructive" />
+                          </div>
+                          <div>
+                            <p className="text-xl font-bold text-destructive">{fmt(kpis.despesas)}</p>
+                            <p className="text-xs text-muted-foreground">Total Despesas</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      <Card className={saldoFinal < 0 ? "border-destructive/30 bg-destructive/5" : ""}>
+                        <CardContent className="flex items-center gap-3 p-4">
+                          <div className={cn("flex h-10 w-10 items-center justify-center rounded-lg", saldoFinal >= 0 ? "bg-success/10" : "bg-destructive/10")}>
+                            <Scale className={cn("h-5 w-5", saldoFinal >= 0 ? "text-success" : "text-destructive")} />
+                          </div>
+                          <div>
+                            <p className={cn("text-xl font-bold", saldoFinal >= 0 ? "text-success" : "text-destructive")}>{fmt(saldoFinal)}</p>
+                            <p className="text-xs text-muted-foreground">Saldo Final</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  );
+                })()}
+
+                {/* Tabela cronológica com saldo acumulado */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base font-sans font-semibold">Fluxo de Caixa — {periodLabel}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="rounded-md border">
+                      <Table>
+                        <TableHeader>
                           <TableRow>
-                            <TableCell colSpan={4} className="text-center text-muted-foreground py-10">
-                              Nenhuma movimentação no período.
-                            </TableCell>
+                            <TableHead>Data</TableHead>
+                            <TableHead>Descrição</TableHead>
+                            <TableHead className="text-right">Entrada</TableHead>
+                            <TableHead className="text-right">Saída</TableHead>
+                            <TableHead className="text-right">Saldo Acumulado</TableHead>
                           </TableRow>
-                        ) : (
-                          <>
-                            {fluxoMensal.map((m) => {
-                              const [year, month] = m.mes.split("-");
-                              const monthLabel = format(new Date(Number(year), Number(month) - 1, 1), "MMMM yyyy", { locale: ptBR });
-                              return (
-                                <TableRow key={m.mes}>
-                                  <TableCell className="text-sm font-medium capitalize">{monthLabel}</TableCell>
-                                  <TableCell className="text-right text-sm text-success font-medium">{fmt(m.receitas)}</TableCell>
-                                  <TableCell className="text-right text-sm text-destructive font-medium">{fmt(m.despesas)}</TableCell>
-                                  <TableCell className={cn("text-right text-sm font-bold", m.resultado >= 0 ? "text-success" : "text-destructive")}>
-                                    {fmt(m.resultado)}
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            })}
-                            <TableRow className="bg-muted/40 font-semibold">
-                              <TableCell className="text-sm">Total</TableCell>
-                              <TableCell className="text-right text-sm text-success">{fmt(kpis.receitas)}</TableCell>
-                              <TableCell className="text-right text-sm text-destructive">{fmt(kpis.despesas)}</TableCell>
-                              <TableCell className={cn("text-right text-sm", kpis.resultado >= 0 ? "text-success" : "text-destructive")}>{fmt(kpis.resultado)}</TableCell>
+                        </TableHeader>
+                        <TableBody>
+                          {transactionsWithSaldo.length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={5} className="text-center text-muted-foreground py-10">
+                                Nenhuma movimentação no período.
+                              </TableCell>
                             </TableRow>
-                          </>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </CardContent>
-              </Card>
+                          ) : transactionsWithSaldo.map((t) => {
+                            const isReceita = t.status === "pago";
+                            const valor = Number(t.valor);
+                            return (
+                              <TableRow key={t.id}>
+                                <TableCell className="text-sm">{format(new Date(t.data), "dd/MM/yyyy")}</TableCell>
+                                <TableCell className="text-sm text-muted-foreground">{t.descricao || "—"}</TableCell>
+                                <TableCell className="text-right text-sm text-success font-medium">
+                                  {isReceita ? fmt(valor) : "—"}
+                                </TableCell>
+                                <TableCell className="text-right text-sm text-destructive font-medium">
+                                  {!isReceita ? fmt(valor) : "—"}
+                                </TableCell>
+                                <TableCell className={cn("text-right text-sm font-semibold", t.saldoAcumulado < 0 ? "text-destructive" : "text-foreground")}>
+                                  {fmt(t.saldoAcumulado)}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
           </Tabs>
         </>
