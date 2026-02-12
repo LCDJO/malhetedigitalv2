@@ -69,22 +69,29 @@ export function AceiteTermos() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-background p-4">
       <Card className="w-full max-w-2xl">
-        <CardHeader className="text-center space-y-2">
+        <CardHeader className="text-center space-y-3">
           <div className="flex justify-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-              <FileText className="h-7 w-7 text-primary" />
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-warning/10">
+              <ShieldCheck className="h-7 w-7 text-warning" />
             </div>
           </div>
-          <CardTitle className="font-serif text-xl">Termos de Uso</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Versão {term.versao} — Para acessar o sistema, é necessário ler e aceitar os termos abaixo.
-          </p>
+          <CardTitle className="font-serif text-xl">Aceite Obrigatório — Termos de Uso</CardTitle>
+          <div className="space-y-1">
+            <p className="text-sm text-muted-foreground">
+              Versão <span className="font-semibold text-foreground">{term.versao}</span>
+            </p>
+            <div className="rounded-md bg-warning/5 border border-warning/20 px-4 py-3 mt-2">
+              <p className="text-sm text-foreground leading-relaxed">
+                <strong>Atenção:</strong> Uma nova versão dos Termos de Uso foi publicada.
+                O acesso aos módulos do sistema está temporariamente bloqueado até que você leia e aceite
+                os termos abaixo, conforme exigido pela Lei Geral de Proteção de Dados (LGPD).
+              </p>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <ScrollArea className="h-[400px] rounded-md border p-4">
-            <div className="prose prose-sm max-w-none text-sm text-foreground whitespace-pre-wrap">
-              {term.conteudo}
-            </div>
+            <div className="prose prose-sm max-w-none text-sm text-foreground whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: term.conteudo }} />
           </ScrollArea>
 
           <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 border">
@@ -95,7 +102,7 @@ export function AceiteTermos() {
               className="mt-0.5"
             />
             <label htmlFor="aceite" className="text-sm cursor-pointer leading-relaxed">
-              Declaro que li integralmente os Termos de Uso acima e aceito todas as condições estabelecidas.
+              Declaro que li integralmente os Termos de Uso (versão {term.versao}) acima e aceito todas as condições estabelecidas.
             </label>
           </div>
 
