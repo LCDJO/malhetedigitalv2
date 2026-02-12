@@ -13,13 +13,11 @@ import { Calendar } from "@/components/ui/calendar";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { CalendarIcon, Check, ChevronsUpDown, Plus, RotateCcw, Trash2, Pencil, Loader2 } from "lucide-react";
+import { CalendarIcon, Check, ChevronsUpDown, Plus, RotateCcw, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { ConfirmSensitiveAction } from "@/components/ConfirmSensitiveAction";
 import { PermissionGate } from "@/components/PermissionGate";
 import { useAuditLog } from "@/hooks/useAuditLog";
-import { formatCurrency } from "@/components/dashboard/DashboardData";
 
 interface MemberOption {
   id: string;
@@ -28,13 +26,14 @@ interface MemberOption {
   degree: string;
 }
 
-interface Lancamento {
-  id: number;
-  irmao: string;
-  data: Date;
+interface TransactionRow {
+  id: string;
+  data: string;
   tipo: string;
-  valor: number;
   descricao: string;
+  valor: number;
+  status: string;
+  member_name?: string;
 }
 
 const tipoLabels: Record<string, string> = { mensalidade: "Mensalidade", avulso: "Valor Avulso", taxa: "Taxa" };
@@ -44,35 +43,32 @@ const tipoBadge: Record<string, string> = {
   taxa: "bg-warning/10 text-warning border-warning/20",
 };
 
-const emptyForm = { irmaoId: "", tipo: "", valor: "", descricao: "", data: new Date() };
+const emptyForm = { irmaoId: "", tipo: "", valor: "", descricao: "", data: new Date(), situacao: "em aberto" };
 
 interface LancamentoIndividualProps {
   onLancamentoSaved?: () => void;
 }
 
+function formatCurrency(v: number) {
+  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
 export function LancamentoIndividual({ onLancamentoSaved }: LancamentoIndividualProps = {}) {
-  const { hasPermission } = useAuth();
+  const { session } = useAuth();
   const { logAction } = useAuditLog();
   const { config: lodgeConfig } = useLodgeConfig();
   const [members, setMembers] = useState<MemberOption[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
-  const [historico, setHistorico] = useState<Lancamento[]>([]);
+  const [recentTx, setRecentTx] = useState<TransactionRow[]>([]);
   const [form, setForm] = useState(emptyForm);
+  const [saving, setSaving] = useState(false);
 
-  // Auto-fill valor when tipo changes to mensalidade
   useEffect(() => {
     if (form.tipo === "mensalidade" && !form.valor && lodgeConfig.mensalidade_padrao > 0) {
       setForm((f) => ({ ...f, valor: lodgeConfig.mensalidade_padrao.toFixed(2).replace(".", ",") }));
     }
   }, [form.tipo, lodgeConfig.mensalidade_padrao]);
   const [comboOpen, setComboOpen] = useState(false);
-
-  // Sensitive action state
-  const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
-  const [editTarget, setEditTarget] = useState<Lancamento | null>(null);
-
-  const canWrite = hasPermission("tesouraria", "write");
-  const canApprove = hasPermission("tesouraria", "approve");
 
   const fetchMembers = useCallback(async () => {
     setLoadingMembers(true);
@@ -85,13 +81,32 @@ export function LancamentoIndividual({ onLancamentoSaved }: LancamentoIndividual
     setLoadingMembers(false);
   }, []);
 
-  useEffect(() => { fetchMembers(); }, [fetchMembers]);
+  // Fetch recent transactions created in this session (last 20)
+  const fetchRecent = useCallback(async () => {
+    const { data } = await supabase
+      .from("member_transactions")
+      .select("id, data, tipo, descricao, valor, status, member_id")
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (data) {
+      // Enrich with member names
+      const memberIds = [...new Set(data.map((t) => t.member_id))];
+      const { data: membersData } = await supabase
+        .from("members")
+        .select("id, full_name")
+        .in("id", memberIds);
+      const nameMap = new Map(membersData?.map((m) => [m.id, m.full_name]) ?? []);
+      setRecentTx(data.map((t) => ({ ...t, member_name: nameMap.get(t.member_id) ?? "—" })));
+    }
+  }, []);
+
+  useEffect(() => { fetchMembers(); fetchRecent(); }, [fetchMembers, fetchRecent]);
 
   const selectedIrmao = members.find((m) => m.id === form.irmaoId);
 
   const resetForm = () => setForm(emptyForm);
 
-  const handleSalvar = () => {
+  const handleSalvar = async () => {
     if (!form.irmaoId) { toast.error("É obrigatório selecionar um irmão para o lançamento."); return; }
     if (!form.tipo) { toast.error("Selecione o tipo de lançamento (mensalidade, avulso ou taxa)."); return; }
     const v = parseFloat(form.valor.replace(",", ".")) || 0;
@@ -100,17 +115,34 @@ export function LancamentoIndividual({ onLancamentoSaved }: LancamentoIndividual
     const irmao = members.find((m) => m.id === form.irmaoId);
     if (!irmao) { toast.error("Irmão não encontrado."); return; }
 
-    const novo: Lancamento = {
-      id: Date.now(),
-      irmao: irmao.full_name,
-      data: form.data,
+    setSaving(true);
+    const { error } = await supabase.from("member_transactions").insert({
+      member_id: form.irmaoId,
       tipo: form.tipo,
-      valor: v,
       descricao: form.descricao.trim() || tipoLabels[form.tipo],
-    };
-    setHistorico((prev) => [novo, ...prev]);
-    resetForm();
+      valor: v,
+      data: format(form.data, "yyyy-MM-dd"),
+      status: form.situacao,
+      created_by: session?.user?.id,
+    });
+    setSaving(false);
+
+    if (error) {
+      toast.error("Erro ao registrar lançamento. Tente novamente.");
+      console.error(error);
+      return;
+    }
+
+    logAction({
+      action: form.situacao === "pago" ? "CREATE_CREDIT" : "CREATE_DEBIT",
+      targetTable: "member_transactions",
+      targetId: form.irmaoId,
+      details: { member: irmao.full_name, tipo: form.tipo, valor: v, situacao: form.situacao },
+    });
+
     toast.success(`Lançamento de ${formatCurrency(v)} registrado para ${irmao.full_name}.`);
+    resetForm();
+    fetchRecent();
     onLancamentoSaved?.();
   };
 
@@ -163,7 +195,7 @@ export function LancamentoIndividual({ onLancamentoSaved }: LancamentoIndividual
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-1.5">
               <Label>Tipo de lançamento *</Label>
               <Select value={form.tipo} onValueChange={(v) => setForm((f) => ({ ...f, tipo: v }))}>
@@ -193,6 +225,16 @@ export function LancamentoIndividual({ onLancamentoSaved }: LancamentoIndividual
                 </PopoverContent>
               </Popover>
             </div>
+            <div className="space-y-1.5">
+              <Label>Situação</Label>
+              <Select value={form.situacao} onValueChange={(v) => setForm((f) => ({ ...f, situacao: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="em aberto">Em Aberto (Débito)</SelectItem>
+                  <SelectItem value="pago">Pago (Crédito)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="space-y-1.5">
@@ -202,9 +244,9 @@ export function LancamentoIndividual({ onLancamentoSaved }: LancamentoIndividual
 
           <div className="flex gap-2 pt-2">
             <PermissionGate module="tesouraria" action="write">
-              <Button onClick={handleSalvar} className="gap-1.5">
-                <Plus className="h-4 w-4" />
-                Salvar Lançamento
+              <Button onClick={handleSalvar} disabled={saving} className="gap-1.5">
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                {saving ? "Salvando..." : "Salvar Lançamento"}
               </Button>
             </PermissionGate>
             <Button variant="outline" onClick={resetForm} className="gap-1.5">
@@ -218,7 +260,7 @@ export function LancamentoIndividual({ onLancamentoSaved }: LancamentoIndividual
       {/* Registros recentes */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base font-sans font-semibold">Registros Recentes</CardTitle>
+          <CardTitle className="text-base font-sans font-semibold">Lançamentos Recentes</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="rounded-md border">
@@ -230,54 +272,29 @@ export function LancamentoIndividual({ onLancamentoSaved }: LancamentoIndividual
                   <TableHead>Tipo</TableHead>
                   <TableHead className="text-right">Valor</TableHead>
                   <TableHead>Descrição</TableHead>
-                  {canWrite && <TableHead className="text-right">Ações</TableHead>}
+                  <TableHead>Situação</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {historico.length === 0 ? (
+                {recentTx.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={canWrite ? 6 : 5} className="text-center text-muted-foreground py-8">
-                      Nenhum lançamento registrado nesta sessão
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                      Nenhum lançamento recente encontrado.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  historico.map((l) => (
-                    <TableRow key={l.id}>
-                      <TableCell className="font-medium">{l.irmao}</TableCell>
-                      <TableCell>{format(l.data, "dd/MM/yyyy")}</TableCell>
-                      <TableCell><Badge variant="outline" className={tipoBadge[l.tipo]}>{tipoLabels[l.tipo]}</Badge></TableCell>
-                      <TableCell className="text-right font-medium">{formatCurrency(l.valor)}</TableCell>
-                      <TableCell className="text-muted-foreground">{l.descricao}</TableCell>
-                      {canWrite && (
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              title="Editar valor"
-                              onClick={() => {
-                                if (!canApprove) {
-                                  toast.error("Alteração de valores requer perfil com permissão de aprovação.");
-                                  return;
-                                }
-                                setEditTarget(l);
-                              }}
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-destructive hover:text-destructive"
-                              title="Excluir lançamento"
-                              onClick={() => setDeleteTarget(l.id)}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      )}
+                  recentTx.map((t) => (
+                    <TableRow key={t.id}>
+                      <TableCell className="font-medium">{t.member_name}</TableCell>
+                      <TableCell>{format(new Date(t.data), "dd/MM/yyyy")}</TableCell>
+                      <TableCell><Badge variant="outline" className={cn("text-[10px]", tipoBadge[t.tipo])}>{tipoLabels[t.tipo] ?? t.tipo}</Badge></TableCell>
+                      <TableCell className="text-right font-medium">{formatCurrency(Number(t.valor))}</TableCell>
+                      <TableCell className="text-muted-foreground">{t.descricao || "—"}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={cn("text-[10px]", t.status === "pago" ? "text-success border-success/30" : "text-warning border-warning/30")}>
+                          {t.status === "pago" ? "Pago" : "Em Aberto"}
+                        </Badge>
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
@@ -286,40 +303,6 @@ export function LancamentoIndividual({ onLancamentoSaved }: LancamentoIndividual
           </div>
         </CardContent>
       </Card>
-
-      {/* Confirmação de exclusão */}
-      <ConfirmSensitiveAction
-        open={deleteTarget !== null}
-        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
-        title="Excluir Lançamento"
-        description="Esta ação é irreversível. O lançamento será permanentemente removido do sistema. Deseja continuar?"
-        confirmLabel="Excluir Lançamento"
-        requireTypedConfirmation="EXCLUIR"
-        destructive
-        onConfirm={() => {
-          if (deleteTarget !== null) {
-            const entry = historico.find((l) => l.id === deleteTarget);
-            setHistorico((prev) => prev.filter((l) => l.id !== deleteTarget));
-            toast.success("Lançamento excluído com sucesso.");
-            logAction({ action: "DELETE_ENTRY", targetTable: "lancamentos", targetId: deleteTarget.toString(), details: { irmao: entry?.irmao, valor: entry?.valor } });
-            setDeleteTarget(null);
-          }
-        }}
-      />
-
-      {/* Confirmação de edição de valor */}
-      <ConfirmSensitiveAction
-        open={editTarget !== null}
-        onOpenChange={(open) => { if (!open) setEditTarget(null); }}
-        title="Alterar Valor Financeiro"
-        description={`Você está prestes a editar o lançamento de ${editTarget ? formatCurrency(editTarget.valor) : ""} para ${editTarget?.irmao}. Alterações em valores financeiros são auditadas. Deseja continuar?`}
-        confirmLabel="Confirmar Alteração"
-        requireTypedConfirmation="ALTERAR"
-        onConfirm={() => {
-          toast.success("Edição autorizada. Implemente o formulário de edição conforme necessário.");
-          setEditTarget(null);
-        }}
-      />
     </div>
   );
 }

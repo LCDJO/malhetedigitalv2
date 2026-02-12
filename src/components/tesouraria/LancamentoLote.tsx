@@ -39,12 +39,14 @@ export function LancamentoLote() {
   const [step, setStep] = useState<Step>("config");
   const [members, setMembers] = useState<MemberOption[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   // form
   const [tipo, setTipo] = useState("");
   const [valor, setValor] = useState("");
   const [descricao, setDescricao] = useState("");
   const [data, setData] = useState<Date>(new Date());
+  const [situacao, setSituacao] = useState<string>("em aberto");
   const [selecaoMode, setSelecaoMode] = useState<"todos" | "manual">("todos");
   const [selected, setSelected] = useState<string[]>([]);
 
@@ -67,17 +69,38 @@ export function LancamentoLote() {
 
   const canAdvance = () => {
     if (!tipo) { toast.error("Selecione o tipo de lançamento (mensalidade ou taxa)."); return false; }
-    if (valorNum <= 0 || isNaN(valorNum)) { toast.error("O valor deve ser maior que zero. Valores negativos não são permitidos."); return false; }
+    if (valorNum <= 0 || isNaN(valorNum)) { toast.error("O valor deve ser maior que zero."); return false; }
     if (targetIds.length === 0) { toast.error("Selecione ao menos um irmão para o lançamento em lote."); return false; }
     return true;
   };
 
   const goPreview = () => { if (canAdvance()) setStep("preview"); };
 
-  // Gera registros individuais para cada irmão selecionado
   const [registrosGerados, setRegistrosGerados] = useState<Array<{ id: string; irmao: string; cim: string; tipo: string; valor: number; descricao: string; data: Date }>>([]);
 
-  const confirmar = () => {
+  const confirmar = async () => {
+    setSaving(true);
+
+    // Build batch insert rows
+    const rows = targetIrmaos.map((m) => ({
+      member_id: m.id,
+      tipo,
+      descricao: descricao || tipoLabels[tipo],
+      valor: valorNum,
+      data: format(data, "yyyy-MM-dd"),
+      status: situacao,
+      created_by: session?.user?.id,
+    }));
+
+    const { error } = await supabase.from("member_transactions").insert(rows);
+
+    if (error) {
+      setSaving(false);
+      toast.error("Erro ao registrar lançamentos em lote. Tente novamente.");
+      console.error(error);
+      return;
+    }
+
     const novos = targetIrmaos.map((m) => ({
       id: m.id,
       irmao: m.full_name,
@@ -89,6 +112,7 @@ export function LancamentoLote() {
     }));
     setRegistrosGerados(novos);
     setStep("done");
+    setSaving(false);
 
     logAction({
       action: "CREATE_BATCH",
@@ -96,6 +120,7 @@ export function LancamentoLote() {
       details: {
         tipo,
         valor: valorNum,
+        situacao,
         total_membros: novos.length,
         total_geral: valorNum * novos.length,
         data: format(data, "yyyy-MM-dd"),
@@ -103,7 +128,7 @@ export function LancamentoLote() {
       },
     });
 
-    toast.success(`${novos.length} lançamento(s) individual(is) gerado(s) com sucesso.`);
+    toast.success(`${novos.length} lançamento(s) registrado(s) com sucesso no banco de dados.`);
   };
 
   const resetAll = () => {
@@ -112,12 +137,12 @@ export function LancamentoLote() {
     setValor("");
     setDescricao("");
     setData(new Date());
+    setSituacao("em aberto");
     setSelecaoMode("todos");
     setSelected([]);
     setRegistrosGerados([]);
   };
 
-  // ── Steps indicator ──
   const steps = [
     { key: "config", label: "Configurar", icon: Settings2 },
     { key: "preview", label: "Revisar", icon: Eye },
@@ -160,7 +185,7 @@ export function LancamentoLote() {
               <CardDescription>Defina o tipo, valor e data que serão aplicados a todos os irmãos selecionados.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div className="space-y-1.5">
                   <Label>Tipo *</Label>
                   <Select value={tipo} onValueChange={setTipo}>
@@ -188,6 +213,16 @@ export function LancamentoLote() {
                       <Calendar mode="single" selected={data} onSelect={(d) => d && setData(d)} initialFocus className="p-3 pointer-events-auto" />
                     </PopoverContent>
                   </Popover>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Situação</Label>
+                  <Select value={situacao} onValueChange={setSituacao}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="em aberto">Em Aberto (Débito)</SelectItem>
+                      <SelectItem value="pago">Pago (Crédito)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-1.5">
                   <Label>Descrição padrão</Label>
@@ -257,12 +292,11 @@ export function LancamentoLote() {
           <CardHeader>
             <CardTitle className="text-base font-sans font-semibold">Prévia dos Lançamentos</CardTitle>
             <CardDescription>
-              Confira os {targetIrmaos.length} lançamento(s) abaixo antes de confirmar.
+              Confira os {targetIrmaos.length} lançamento(s) abaixo antes de confirmar. Todos serão gravados no banco de dados.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Resumo */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
               <div className="bg-muted/50 rounded-lg p-3">
                 <p className="text-xs text-muted-foreground">Tipo</p>
                 <p className="font-medium text-sm">{tipoLabels[tipo]}</p>
@@ -274,6 +308,10 @@ export function LancamentoLote() {
               <div className="bg-muted/50 rounded-lg p-3">
                 <p className="text-xs text-muted-foreground">Total geral</p>
                 <p className="font-bold text-sm font-serif">{formatCurrency(valorNum * targetIrmaos.length)}</p>
+              </div>
+              <div className="bg-muted/50 rounded-lg p-3">
+                <p className="text-xs text-muted-foreground">Situação</p>
+                <p className="font-medium text-sm">{situacao === "pago" ? "Pago" : "Em Aberto"}</p>
               </div>
               <div className="bg-muted/50 rounded-lg p-3">
                 <p className="text-xs text-muted-foreground">Data</p>
@@ -313,9 +351,9 @@ export function LancamentoLote() {
                 <ChevronLeft className="h-4 w-4" />
                 Voltar
               </Button>
-              <Button onClick={confirmar} className="gap-1.5">
-                <Send className="h-4 w-4" />
-                Confirmar {targetIrmaos.length} Lançamento(s)
+              <Button onClick={confirmar} disabled={saving} className="gap-1.5">
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                {saving ? "Gravando..." : `Confirmar ${targetIrmaos.length} Lançamento(s)`}
               </Button>
             </div>
           </CardContent>
@@ -332,14 +370,14 @@ export function LancamentoLote() {
               </div>
               <h2 className="text-xl font-serif font-bold">Lançamento Concluído</h2>
               <p className="text-sm text-muted-foreground text-center max-w-md">
-                {registrosGerados.length} registro(s) individual(is) de <strong>{formatCurrency(valorNum)}</strong> ({tipoLabels[tipo]}) gerado(s) com sucesso em {format(data, "dd/MM/yyyy")}.
+                {registrosGerados.length} registro(s) de <strong>{formatCurrency(valorNum)}</strong> ({tipoLabels[tipo]}) gravado(s) com sucesso no banco de dados em {format(data, "dd/MM/yyyy")}.
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base font-sans font-semibold">Registros Individuais Gerados</CardTitle>
+              <CardTitle className="text-base font-sans font-semibold">Registros Gravados</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="rounded-md border">
