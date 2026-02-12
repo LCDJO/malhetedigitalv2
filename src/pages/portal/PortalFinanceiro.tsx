@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { usePortalMemberContext } from "@/components/portal/PortalLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -11,29 +11,12 @@ const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", curren
 const fmtDate = (d: string) => format(new Date(d), "dd/MM/yyyy");
 
 export default function PortalFinanceiro() {
-  const { user } = useAuth();
-  const [memberId, setMemberId] = useState<string | null>(null);
+  const member = usePortalMemberContext();
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
-    const fetch = async () => {
-      if (!user?.email) return;
-      const { data: member } = await supabase
-        .from("members")
-        .select("id")
-        .eq("email", user.email)
-        .maybeSingle();
-
-      if (!member) {
-        setNotFound(true);
-        setLoading(false);
-        return;
-      }
-
-      setMemberId(member.id);
-
+    const fetchTxs = async () => {
       const { data: txs } = await supabase
         .from("member_transactions")
         .select("id, data, tipo, descricao, valor, status")
@@ -44,8 +27,8 @@ export default function PortalFinanceiro() {
       setTransactions(txs ?? []);
       setLoading(false);
     };
-    fetch();
-  }, [user]);
+    fetchTxs();
+  }, [member.id]);
 
   const kpis = useMemo(() => {
     let debitos = 0, creditos = 0, emAberto = 0;
@@ -60,16 +43,6 @@ export default function PortalFinanceiro() {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (notFound) {
-    return (
-      <div className="text-center py-20 space-y-2">
-        <Wallet className="h-10 w-10 mx-auto text-muted-foreground" />
-        <h2 className="text-lg font-serif font-bold">Cadastro não encontrado</h2>
-        <p className="text-sm text-muted-foreground">Não foi possível localizar seu cadastro financeiro.</p>
       </div>
     );
   }

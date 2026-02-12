@@ -1,27 +1,8 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { usePortalMemberContext } from "@/components/portal/PortalLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, User, Mail, Phone, MapPin, Calendar, Award } from "lucide-react";
+import { Mail, Phone, MapPin, Calendar, Award } from "lucide-react";
 import { format } from "date-fns";
-
-interface MemberData {
-  id: string;
-  full_name: string;
-  email: string | null;
-  phone: string | null;
-  cpf: string | null;
-  cim: string | null;
-  address: string | null;
-  birth_date: string | null;
-  degree: string;
-  status: string;
-  initiation_date: string | null;
-  elevation_date: string | null;
-  exaltation_date: string | null;
-  master_installed: boolean;
-}
 
 const degreeLabels: Record<string, string> = {
   aprendiz: "Aprendiz",
@@ -39,43 +20,7 @@ const statusLabels: Record<string, string> = {
 const fmtDate = (d: string | null) => (d ? format(new Date(d), "dd/MM/yyyy") : "—");
 
 export default function PortalCadastro() {
-  const { user } = useAuth();
-  const [member, setMember] = useState<MemberData | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetch = async () => {
-      if (!user?.email) return;
-      const { data } = await supabase
-        .from("members")
-        .select("*")
-        .eq("email", user.email)
-        .maybeSingle();
-      setMember(data);
-      setLoading(false);
-    };
-    fetch();
-  }, [user]);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!member) {
-    return (
-      <div className="text-center py-20 space-y-2">
-        <User className="h-10 w-10 mx-auto text-muted-foreground" />
-        <h2 className="text-lg font-serif font-bold">Cadastro não encontrado</h2>
-        <p className="text-sm text-muted-foreground max-w-md mx-auto">
-          Não foi possível localizar seu cadastro de membro. Verifique com o Secretário se seu e-mail está registrado corretamente.
-        </p>
-      </div>
-    );
-  }
+  const member = usePortalMemberContext();
 
   const infoItems = [
     { icon: Mail, label: "E-mail", value: member.email ?? "—" },
