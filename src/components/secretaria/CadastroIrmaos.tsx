@@ -16,11 +16,12 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { Search, Plus, Pencil, Eye, X, User, CalendarIcon, Loader2, ChevronLeft, ChevronRight, Filter, Upload } from "lucide-react";
+import { Search, Plus, Pencil, Eye, X, User, CalendarIcon, Loader2, ChevronLeft, ChevronRight, Filter, Upload, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { PermissionGate } from "@/components/PermissionGate";
 import { useAuth } from "@/contexts/AuthContext";
 import { ImportarCSV } from "./ImportarCSV";
+import { ConfirmSensitiveAction } from "@/components/ConfirmSensitiveAction";
 
 interface Member {
   id: string;
@@ -128,6 +129,7 @@ export function CadastroIrmaos() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [csvDialogOpen, setCsvDialogOpen] = useState(false);
+  const [deletingMember, setDeletingMember] = useState<Member | null>(null);
   const fetchMembers = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
@@ -378,6 +380,9 @@ export function CadastroIrmaos() {
                             <div className="flex justify-end gap-1">
                               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setViewMember(m)} title="Visualizar"><Eye className="h-4 w-4" /></Button>
                               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(m)} title="Editar"><Pencil className="h-4 w-4" /></Button>
+                              <PermissionGate module="secretaria" action="approve">
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeletingMember(m)} title="Excluir"><Trash2 className="h-4 w-4" /></Button>
+                              </PermissionGate>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -577,6 +582,27 @@ export function CadastroIrmaos() {
       </Dialog>
       {/* Dialog Importar CSV */}
       <ImportarCSV open={csvDialogOpen} onOpenChange={setCsvDialogOpen} onSuccess={fetchMembers} />
+      {/* Dialog Confirmar Exclusão */}
+      <ConfirmSensitiveAction
+        open={!!deletingMember}
+        onOpenChange={(open) => { if (!open) setDeletingMember(null); }}
+        title="Excluir Cadastro"
+        description={`Tem certeza que deseja excluir o cadastro de "${deletingMember?.full_name}"? Esta ação é irreversível e removerá todos os dados associados.`}
+        confirmLabel="Excluir"
+        requireTypedConfirmation="EXCLUIR"
+        destructive
+        onConfirm={async () => {
+          if (!deletingMember) return;
+          const { error } = await supabase.from("members").delete().eq("id", deletingMember.id);
+          if (error) {
+            toast.error("Erro ao excluir: " + error.message);
+          } else {
+            toast.success("Cadastro excluído com sucesso.");
+            fetchMembers();
+          }
+          setDeletingMember(null);
+        }}
+      />
     </>
   );
 }
