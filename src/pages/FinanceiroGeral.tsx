@@ -21,6 +21,9 @@ import {
   FileText,
   BarChart3,
   Loader2,
+  ChevronRight,
+  ChevronDown,
+  FolderOpen,
 } from "lucide-react";
 
 interface Transaction {
@@ -32,6 +35,25 @@ interface Transaction {
   status: string;
   member_id: string;
   member_name?: string;
+}
+
+interface ContaPlano {
+  id: string;
+  codigo: string;
+  nome: string;
+  tipo: string;
+  conta_pai_id: string | null;
+  status: string;
+}
+
+interface ConsolidadoNode {
+  id: string;
+  codigo: string;
+  nome: string;
+  tipo: string;
+  total: number;
+  children: ConsolidadoNode[];
+  depth: number;
 }
 
 const tipoLabels: Record<string, string> = { mensalidade: "Mensalidade", avulso: "Valor Avulso", taxa: "Taxa" };
@@ -72,6 +94,7 @@ const FinanceiroGeral = () => {
   const [customTo, setCustomTo] = useState<Date>(endOfMonth(new Date()));
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [planoContas, setPlanoContas] = useState<ContaPlano[]>([]);
 
   const dateRange = useMemo(() => {
     if (preset === "personalizado") return { from: customFrom, to: customTo };
@@ -83,23 +106,30 @@ const FinanceiroGeral = () => {
     const fromStr = format(dateRange.from, "yyyy-MM-dd");
     const toStr = format(dateRange.to, "yyyy-MM-dd");
 
-    const { data } = await supabase
-      .from("member_transactions")
-      .select("id, data, tipo, descricao, valor, status, member_id")
-      .gte("data", fromStr)
-      .lte("data", toStr)
-      .order("data", { ascending: true });
+    const [txResult, contasResult] = await Promise.all([
+      supabase
+        .from("member_transactions")
+        .select("id, data, tipo, descricao, valor, status, member_id")
+        .gte("data", fromStr)
+        .lte("data", toStr)
+        .order("data", { ascending: true }),
+      supabase
+        .from("plano_contas")
+        .select("id, codigo, nome, tipo, conta_pai_id, status")
+        .eq("status", "ativo")
+        .order("codigo", { ascending: true }),
+    ]);
 
-    if (data) {
-      // Fetch member names
-      const memberIds = [...new Set(data.map((t) => t.member_id))];
+    setPlanoContas(contasResult.data ?? []);
+
+    if (txResult.data) {
+      const memberIds = [...new Set(txResult.data.map((t) => t.member_id))];
       const { data: members } = await supabase
         .from("members")
         .select("id, full_name")
         .in("id", memberIds);
       const nameMap = new Map(members?.map((m) => [m.id, m.full_name]) ?? []);
-
-      setTransactions(data.map((t) => ({ ...t, member_name: nameMap.get(t.member_id) ?? "—" })));
+      setTransactions(txResult.data.map((t) => ({ ...t, member_name: nameMap.get(t.member_id) ?? "—" })));
     }
     setLoading(false);
   }, [dateRange]);
@@ -130,6 +160,98 @@ const FinanceiroGeral = () => {
       return { ...t, saldoAcumulado: saldo };
     });
   }, [transactions]);
+
+  // Consolidated tree by plano de contas
+  const consolidadoTree = useMemo(() => {
+    if (planoContas.length === 0) return [];
+
+    // Sum by tipo (category key in transactions maps to plano_contas tipo match)
+    const tipoTotals = new Map<string, { receitas: number; despesas: number }>();
+    for (const t of transactions) {
+      const key = t.tipo;
+      const entry = tipoTotals.get(key) ?? { receitas: 0, despesas: 0 };
+      if (t.status === "pago") entry.receitas += Number(t.valor);
+      else entry.despesas += Number(t.valor);
+      tipoTotals.set(key, entry);
+    }
+
+    // Build tree from plano_contas
+    const nodeMap = new Map<string, ConsolidadoNode>();
+    for (const c of planoContas) {
+      nodeMap.set(c.id, { id: c.id, codigo: c.codigo, nome: c.nome, tipo: c.tipo, total: 0, children: [], depth: 0 });
+    }
+
+    const roots: ConsolidadoNode[] = [];
+    for (const c of planoContas) {
+      const node = nodeMap.get(c.id)!;
+      if (c.conta_pai_id && nodeMap.has(c.conta_pai_id)) {
+        nodeMap.get(c.conta_pai_id)!.children.push(node);
+      } else {
+        roots.push(node);
+      }
+    }
+
+    // Assign totals to leaf nodes by matching tipo name (lowercase)
+    // Match: conta.nome.toLowerCase() matches transaction.tipo key
+    const contasByName = new Map<string, ConsolidadoNode>();
+    for (const [, node] of nodeMap) {
+      contasByName.set(node.nome.toLowerCase(), node);
+    }
+
+    // Map transaction tipos to plano nodes
+    const tipoToContaName: Record<string, string> = {
+      mensalidade: "mensalidades",
+      taxa: "taxas",
+      avulso: "avulso",
+    };
+
+    for (const [tipo, totals] of tipoTotals) {
+      const lookupName = tipoToContaName[tipo] ?? tipo;
+      // Try exact match, then partial
+      let target = contasByName.get(lookupName) ?? contasByName.get(tipo);
+      if (!target) {
+        // Try finding any conta whose name contains the tipo
+        for (const [name, node] of contasByName) {
+          if (name.includes(tipo) || tipo.includes(name)) { target = node; break; }
+        }
+      }
+      if (target) {
+        target.total = target.tipo === "receita" ? totals.receitas : totals.despesas;
+      }
+    }
+
+    // Bubble up totals
+    function sumUp(node: ConsolidadoNode): number {
+      if (node.children.length === 0) return node.total;
+      let childSum = 0;
+      for (const child of node.children) childSum += sumUp(child);
+      node.total = childSum + node.total;
+      return node.total;
+    }
+
+    function setDepth(nodes: ConsolidadoNode[], d: number) {
+      for (const n of nodes) { n.depth = d; setDepth(n.children, d + 1); }
+    }
+
+    for (const r of roots) sumUp(r);
+    setDepth(roots, 0);
+    roots.sort((a, b) => a.codigo.localeCompare(b.codigo));
+
+    return roots;
+  }, [planoContas, transactions]);
+
+  // Flatten consolidated tree for rendering
+  const flatConsolidado = useMemo(() => {
+    const result: ConsolidadoNode[] = [];
+    function walk(nodes: ConsolidadoNode[]) {
+      for (const n of nodes) {
+        result.push(n);
+        walk(n.children);
+      }
+    }
+    walk(consolidadoTree);
+    return result;
+  }, [consolidadoTree]);
 
   // Monthly cash flow
   const fluxoMensal = useMemo(() => {
@@ -339,56 +461,112 @@ const FinanceiroGeral = () => {
 
             {/* Demonstrativo */}
             <TabsContent value="demonstrativo">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base font-sans font-semibold">Demonstrativo Financeiro — {periodLabel}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Data</TableHead>
-                          <TableHead>Obreiro</TableHead>
-                          <TableHead>Tipo</TableHead>
-                          <TableHead>Descrição</TableHead>
-                          <TableHead className="text-right">Valor</TableHead>
-                          <TableHead className="text-right">Saldo Acumulado</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {transactionsWithSaldo.length === 0 ? (
-                          <TableRow>
-                            <TableCell colSpan={6} className="text-center text-muted-foreground py-10">
-                              Nenhuma movimentação no período.
-                            </TableCell>
-                          </TableRow>
-                        ) : transactionsWithSaldo.map((t) => {
-                          const isDebito = t.status === "em aberto";
+              <div className="space-y-6">
+                {/* Consolidated by Plano de Contas */}
+                {flatConsolidado.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base font-sans font-semibold">Demonstrativo Consolidado — {periodLabel}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-0.5">
+                        {flatConsolidado.map((node) => {
+                          const hasChildren = node.children.length > 0;
+                          const isReceita = node.tipo === "receita";
                           return (
-                            <TableRow key={t.id}>
-                              <TableCell className="text-sm">{format(new Date(t.data), "dd/MM/yyyy")}</TableCell>
-                              <TableCell className="text-sm font-medium">{t.member_name}</TableCell>
-                              <TableCell>
-                                <Badge variant="outline" className={cn("text-[10px]", isDebito ? "text-destructive border-destructive/30" : "text-success border-success/30")}>
-                                  {isDebito ? "Débito" : "Crédito"}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-sm text-muted-foreground">{t.descricao || "—"}</TableCell>
-                              <TableCell className={cn("text-right text-sm font-medium", isDebito ? "text-destructive" : "text-success")}>
-                                {isDebito ? "−" : "+"} {fmt(Number(t.valor))}
-                              </TableCell>
-                              <TableCell className={cn("text-right text-sm font-semibold", t.saldoAcumulado < 0 ? "text-destructive" : "text-foreground")}>
-                                {fmt(t.saldoAcumulado)}
-                              </TableCell>
-                            </TableRow>
+                            <div
+                              key={node.id}
+                              className={cn(
+                                "flex items-center gap-2 rounded-md px-3 py-2 transition-colors",
+                                node.depth === 0 && "bg-muted/40 font-semibold",
+                                hasChildren && node.depth > 0 && "bg-muted/20"
+                              )}
+                              style={{ paddingLeft: `${node.depth * 24 + 12}px` }}
+                            >
+                              {hasChildren ? (
+                                <FolderOpen className={cn("h-4 w-4 shrink-0", isReceita ? "text-success" : "text-destructive")} />
+                              ) : (
+                                <ChevronRight className={cn("h-3.5 w-3.5 shrink-0", isReceita ? "text-success/60" : "text-destructive/60")} />
+                              )}
+                              <span className="text-xs font-mono text-muted-foreground w-16 shrink-0">{node.codigo}</span>
+                              <span className={cn("text-sm flex-1", hasChildren ? "font-semibold" : "font-medium")}>{node.nome}</span>
+                              <Badge variant="outline" className={cn("text-[9px] shrink-0", isReceita ? "text-success border-success/30" : "text-destructive border-destructive/30")}>
+                                {isReceita ? "Receita" : "Despesa"}
+                              </Badge>
+                              <span className={cn("text-sm font-bold w-32 text-right shrink-0", node.total > 0 ? (isReceita ? "text-success" : "text-destructive") : "text-muted-foreground")}>
+                                {fmt(node.total)}
+                              </span>
+                            </div>
                           );
                         })}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </CardContent>
-              </Card>
+                        {/* Resultado */}
+                        <div className="flex items-center gap-2 rounded-md px-3 py-2 bg-muted/60 mt-2 border-t">
+                          <Scale className={cn("h-4 w-4 shrink-0", kpis.resultado >= 0 ? "text-success" : "text-destructive")} />
+                          <span className="text-sm font-bold flex-1">Resultado do Período</span>
+                          <Badge variant="outline" className={cn("text-[9px]", kpis.resultado >= 0 ? "text-success border-success/30" : "text-destructive border-destructive/30")}>
+                            {kpis.resultado >= 0 ? "Superávit" : "Déficit"}
+                          </Badge>
+                          <span className={cn("text-sm font-bold w-32 text-right", kpis.resultado >= 0 ? "text-success" : "text-destructive")}>
+                            {fmt(kpis.resultado)}
+                          </span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Detailed table */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base font-sans font-semibold">Movimentações Detalhadas — {periodLabel}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Data</TableHead>
+                            <TableHead>Obreiro</TableHead>
+                            <TableHead>Tipo</TableHead>
+                            <TableHead>Descrição</TableHead>
+                            <TableHead className="text-right">Valor</TableHead>
+                            <TableHead className="text-right">Saldo Acumulado</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {transactionsWithSaldo.length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={6} className="text-center text-muted-foreground py-10">
+                                Nenhuma movimentação no período.
+                              </TableCell>
+                            </TableRow>
+                          ) : transactionsWithSaldo.map((t) => {
+                            const isDebito = t.status === "em aberto";
+                            return (
+                              <TableRow key={t.id}>
+                                <TableCell className="text-sm">{format(new Date(t.data), "dd/MM/yyyy")}</TableCell>
+                                <TableCell className="text-sm font-medium">{t.member_name}</TableCell>
+                                <TableCell>
+                                  <Badge variant="outline" className={cn("text-[10px]", isDebito ? "text-destructive border-destructive/30" : "text-success border-success/30")}>
+                                    {isDebito ? "Débito" : "Crédito"}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-sm text-muted-foreground">{t.descricao || "—"}</TableCell>
+                                <TableCell className={cn("text-right text-sm font-medium", isDebito ? "text-destructive" : "text-success")}>
+                                  {isDebito ? "−" : "+"} {fmt(Number(t.valor))}
+                                </TableCell>
+                                <TableCell className={cn("text-right text-sm font-semibold", t.saldoAcumulado < 0 ? "text-destructive" : "text-foreground")}>
+                                  {fmt(t.saldoAcumulado)}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
 
             {/* Fluxo de Caixa */}
