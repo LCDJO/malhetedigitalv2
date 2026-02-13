@@ -90,7 +90,7 @@ export function NovoLancamentoLoja({ tipo, onSaved }: NovoLancamentoLojaProps) {
     setSaving(true);
     const { error } = await supabase.from("member_transactions").insert({
       member_id: LOJA_MEMBER_ID,
-      tipo: contaSelecionada?.nome.toLowerCase() ?? tipo,
+      tipo: isReceita ? "receita" : "despesa",
       descricao: form.descricao.trim(),
       valor: v,
       data: format(form.data, "yyyy-MM-dd"),
