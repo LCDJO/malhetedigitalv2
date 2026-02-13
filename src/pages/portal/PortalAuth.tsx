@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Eye, EyeOff, KeyRound, ArrowLeft, LogIn, ShieldAlert, Loader2 } from "lucide-react";
 
-type PortalAuthView = "login" | "forgot" | "reset";
+type PortalAuthView = "login" | "forgot" | "reset" | "force_change";
 
 const MAX_ATTEMPTS = 5;
 
@@ -28,10 +28,12 @@ export default function PortalAuth() {
   const [view, setView] = useState<PortalAuthView>("login");
   const [identifier, setIdentifier] = useState(""); // email or CPF
   const [password, setPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [blocked, setBlocked] = useState(false);
+  const [forceChangeEmail, setForceChangeEmail] = useState<string | null>(null);
 
   // Detect password recovery event
   useEffect(() => {
@@ -46,7 +48,7 @@ export default function PortalAuth() {
   // Redirect authenticated users to portal
   useEffect(() => {
     if (authLoading || !user) return;
-    if (view === "reset") return;
+    if (view === "reset" || view === "force_change") return;
     navigate("/portal", { replace: true });
   }, [user, authLoading, navigate, view]);
 
@@ -133,13 +135,31 @@ export default function PortalAuth() {
     await logAttempt(identifier, true);
 
     // Log to audit
+    const currentUser = (await supabase.auth.getUser()).data.user;
     await supabase.from("audit_log").insert({
-      user_id: (await supabase.auth.getUser()).data.user?.id,
+      user_id: currentUser?.id,
       user_name: email,
       action: "PORTAL_LOGIN",
       target_table: "auth",
       details: { method: isCpf(identifier) ? "cpf" : "email" },
     });
+
+    // Check if password change is required
+    const { data: memberData } = await supabase
+      .from("members")
+      .select("force_password_change")
+      .eq("email", email)
+      .eq("status", "ativo")
+      .maybeSingle();
+
+    if (memberData?.force_password_change) {
+      setForceChangeEmail(email);
+      setView("force_change");
+      setPassword("");
+      toast.info("Sua senha é provisória. Por favor, defina uma nova senha.");
+      setLoading(false);
+      return;
+    }
 
     toast.success("Bem-vindo ao Portal do Irmão!");
     setLoading(false);
@@ -196,6 +216,47 @@ export default function PortalAuth() {
       toast.success("Senha redefinida com sucesso!");
       setView("login");
     }
+  };
+
+  const handleForceChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPassword || !confirmPassword) {
+      toast.error("Preencha todos os campos.");
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error("A senha deve ter no mínimo 6 caracteres.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("As senhas não coincidem.");
+      return;
+    }
+
+    setLoading(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+
+    if (error) {
+      toast.error(error.message);
+      setLoading(false);
+      return;
+    }
+
+    // Clear force_password_change flag
+    if (forceChangeEmail) {
+      await supabase
+        .from("members")
+        .update({ force_password_change: false })
+        .eq("email", forceChangeEmail);
+    }
+
+    setLoading(false);
+    toast.success("Senha atualizada com sucesso! Bem-vindo ao Portal.");
+    setView("login");
+    setNewPassword("");
+    setConfirmPassword("");
+    setForceChangeEmail(null);
+    navigate("/portal", { replace: true });
   };
 
   const PwToggle = () => (
@@ -326,6 +387,52 @@ export default function PortalAuth() {
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? "Salvando..." : "Redefinir Senha"}
+                  </Button>
+                </form>
+              </CardContent>
+            </>
+          )}
+
+          {/* Force Password Change */}
+          {view === "force_change" && (
+            <>
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2">
+                  <KeyRound className="h-5 w-5 text-warning" />
+                  <div>
+                    <p className="font-semibold text-sm">Criar Nova Senha</p>
+                    <p className="text-xs text-muted-foreground">Sua senha atual é provisória. Defina uma senha pessoal.</p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleForceChangePassword} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label>Nova Senha</Label>
+                    <div className="relative">
+                      <Input
+                        type={showPw ? "text" : "password"}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Mínimo 6 caracteres"
+                        autoComplete="new-password"
+                      />
+                      <PwToggle />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Confirmar Nova Senha</Label>
+                    <Input
+                      type={showPw ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Repita a nova senha"
+                      autoComplete="new-password"
+                    />
+                  </div>
+                  <Button type="submit" className="w-full gap-1.5" disabled={loading}>
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
+                    {loading ? "Salvando..." : "Definir Nova Senha"}
                   </Button>
                 </form>
               </CardContent>
