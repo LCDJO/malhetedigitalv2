@@ -88,22 +88,39 @@ export function NovoLancamentoLoja({ tipo, onSaved }: NovoLancamentoLojaProps) {
     const contaSelecionada = contas.find((c) => c.id === form.contaPlanoId);
 
     setSaving(true);
-    const { error } = await supabase.from("member_transactions").insert({
+
+    const payloadBase = {
       member_id: LOJA_MEMBER_ID,
       tipo: isReceita ? "receita" : "despesa",
       descricao: form.descricao.trim(),
       valor: v,
       data: format(form.data, "yyyy-MM-dd"),
-      status: isReceita ? "pago" : "em_aberto",
       created_by: session?.user?.id,
       conta_plano_id: form.contaPlanoId,
       forma_pagamento: form.formaPagamento || null,
-    });
+    };
+
+    const statusCandidates = isReceita ? ["pago"] : ["em_aberto", "em aberto"];
+    let insertError: { message?: string } | null = null;
+
+    for (const statusValue of statusCandidates) {
+      const { error } = await supabase
+        .from("member_transactions")
+        .insert({ ...payloadBase, status: statusValue });
+
+      if (!error) {
+        insertError = null;
+        break;
+      }
+
+      insertError = error;
+    }
+
     setSaving(false);
 
-    if (error) {
-      toast.error("Erro ao registrar lançamento. Tente novamente.");
-      console.error(error);
+    if (insertError) {
+      toast.error(insertError.message || "Erro ao registrar lançamento. Tente novamente.");
+      console.error(insertError);
       return;
     }
 
