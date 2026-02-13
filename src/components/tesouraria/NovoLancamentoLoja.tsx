@@ -94,7 +94,7 @@ export function NovoLancamentoLoja({ tipo, onSaved }: NovoLancamentoLojaProps) {
       descricao: form.descricao.trim(),
       valor: v,
       data: format(form.data, "yyyy-MM-dd"),
-      status: isReceita ? "pago" : "em aberto",
+      status: isReceita ? "pago" : "em_aberto",
       created_by: session?.user?.id,
       conta_plano_id: form.contaPlanoId,
       forma_pagamento: form.formaPagamento || null,

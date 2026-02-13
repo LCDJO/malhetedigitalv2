@@ -42,7 +42,7 @@ export function NovoDebito({ memberId, memberName, onDebitoSaved }: NovoDebitoPr
       descricao: form.descricao.trim() || undefined,
       valor: v,
       data: format(form.data, "yyyy-MM-dd"),
-      status: "em aberto",
+      status: "em_aberto",
       created_by: session?.user?.id,
     });
     setSaving(false);

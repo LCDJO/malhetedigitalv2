@@ -46,7 +46,7 @@ export function LancamentoLote() {
   const [valor, setValor] = useState("");
   const [descricao, setDescricao] = useState("");
   const [data, setData] = useState<Date>(new Date());
-  const [situacao, setSituacao] = useState<string>("em aberto");
+  const [situacao, setSituacao] = useState<string>("em_aberto");
   const [selecaoMode, setSelecaoMode] = useState<"todos" | "manual">("todos");
   const [selected, setSelected] = useState<string[]>([]);
 
@@ -137,7 +137,7 @@ export function LancamentoLote() {
     setValor("");
     setDescricao("");
     setData(new Date());
-    setSituacao("em aberto");
+    setSituacao("em_aberto");
     setSelecaoMode("todos");
     setSelected([]);
     setRegistrosGerados([]);
@@ -219,7 +219,7 @@ export function LancamentoLote() {
                   <Select value={situacao} onValueChange={setSituacao}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="em aberto">Em Aberto (Débito)</SelectItem>
+                      <SelectItem value="em_aberto">Em Aberto (Débito)</SelectItem>
                       <SelectItem value="pago">Pago (Crédito)</SelectItem>
                     </SelectContent>
                   </Select>

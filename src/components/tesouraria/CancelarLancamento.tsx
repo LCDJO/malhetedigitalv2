@@ -52,7 +52,7 @@ export function CancelarLancamento({ transaction, open, onOpenChange, onCancelle
       if (!user) throw new Error("Não autenticado");
 
       // 2. Create reverse (inverse) transaction
-      const isDebito = transaction.status === "em aberto";
+      const isDebito = transaction.status === "em_aberto";
       const { error: insertError } = await supabase
         .from("member_transactions")
         .insert({
@@ -61,7 +61,7 @@ export function CancelarLancamento({ transaction, open, onOpenChange, onCancelle
           descricao: `[CANCELAMENTO] ${transaction.descricao} — Motivo: ${motivo.trim()}`,
           valor: transaction.valor,
           // Inverse: if original was debit (em aberto), reverse is credit (pago) and vice-versa
-          status: isDebito ? "pago" : "em aberto",
+          status: isDebito ? "pago" : "em_aberto",
           data: new Date().toISOString().slice(0, 10),
           conta_plano_id: transaction.conta_plano_id,
           created_by: user.id,
@@ -132,7 +132,7 @@ export function CancelarLancamento({ transaction, open, onOpenChange, onCancelle
           <div className="rounded-md border bg-muted/30 p-3 space-y-1 text-sm">
             <p><span className="text-muted-foreground">Descrição:</span> {transaction.descricao || "—"}</p>
             <p><span className="text-muted-foreground">Valor:</span> <span className="font-semibold">{fmt(transaction.valor)}</span></p>
-            <p><span className="text-muted-foreground">Tipo:</span> {transaction.status === "em aberto" ? "Despesa" : "Receita"}</p>
+            <p><span className="text-muted-foreground">Tipo:</span> {transaction.status === "em_aberto" ? "Despesa" : "Receita"}</p>
           </div>
         )}
 

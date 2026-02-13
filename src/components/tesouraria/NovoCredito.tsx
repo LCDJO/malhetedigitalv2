@@ -62,7 +62,7 @@ export function NovoCredito({ memberId, memberName, onCreditoSaved }: NovoCredit
         .from("member_transactions")
         .select("id, data, descricao, valor, tipo")
         .eq("member_id", memberId)
-        .eq("status", "em aberto")
+        .eq("status", "em_aberto")
         .order("data", { ascending: true });
       setDebitosAbertos(data ?? []);
       setLoadingDebitos(false);

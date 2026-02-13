@@ -196,7 +196,7 @@ const FinanceiroGeral = ({ embedded = false }: FinanceiroGeralProps) => {
   const filteredTransactions = useMemo(() => {
     let list = [...transactions];
     if (filterTipo !== "todos") {
-      list = list.filter((t) => (filterTipo === "receita" ? t.status === "pago" : t.status === "em aberto"));
+      list = list.filter((t) => (filterTipo === "receita" ? t.status === "pago" : t.status === "em_aberto"));
     }
     if (filterConta !== "todas") {
       list = list.filter((t) => t.conta_plano_id === filterConta);
@@ -569,7 +569,7 @@ const FinanceiroGeral = ({ embedded = false }: FinanceiroGeralProps) => {
                             </TableCell>
                           </TableRow>
                         ) : paginatedTransactions.map((t) => {
-                          const isDebito = t.status === "em aberto";
+                          const isDebito = t.status === "em_aberto";
                           const isCancelado = t.descricao.startsWith("[CANCELADO]") || t.descricao.startsWith("[CANCELAMENTO]");
                           return (
                             <TableRow key={t.id} className={isCancelado ? "opacity-50" : ""}>

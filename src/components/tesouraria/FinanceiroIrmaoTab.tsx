@@ -91,7 +91,7 @@ export function FinanceiroIrmaoTab() {
       const now = new Date();
       const mesesSet = new Set<string>();
       for (const t of rows) {
-        if (t.status === "em aberto") {
+        if (t.status === "em_aberto") {
           debitos += Number(t.valor);
           const d = new Date(t.data);
           if (d <= now) mesesSet.add(`${d.getFullYear()}-${d.getMonth()}`);
@@ -341,7 +341,7 @@ export function FinanceiroIrmaoTab() {
                         const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
                         return transactions.map((t) => {
                           const valor = Number(t.valor);
-                          const isDebito = t.status === "em aberto";
+                          const isDebito = t.status === "em_aberto";
                           if (isDebito) {
                             saldoAcumulado -= valor;
                           } else {

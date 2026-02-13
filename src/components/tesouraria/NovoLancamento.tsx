@@ -97,7 +97,7 @@ export function NovoLancamento({ memberId, memberName, onLancamentoSaved }: Novo
       descricao: form.descricao.trim(),
       valor: v,
       data: format(form.data, "yyyy-MM-dd"),
-      status: form.tipo === "receita" ? "pago" : "em aberto",
+      status: form.tipo === "receita" ? "pago" : "em_aberto",
       created_by: session?.user?.id,
       conta_plano_id: form.contaPlanoId,
       forma_pagamento: form.formaPagamento || null,

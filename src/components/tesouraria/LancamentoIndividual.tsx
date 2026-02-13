@@ -43,7 +43,7 @@ const tipoBadge: Record<string, string> = {
   taxa: "bg-warning/10 text-warning border-warning/20",
 };
 
-const emptyForm = { irmaoId: "", tipo: "", valor: "", descricao: "", data: new Date(), situacao: "em aberto" };
+const emptyForm = { irmaoId: "", tipo: "", valor: "", descricao: "", data: new Date(), situacao: "em_aberto" };
 
 interface LancamentoIndividualProps {
   onLancamentoSaved?: () => void;
@@ -230,7 +230,7 @@ export function LancamentoIndividual({ onLancamentoSaved }: LancamentoIndividual
               <Select value={form.situacao} onValueChange={(v) => setForm((f) => ({ ...f, situacao: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="em aberto">Em Aberto (Débito)</SelectItem>
+                  <SelectItem value="em_aberto">Em Aberto (Débito)</SelectItem>
                   <SelectItem value="pago">Pago (Crédito)</SelectItem>
                 </SelectContent>
               </Select>
