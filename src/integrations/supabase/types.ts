@@ -293,6 +293,7 @@ export type Database = {
           elevation_date: string | null
           email: string | null
           exaltation_date: string | null
+          force_password_change: boolean
           full_name: string
           id: string
           initiation_date: string | null
@@ -314,6 +315,7 @@ export type Database = {
           elevation_date?: string | null
           email?: string | null
           exaltation_date?: string | null
+          force_password_change?: boolean
           full_name: string
           id?: string
           initiation_date?: string | null
@@ -335,6 +337,7 @@ export type Database = {
           elevation_date?: string | null
           email?: string | null
           exaltation_date?: string | null
+          force_password_change?: boolean
           full_name?: string
           id?: string
           initiation_date?: string | null

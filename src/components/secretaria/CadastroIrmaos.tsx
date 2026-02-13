@@ -16,7 +16,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { Search, Plus, Pencil, Eye, X, User, Users, CalendarIcon, Loader2, ChevronLeft, ChevronRight, Filter, Upload, Trash2 } from "lucide-react";
+import { Search, Plus, Pencil, Eye, X, User, Users, CalendarIcon, Loader2, ChevronLeft, ChevronRight, Filter, Upload, Trash2, KeyRound, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import { PermissionGate } from "@/components/PermissionGate";
 import { useAuth } from "@/contexts/AuthContext";
@@ -138,6 +138,11 @@ export function CadastroIrmaos() {
   const [uploading, setUploading] = useState(false);
   const [csvDialogOpen, setCsvDialogOpen] = useState(false);
   const [deletingMember, setDeletingMember] = useState<Member | null>(null);
+  // Password management
+  const [portalPassword, setPortalPassword] = useState("");
+  const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
+  const [savingPassword, setSavingPassword] = useState(false);
+  const [copiedPassword, setCopiedPassword] = useState(false);
   const fetchMembers = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
@@ -273,6 +278,68 @@ export function CadastroIrmaos() {
     setDialogOpen(false);
     setEditingId(null);
     setForm(emptyForm);
+    setPortalPassword("");
+    setGeneratedPassword(null);
+    setCopiedPassword(false);
+  };
+
+  const handleCreateOrResetPassword = async (action: "create" | "reset") => {
+    if (!editingId) return;
+    if (!form.email?.trim()) {
+      toast.error("É necessário informar o e-mail do irmão para criar acesso ao portal.");
+      return;
+    }
+    if (action === "create" && portalPassword.length < 6) {
+      toast.error("A senha deve ter no mínimo 6 caracteres.");
+      return;
+    }
+
+    setSavingPassword(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-portal-user`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            action,
+            member_id: editingId,
+            email: form.email.trim(),
+            password: action === "create" ? portalPassword : undefined,
+          }),
+        }
+      );
+      const result = await res.json();
+      if (!res.ok) {
+        toast.error(result.error || "Erro ao gerenciar acesso.");
+        return;
+      }
+      if (action === "reset") {
+        setGeneratedPassword(result.temp_password);
+        toast.success("Senha provisória gerada! Copie e envie ao irmão.");
+      } else {
+        toast.success("Acesso ao portal criado com sucesso.");
+        setPortalPassword("");
+      }
+    } catch {
+      toast.error("Erro de conexão ao criar acesso.");
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
+  const copyPassword = () => {
+    if (generatedPassword) {
+      navigator.clipboard.writeText(generatedPassword);
+      setCopiedPassword(true);
+      toast.success("Senha copiada para a área de transferência!");
+      setTimeout(() => setCopiedPassword(false), 3000);
+    }
   };
 
   const DateField = ({ label, value, onChange }: { label: string; value: Date | undefined; onChange: (d: Date | undefined) => void }) => (
@@ -558,6 +625,70 @@ export function CadastroIrmaos() {
               <DateField label="Elevação" value={form.elevation_date} onChange={(d) => setForm({ ...form, elevation_date: d })} />
               <DateField label="Exaltação" value={form.exaltation_date} onChange={(d) => setForm({ ...form, exaltation_date: d })} />
             </div>
+
+            {/* Acesso ao Portal */}
+            {editingId && (
+              <>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-2">Acesso ao Portal do Irmão</p>
+                {!generatedPassword ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+                    <div className="space-y-1.5">
+                      <Label>Senha do Portal</Label>
+                      <Input
+                        type="text"
+                        value={portalPassword}
+                        onChange={(e) => setPortalPassword(e.target.value)}
+                        placeholder="Mínimo 6 caracteres"
+                        maxLength={50}
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="default"
+                        size="sm"
+                        className="gap-1.5"
+                        disabled={savingPassword || !form.email}
+                        onClick={() => handleCreateOrResetPassword("create")}
+                      >
+                        {savingPassword ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
+                        Criar / Atualizar Senha
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5"
+                        disabled={savingPassword || !form.email}
+                        onClick={() => handleCreateOrResetPassword("reset")}
+                      >
+                        <KeyRound className="h-4 w-4" />
+                        Redefinir Senha
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-warning/30 bg-warning/5 p-4 space-y-3">
+                    <p className="text-sm font-medium text-warning">Senha provisória gerada</p>
+                    <p className="text-xs text-muted-foreground">
+                      Copie e envie ao irmão por e-mail, WhatsApp ou SMS. Ao fazer login, ele será solicitado a criar uma nova senha.
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <code className="bg-background border rounded px-3 py-2 text-lg font-mono font-bold tracking-widest select-all">
+                        {generatedPassword}
+                      </code>
+                      <Button variant="outline" size="sm" className="gap-1.5" onClick={copyPassword}>
+                        {copiedPassword ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
+                        {copiedPassword ? "Copiado!" : "Copiar"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                {!form.email && (
+                  <p className="text-xs text-destructive">É necessário informar o e-mail do irmão para criar acesso ao portal.</p>
+                )}
+              </>
+            )}
 
             <div className="space-y-1.5">
               <Label>Observações</Label>
