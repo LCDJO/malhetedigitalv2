@@ -100,7 +100,9 @@ export function NovoLancamentoLoja({ tipo, onSaved }: NovoLancamentoLojaProps) {
       forma_pagamento: form.formaPagamento || null,
     };
 
-    const statusCandidates = isReceita ? ["pago"] : ["em_aberto", "em aberto"];
+    const statusCandidates = isReceita
+      ? ["pago", "Pago"]
+      : ["em_aberto", "em aberto", "Em Aberto", "aberto", "pendente", "cancelado"];
     let insertError: { message?: string } | null = null;
 
     for (const statusValue of statusCandidates) {
