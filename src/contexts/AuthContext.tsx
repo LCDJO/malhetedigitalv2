@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback, type React
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 
-export type AppRole = "administrador" | "veneravel" | "secretario" | "tesoureiro" | "orador" | "chanceler" | "consulta";
+export type AppRole = "administrador" | "veneravel" | "secretario" | "tesoureiro" | "orador" | "chanceler" | "consulta" | "portal_irmao";
 
 export type PermissionAction = "read" | "write" | "approve" | "manage_users";
 
@@ -14,6 +14,7 @@ export const roleLabels: Record<AppRole, string> = {
   orador: "Orador",
   chanceler: "Chanceler",
   consulta: "Usuário de Consulta",
+  portal_irmao: "Portal do Irmão",
 };
 
 // Granular permissions matrix: role → module → allowed actions
@@ -62,6 +63,13 @@ export const permissionsMatrix: Record<AppRole, Record<string, PermissionAction[
   },
   consulta: {
     dashboard: ["read"],
+    secretaria: [],
+    tesouraria: [],
+    chancelaria: [],
+    configuracoes: [],
+  },
+  portal_irmao: {
+    dashboard: [],
     secretaria: [],
     tesouraria: [],
     chancelaria: [],

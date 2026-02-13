@@ -61,12 +61,14 @@ Deno.serve(async (req) => {
 
     if (action === "create" || action === "reset") {
       const tempPassword = password || generateTempPassword();
+      let portalUserId: string | null = null;
 
       // Check if auth user already exists with this email
       const { data: { users } } = await adminClient.auth.admin.listUsers();
       const existingUser = users?.find((u) => u.email === email);
 
       if (existingUser) {
+        portalUserId = existingUser.id;
         // Update password
         const { error: updateError } = await adminClient.auth.admin.updateUserById(
           existingUser.id,
@@ -80,7 +82,7 @@ Deno.serve(async (req) => {
         }
       } else {
         // Create new auth user
-        const { error: createError } = await adminClient.auth.admin.createUser({
+        const { data: createdUser, error: createError } = await adminClient.auth.admin.createUser({
           email,
           password: tempPassword,
           email_confirm: true,
@@ -88,6 +90,27 @@ Deno.serve(async (req) => {
         });
         if (createError) {
           return new Response(JSON.stringify({ error: createError.message }), {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        portalUserId = createdUser.user?.id ?? null;
+      }
+
+      if (portalUserId) {
+        const { error: roleError } = await adminClient
+          .from("user_roles")
+          .upsert(
+            {
+              user_id: portalUserId,
+              role: "portal_irmao",
+              assigned_by: caller.id,
+            },
+            { onConflict: "user_id,role", ignoreDuplicates: true }
+          );
+
+        if (roleError) {
+          return new Response(JSON.stringify({ error: roleError.message }), {
             status: 500,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });

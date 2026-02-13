@@ -588,6 +588,7 @@ export type Database = {
         | "chanceler"
         | "administrador"
         | "consulta"
+        | "portal_irmao"
       status_solicitacao:
         | "pendente"
         | "em_andamento"
@@ -729,6 +730,7 @@ export const Constants = {
         "chanceler",
         "administrador",
         "consulta",
+        "portal_irmao",
       ],
       status_solicitacao: [
         "pendente",

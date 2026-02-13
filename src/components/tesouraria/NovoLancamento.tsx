@@ -93,7 +93,7 @@ export function NovoLancamento({ memberId, memberName, onLancamentoSaved }: Novo
     setSaving(true);
     const { error } = await supabase.from("member_transactions").insert({
       member_id: memberId,
-      tipo: contaSelecionada?.nome.toLowerCase() ?? form.tipo,
+      tipo: form.tipo,
       descricao: form.descricao.trim(),
       valor: v,
       data: format(form.data, "yyyy-MM-dd"),
@@ -105,7 +105,7 @@ export function NovoLancamento({ memberId, memberName, onLancamentoSaved }: Novo
     setSaving(false);
 
     if (error) {
-      toast.error("Erro ao registrar lançamento. Tente novamente.");
+      toast.error(error.message || "Erro ao registrar lançamento. Tente novamente.");
       console.error(error);
       return;
     }

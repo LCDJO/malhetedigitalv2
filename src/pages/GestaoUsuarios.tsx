@@ -53,6 +53,7 @@ const availableRoles: AppRole[] = [
   "secretario",
   "tesoureiro",
   "consulta",
+  "portal_irmao",
 ];
 
 export default function GestaoUsuarios() {

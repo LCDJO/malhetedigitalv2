@@ -1,12 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useLodgeConfig } from "@/hooks/useLodgeConfig";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -15,11 +13,8 @@ import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { CalendarIcon, DollarSign, Clock, Plus, Loader2, User, FileText, TrendingUp, AlertCircle, CheckCircle2, XCircle, Hash, ArrowUpDown, ArrowUp, ArrowDown, X } from "lucide-react";
-import { toast } from "sonner";
-import { PermissionGate } from "@/components/PermissionGate";
+import { CalendarIcon, DollarSign, Clock, Loader2, User, FileText, TrendingUp, AlertCircle, CheckCircle2, XCircle, Hash, ArrowUpDown, ArrowUp, ArrowDown, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useAuditLog } from "@/hooks/useAuditLog";
 
 interface MemberDetail {
   id: string;
@@ -101,36 +96,19 @@ function maskCpfSimple(cpf: string | null | undefined): string {
 }
 
 export function FinanceiroIrmao() {
-  const { config: lodgeConfig } = useLodgeConfig();
   const { hasPermission } = useAuth();
-  const { logAction } = useAuditLog();
   const canViewCpf = hasPermission("secretaria", "write");
   const [members, setMembers] = useState<MemberDetail[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
   const [selectedId, setSelectedId] = useState<string>("");
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loadingTx, setLoadingTx] = useState(false);
-  const [saving, setSaving] = useState(false);
 
   // filters for history
   const [sortAsc, setSortAsc] = useState(false);
   const [filterDateFrom, setFilterDateFrom] = useState<Date | undefined>(undefined);
   const [filterDateTo, setFilterDateTo] = useState<Date | undefined>(undefined);
   const [filterSituacao, setFilterSituacao] = useState<string>("all");
-
-  // form
-  const [tipo, setTipo] = useState<string>("");
-  const [valor, setValor] = useState("");
-  const [descricao, setDescricao] = useState("");
-  const [data, setData] = useState<Date>(new Date());
-  const [situacao, setSituacao] = useState<string>("pago");
-
-  // Auto-fill valor when tipo changes to mensalidade (only if valor is empty)
-  useEffect(() => {
-    if (tipo === "mensalidade" && !valor && lodgeConfig.mensalidade_padrao > 0) {
-      setValor(lodgeConfig.mensalidade_padrao.toFixed(2).replace(".", ","));
-    }
-  }, [tipo, lodgeConfig.mensalidade_padrao]);
 
   const fetchMembers = useCallback(async () => {
     setLoadingMembers(true);
@@ -172,48 +150,6 @@ export function FinanceiroIrmao() {
   const txEmAberto = transactions.filter((t) => t.status === "em_aberto");
   const totalEmAberto = txEmAberto.reduce((s, t) => s + Number(t.valor), 0);
   const isAdimplente = txEmAberto.length === 0;
-
-  const handleLancamento = async () => {
-    if (!selected) { toast.error("Selecione um irmão antes de registrar."); return; }
-    if (!tipo) { toast.error("Selecione o tipo de lançamento."); return; }
-    const v = currencyToNumber(valor);
-    if (v <= 0 || isNaN(v)) { toast.error("O valor deve ser maior que zero."); return; }
-
-    setSaving(true);
-    const { error } = await supabase.from("member_transactions").insert({
-      member_id: selectedId,
-      tipo,
-      valor: v,
-      descricao: descricao.trim() || tipoLabels[tipo],
-      data: format(data, "yyyy-MM-dd"),
-      status: situacao,
-    });
-
-    if (error) {
-      toast.error("Erro ao registrar lançamento.");
-    } else {
-      logAction({
-        action: situacao === "pago" ? "CREATE_CREDIT" : "CREATE_DEBIT",
-        targetTable: "member_transactions",
-        targetId: selectedId,
-        details: {
-          member: selected.full_name,
-          tipo,
-          valor: v,
-          descricao: descricao.trim() || tipoLabels[tipo],
-          situacao,
-        },
-      });
-      toast.success(`Lançamento de ${formatCurrency(v)} registrado para ${selected.full_name}.`);
-      setTipo("");
-      setValor("");
-      setDescricao("");
-      setData(new Date());
-      setSituacao("pago");
-      fetchTransactions(selectedId);
-    }
-    setSaving(false);
-  };
 
   return (
     <div className="space-y-6">
@@ -334,67 +270,17 @@ export function FinanceiroIrmao() {
             </CardContent>
           </Card>
 
-          {/* Novo Lançamento */}
-          <PermissionGate module="secretaria" action="write">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base font-sans font-semibold">Novo Lançamento</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
-                  <div className="space-y-1.5">
-                    <Label>Tipo *</Label>
-                    <Select value={tipo} onValueChange={setTipo}>
-                      <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="mensalidade">Mensalidade</SelectItem>
-                        <SelectItem value="avulso">Valor Avulso</SelectItem>
-                        <SelectItem value="taxa">Taxa</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Valor (R$) *</Label>
-                    <Input placeholder="0,00" value={valor} onChange={(e) => setValor(parseCurrencyInput(e.target.value))} maxLength={12} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Data</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !data && "text-muted-foreground")}>
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {format(data, "dd/MM/yyyy")}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar mode="single" selected={data} onSelect={(d) => d && setData(d)} locale={ptBR} initialFocus className="p-3 pointer-events-auto" />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Situação</Label>
-                    <Select value={situacao} onValueChange={setSituacao}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pago">Pago</SelectItem>
-                        <SelectItem value="em_aberto">Em Aberto</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Descrição</Label>
-                    <Input placeholder="Descrição do lançamento" value={descricao} onChange={(e) => setDescricao(e.target.value)} maxLength={100} />
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <Button onClick={handleLancamento} disabled={saving} className="gap-1.5">
-                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                    {saving ? "Registrando..." : "Registrar Lançamento"}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </PermissionGate>
+          {/* Secretaria: consulta apenas */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base font-sans font-semibold">Lançamentos Financeiros</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                A Secretaria possui acesso de consulta. Novos lançamentos devem ser realizados no módulo de Tesouraria.
+              </p>
+            </CardContent>
+          </Card>
 
           {/* Histórico */}
           <Card>

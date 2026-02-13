@@ -10,6 +10,7 @@ export interface PortalMember {
   cpf: string | null;
   cim: string | null;
   address: string | null;
+  avatar_url: string | null;
   birth_date: string | null;
   degree: string;
   status: string;
@@ -41,7 +42,7 @@ export function usePortalMember(): UsePortalMemberReturn {
 
       const { data } = await supabase
         .from("members")
-        .select("id, full_name, email, phone, cpf, cim, address, birth_date, degree, status, initiation_date, elevation_date, exaltation_date, master_installed")
+        .select("id, full_name, email, phone, cpf, cim, address, avatar_url, birth_date, degree, status, initiation_date, elevation_date, exaltation_date, master_installed")
         .eq("email", user.email)
         .eq("status", "ativo")
         .maybeSingle();

@@ -1,7 +1,15 @@
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { usePortalMemberContext } from "@/components/portal/PortalLayout";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Phone, MapPin, Calendar, Award } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { toast } from "sonner";
+import { Mail, Phone, MapPin, Calendar, Award, Upload, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 
 const degreeLabels: Record<string, string> = {
@@ -21,11 +29,110 @@ const fmtDate = (d: string | null) => (d ? format(new Date(d), "dd/MM/yyyy") : "
 
 export default function PortalCadastro() {
   const member = usePortalMemberContext();
+  const { user } = useAuth();
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [form, setForm] = useState({
+    email: member.email ?? "",
+    phone: member.phone ?? "",
+    address: member.address ?? "",
+    avatar_url: member.avatar_url ?? "",
+  });
+
+  useEffect(() => {
+    setForm({
+      email: member.email ?? "",
+      phone: member.phone ?? "",
+      address: member.address ?? "",
+      avatar_url: member.avatar_url ?? "",
+    });
+  }, [member.id, member.email, member.phone, member.address, member.avatar_url]);
+
+  const isDirty = useMemo(() => {
+    const normalize = (value: string | null | undefined) => (value ?? "").trim();
+    return (
+      normalize(form.email) !== normalize(member.email) ||
+      normalize(form.phone) !== normalize(member.phone) ||
+      normalize(form.address) !== normalize(member.address) ||
+      normalize(form.avatar_url) !== normalize(member.avatar_url)
+    );
+  }, [form, member.email, member.phone, member.address, member.avatar_url]);
+
+  const initials = member.full_name
+    .split(" ")
+    .filter(Boolean)
+    .map((word) => word[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Selecione um arquivo de imagem válido.");
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("A foto deve ter no máximo 2 MB.");
+      return;
+    }
+
+    setUploading(true);
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage.from("member-photos").upload(path, file, { upsert: false });
+
+    if (error) {
+      toast.error(error.message || "Erro ao enviar foto.");
+      setUploading(false);
+      return;
+    }
+
+    const { data } = supabase.storage.from("member-photos").getPublicUrl(path);
+    setForm((prev) => ({ ...prev, avatar_url: data.publicUrl }));
+    setUploading(false);
+  };
+
+  const handleSalvar = async () => {
+    setSaving(true);
+    const email = form.email.trim().toLowerCase();
+    const payload = {
+      email: email || null,
+      phone: form.phone.trim() || null,
+      address: form.address.trim() || null,
+      avatar_url: form.avatar_url.trim() || null,
+    };
+
+    const { error } = await supabase.from("members").update(payload).eq("id", member.id);
+
+    if (error) {
+      toast.error(error.message || "Erro ao atualizar cadastro.");
+      setSaving(false);
+      return;
+    }
+
+    if (email && user?.email && email !== user.email.toLowerCase()) {
+      const { error: authError } = await supabase.auth.updateUser({ email });
+      if (authError) {
+        toast.warning("Dados salvos, mas não foi possível atualizar o e-mail de login automaticamente.");
+      } else {
+        toast.success("Dados salvos. Verifique seu e-mail para confirmar a alteração de login.");
+        setSaving(false);
+        return;
+      }
+    }
+
+    toast.success("Dados atualizados com sucesso.");
+    setSaving(false);
+  };
 
   const infoItems = [
-    { icon: Mail, label: "E-mail", value: member.email ?? "—" },
-    { icon: Phone, label: "Telefone", value: member.phone ?? "—" },
-    { icon: MapPin, label: "Endereço", value: member.address ?? "—" },
+    { icon: Mail, label: "E-mail", value: form.email || "—" },
+    { icon: Phone, label: "Telefone", value: form.phone || "—" },
+    { icon: MapPin, label: "Endereço", value: form.address || "—" },
     { icon: Calendar, label: "Data de Nascimento", value: fmtDate(member.birth_date) },
     { icon: Award, label: "CIM", value: member.cim ?? "—" },
   ];
@@ -50,6 +157,40 @@ export default function PortalCadastro() {
           </div>
         </CardHeader>
         <CardContent>
+          <div className="mb-5 flex items-center gap-4">
+            <Avatar className="h-16 w-16">
+              {form.avatar_url ? <AvatarImage src={form.avatar_url} alt={member.full_name} /> : null}
+              <AvatarFallback className="bg-primary/10 text-primary font-semibold">{initials}</AvatarFallback>
+            </Avatar>
+            <div className="space-y-2">
+              <Label htmlFor="portal-avatar">Foto do Perfil</Label>
+              <Input id="portal-avatar" type="file" accept="image/*" onChange={handlePhotoUpload} disabled={uploading} />
+              <p className="text-[11px] text-muted-foreground">PNG/JPG até 2MB.</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+            <div className="space-y-1.5">
+              <Label>E-mail</Label>
+              <Input value={form.email} onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))} placeholder="seuemail@exemplo.com" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Telefone Celular</Label>
+              <Input value={form.phone} onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))} placeholder="(00) 00000-0000" />
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label>Endereço</Label>
+              <Input value={form.address} onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))} placeholder="Rua, número, bairro, cidade" />
+            </div>
+          </div>
+
+          <div className="mb-6">
+            <Button onClick={handleSalvar} disabled={saving || uploading || !isDirty} className="gap-1.5">
+              {saving || uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+              Salvar alterações
+            </Button>
+          </div>
+
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {infoItems.map((item) => (
               <div key={item.label} className="flex items-start gap-3">
