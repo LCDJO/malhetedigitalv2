@@ -299,6 +299,14 @@ export default function Auth() {
                     <Button type="submit" className="w-full" disabled={loading}>
                       {loading ? "Entrando..." : "Entrar"}
                     </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => navigate("/portal/auth")}
+                    >
+                      Portal do Irmão
+                    </Button>
                     <button
                       type="button"
                       onClick={() => setView("forgot")}
@@ -338,6 +346,7 @@ export default function Auth() {
             </Tabs>
           )}
         </Card>
+
       </div>
     </div>
   );
