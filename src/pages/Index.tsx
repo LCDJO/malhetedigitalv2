@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Users, UserCheck, GraduationCap, Shield, Activity } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
@@ -24,19 +24,14 @@ const Index = () => {
     mestresInstalados: 0,
     inadimplentes: 0,
   });
-  const [recentMembers, setRecentMembers] = useState<{ id: string; full_name: string; degree: string; status: string; created_at: string }[]>([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
-      setLoading(true);
-
-      const [activeRes, inactiveRes, allRes, inadRes, recentRes] = await Promise.all([
+      const [activeRes, inactiveRes, allRes, inadRes] = await Promise.all([
         supabase.from("members").select("id", { count: "exact", head: true }).eq("status", "ativo"),
         supabase.from("members").select("id", { count: "exact", head: true }).neq("status", "ativo"),
         supabase.from("members").select("id, degree, master_installed").eq("status", "ativo"),
         supabase.from("member_transactions").select("member_id").eq("status", "em_aberto"),
-        supabase.from("members").select("id, full_name, degree, status, created_at").order("created_at", { ascending: false }).limit(5),
       ]);
 
       const porGrau: Record<string, number> = {};
@@ -58,9 +53,6 @@ const Index = () => {
         mestresInstalados,
         inadimplentes: inadSet.size,
       });
-
-      setRecentMembers(recentRes.data ?? []);
-      setLoading(false);
     })();
   }, []);
 
@@ -137,37 +129,6 @@ const Index = () => {
             </Card>
           ))}
         </div>
-      </section>
-
-      {/* Últimos membros cadastrados */}
-      <section className="space-y-4">
-        <SectionHeader title="Últimos Cadastros" subtitle="Obreiros adicionados recentemente" />
-        <Card>
-          <CardContent className="p-0">
-            {recentMembers.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <Users className="h-8 w-8 text-muted-foreground/40 mb-2" />
-                <p className="text-sm text-muted-foreground">Nenhum membro cadastrado ainda</p>
-              </div>
-            ) : (
-              <div className="divide-y">
-                {recentMembers.map((m) => (
-                  <div key={m.id} className="flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors">
-                    <div>
-                      <p className="text-sm font-medium">{m.full_name}</p>
-                      <p className="text-[10px] text-muted-foreground">
-                        {grauLabels[m.degree] ?? m.degree} · Cadastrado em {new Date(m.created_at).toLocaleDateString("pt-BR")}
-                      </p>
-                    </div>
-                    <Badge variant={m.status === "ativo" ? "default" : "secondary"} className="text-[10px]">
-                      {m.status === "ativo" ? "Ativo" : "Inativo"}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </section>
 
       {/* Info da Loja */}
