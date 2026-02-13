@@ -70,6 +70,44 @@ const Index = () => {
         </p>
       </div>
 
+      {/* Info da Loja */}
+      <section className="space-y-4">
+        <SectionHeader title="Dados da Loja" subtitle="Informações institucionais" />
+        <Card>
+          <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 text-sm">
+            <div><span className="text-muted-foreground">Nome:</span> <strong>{config.lodge_name || "—"}</strong></div>
+            <div><span className="text-muted-foreground">Nº:</span> <strong>{config.lodge_number || "—"}</strong></div>
+            <div><span className="text-muted-foreground">Oriente:</span> <strong>{config.orient || "—"}</strong></div>
+            <div><span className="text-muted-foreground">Potência:</span> <strong>{config.potencia || "—"}</strong></div>
+          </CardContent>
+        </Card>
+      </section>
+
+      {/* Distribuição por grau */}
+      <section className="space-y-4">
+        <SectionHeader title="Quadro de Obreiros" subtitle="Distribuição por grau maçônico" />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {(["aprendiz", "companheiro", "mestre"] as const).map((grau) => (
+            <Card key={grau}>
+              <CardContent className="flex items-center gap-4 p-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                  <GraduationCap className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{grauLabels[grau]}</p>
+                  <p className="text-2xl font-serif font-bold">{stats.porGrau[grau] ?? 0}</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {stats.totalAtivos > 0
+                      ? `${((stats.porGrau[grau] ?? 0) / stats.totalAtivos * 100).toFixed(0)}% do quadro`
+                      : "—"}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
+
       {/* KPIs principais */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
@@ -106,43 +144,6 @@ const Index = () => {
         />
       </div>
 
-      {/* Distribuição por grau */}
-      <section className="space-y-4">
-        <SectionHeader title="Quadro de Obreiros" subtitle="Distribuição por grau maçônico" />
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {(["aprendiz", "companheiro", "mestre"] as const).map((grau) => (
-            <Card key={grau}>
-              <CardContent className="flex items-center gap-4 p-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                  <GraduationCap className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{grauLabels[grau]}</p>
-                  <p className="text-2xl font-serif font-bold">{stats.porGrau[grau] ?? 0}</p>
-                  <p className="text-[10px] text-muted-foreground">
-                    {stats.totalAtivos > 0
-                      ? `${((stats.porGrau[grau] ?? 0) / stats.totalAtivos * 100).toFixed(0)}% do quadro`
-                      : "—"}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
-
-      {/* Info da Loja */}
-      <section className="space-y-4">
-        <SectionHeader title="Dados da Loja" subtitle="Informações institucionais" />
-        <Card>
-          <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 text-sm">
-            <div><span className="text-muted-foreground">Nome:</span> <strong>{config.lodge_name || "—"}</strong></div>
-            <div><span className="text-muted-foreground">Nº:</span> <strong>{config.lodge_number || "—"}</strong></div>
-            <div><span className="text-muted-foreground">Oriente:</span> <strong>{config.orient || "—"}</strong></div>
-            <div><span className="text-muted-foreground">Potência:</span> <strong>{config.potencia || "—"}</strong></div>
-          </CardContent>
-        </Card>
-      </section>
     </div>
   );
 };
