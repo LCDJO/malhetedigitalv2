@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Save, Loader2, Building2 } from "lucide-react";
+import { Save, Loader2, Building2, UserCheck } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 
 export default function AnunciantePerfil() {
   const advertiser = useAdvertiser();
@@ -18,6 +19,11 @@ export default function AnunciantePerfil() {
     phone: advertiser.phone ?? "",
     website: advertiser.website ?? "",
     address: advertiser.address ?? "",
+    representative_name: advertiser.representative_name ?? "",
+    representative_cpf: advertiser.representative_cpf ?? "",
+    representative_email: advertiser.representative_email ?? "",
+    representative_phone: advertiser.representative_phone ?? "",
+    representative_address: advertiser.representative_address ?? "",
   });
 
   const handleSave = async () => {
@@ -33,6 +39,11 @@ export default function AnunciantePerfil() {
         phone: form.phone.trim() || null,
         website: form.website.trim() || null,
         address: form.address.trim() || null,
+        representative_name: form.representative_name.trim() || null,
+        representative_cpf: form.representative_cpf.trim() || null,
+        representative_email: form.representative_email.trim() || null,
+        representative_phone: form.representative_phone.trim() || null,
+        representative_address: form.representative_address.trim() || null,
       })
       .eq("id", advertiser.id);
 
@@ -91,6 +102,47 @@ export default function AnunciantePerfil() {
           <div>
             <Label>Endereço</Label>
             <Input value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} />
+          </div>
+          <div className="flex justify-end">
+            <Button onClick={handleSave} disabled={saving} className="gap-1.5">
+              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+              Salvar
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base font-serif flex items-center gap-2">
+            <UserCheck className="h-4 w-4" />
+            Representante Legal
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label>Nome Completo</Label>
+              <Input value={form.representative_name} onChange={(e) => setForm((f) => ({ ...f, representative_name: e.target.value }))} />
+            </div>
+            <div>
+              <Label>CPF</Label>
+              <Input value={form.representative_cpf} onChange={(e) => setForm((f) => ({ ...f, representative_cpf: e.target.value }))} placeholder="000.000.000-00" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label>E-mail</Label>
+              <Input type="email" value={form.representative_email} onChange={(e) => setForm((f) => ({ ...f, representative_email: e.target.value }))} />
+            </div>
+            <div>
+              <Label>Telefone</Label>
+              <Input value={form.representative_phone} onChange={(e) => setForm((f) => ({ ...f, representative_phone: e.target.value }))} placeholder="(00) 00000-0000" />
+            </div>
+          </div>
+          <div>
+            <Label>Endereço</Label>
+            <Input value={form.representative_address} onChange={(e) => setForm((f) => ({ ...f, representative_address: e.target.value }))} />
           </div>
           <div className="flex justify-end">
             <Button onClick={handleSave} disabled={saving} className="gap-1.5">

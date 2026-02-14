@@ -34,6 +34,11 @@ interface Advertiser {
   logo_url: string | null;
   status: string;
   rejection_reason: string | null;
+  representative_name: string | null;
+  representative_cpf: string | null;
+  representative_email: string | null;
+  representative_phone: string | null;
+  representative_address: string | null;
 }
 
 const AdvertiserContext = createContext<Advertiser | null>(null);
