@@ -49,7 +49,7 @@ const complianceItems = [
 const adsItems = [
   { title: "Anunciantes", url: "/admin/anunciantes", icon: Megaphone },
   { title: "Banner", url: "/admin/banner-login", icon: Monitor },
-  { title: "Analytics", url: "/admin/banner-analytics", icon: BarChart3 },
+  { title: "Ads Analytics", url: "/admin/banner-analytics", icon: BarChart3 },
 ];
 
 export function AdminSidebar() {
