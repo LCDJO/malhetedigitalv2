@@ -140,8 +140,8 @@ export default function PortalCadastro() {
   return (
     <div className="space-y-6 max-w-3xl">
       <div>
-        <h1 className="text-2xl font-serif font-bold">Meu Cadastro</h1>
-        <p className="text-sm text-muted-foreground mt-1">Visualize seus dados registrados na Loja</p>
+        <h1 className="text-2xl font-serif font-bold">Meu Perfil</h1>
+        <p className="text-sm text-muted-foreground mt-1">Visualize e edite seus dados pessoais</p>
       </div>
 
       <Card>

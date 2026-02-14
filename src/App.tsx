@@ -26,6 +26,7 @@ import PortalCadastro from "./pages/portal/PortalCadastro";
 import PortalFinanceiro from "./pages/portal/PortalFinanceiro";
 import PortalPrestacaoContas from "./pages/portal/PortalPrestacaoContas";
 import PortalPerfil from "./pages/portal/PortalPerfil";
+import PortalMinhaLoja from "./pages/portal/PortalMinhaLoja";
 
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -81,9 +82,10 @@ const App = () => (
                   <PortalLayout>
                     <Routes>
                       <Route path="/" element={<PortalCadastro />} />
+                      <Route path="/minha-loja" element={<PortalMinhaLoja />} />
                       <Route path="/financeiro" element={<PortalFinanceiro />} />
                       <Route path="/prestacao-contas" element={<PortalPrestacaoContas />} />
-                      <Route path="/perfil" element={<PortalPerfil />} />
+                      <Route path="/seguranca" element={<PortalPerfil />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </PortalLayout>
