@@ -565,6 +565,57 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          member_id: string
+          message: string
+          metadata: Json | null
+          tenant_id: string
+          title: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          member_id: string
+          message: string
+          metadata?: Json | null
+          tenant_id: string
+          title: string
+          type?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          member_id?: string
+          message?: string
+          metadata?: Json | null
+          tenant_id?: string
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plano_contas: {
         Row: {
           ativo: boolean
@@ -1219,6 +1270,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      broadcast_notification: {
+        Args: {
+          _message: string
+          _metadata?: Json
+          _tenant_id: string
+          _title: string
+          _type?: string
+        }
+        Returns: undefined
+      }
       count_failed_attempts: { Args: { _identifier: string }; Returns: number }
       get_user_role: {
         Args: { _user_id: string }
