@@ -315,6 +315,56 @@ export type Database = {
           },
         ]
       }
+      login_banners: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          created_by: string | null
+          data_fim: string | null
+          data_inicio: string
+          id: string
+          media_url: string
+          tenant_id: string | null
+          tipo: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          data_fim?: string | null
+          data_inicio?: string
+          id?: string
+          media_url: string
+          tenant_id?: string | null
+          tipo: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          data_fim?: string | null
+          data_inicio?: string
+          id?: string
+          media_url?: string
+          tenant_id?: string | null
+          tipo?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "login_banners_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       member_transactions: {
         Row: {
           aprovado_por: string | null
