@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePortalMemberContext } from "@/components/portal/PortalLayout";
 import { PortalBannerCarousel } from "@/components/portal/PortalBannerCarousel";
+import { AdSlot } from "@/components/ads/AdSlot";
 import { useLodgeConfig } from "@/hooks/useLodgeConfig";
 import { Link } from "react-router-dom";
 import {
@@ -167,6 +168,9 @@ export default function PortalDashboard() {
           ))}
         </div>
       </div>
+
+      {/* Ad slot — portal */}
+      <AdSlot slotSlug="portal_dashboard_bottom" page="portal_dashboard" aspectRatio="20%" />
 
       {/* Quick links */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
