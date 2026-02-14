@@ -11,6 +11,7 @@ import {
   ClipboardCheck,
   Megaphone,
   BarChart3,
+  Plug,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
@@ -42,6 +43,7 @@ const complianceItems = [
   { title: "Termos e LGPD", url: "/admin/gestao-termos", icon: Scale },
   { title: "Controle de Aceites", url: "/admin/controle-aceites", icon: ClipboardCheck },
   { title: "Configurações", url: "/admin/configuracoes", icon: Settings },
+  { title: "Integrações", url: "/admin/integracoes", icon: Plug },
 ];
 
 const adsItems = [

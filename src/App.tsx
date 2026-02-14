@@ -40,6 +40,7 @@ import AdminConfigSuperAdmin from "./pages/admin/AdminConfigSuperAdmin";
 import AdminAuth from "./pages/admin/AdminAuth";
 import AdminBannerLogin from "./pages/admin/AdminBannerLogin";
 import AdminBannerAnalytics from "./pages/admin/AdminBannerAnalytics";
+import AdminIntegracoes from "./pages/admin/AdminIntegracoes";
 
 const queryClient = new QueryClient();
 
@@ -72,6 +73,7 @@ const App = () => (
                       <Route path="/gestao-termos" element={<GestaoTermos />} />
                       <Route path="/controle-aceites" element={<ControleAceites />} />
                       <Route path="/configuracoes" element={<AdminConfigSuperAdmin />} />
+                      <Route path="/integracoes" element={<AdminIntegracoes />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </AdminLayout>
