@@ -352,6 +352,7 @@ export type Database = {
           data_fim: string | null
           data_inicio: string
           duracao_segundos: number
+          grupo: string
           id: string
           media_url: string
           pagina: string
@@ -367,6 +368,7 @@ export type Database = {
           data_fim?: string | null
           data_inicio?: string
           duracao_segundos?: number
+          grupo?: string
           id?: string
           media_url: string
           pagina?: string
@@ -382,6 +384,7 @@ export type Database = {
           data_fim?: string | null
           data_inicio?: string
           duracao_segundos?: number
+          grupo?: string
           id?: string
           media_url?: string
           pagina?: string
