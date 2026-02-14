@@ -56,6 +56,30 @@ export type Database = {
           },
         ]
       }
+      active_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          session_token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          session_token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          session_token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       affiliate_relationships: {
         Row: {
           commission_percent: number
