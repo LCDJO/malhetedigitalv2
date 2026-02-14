@@ -10,12 +10,10 @@ import { PortalLayout } from "@/components/portal/PortalLayout";
 import Auth from "./pages/Auth";
 import Index from "./pages/Index";
 import Secretaria from "./pages/Secretaria";
-import Tesouraria from "./pages/Tesouraria";
 
 import GestaoUsuarios from "./pages/GestaoUsuarios";
 import LogAuditoria from "./pages/LogAuditoria";
 import Configuracoes from "./pages/Configuracoes";
-import Relatorios from "./pages/Relatorios";
 import Incidentes from "./pages/Incidentes";
 import GestaoTermos from "./pages/GestaoTermos";
 import ControleAceites from "./pages/ControleAceites";
@@ -23,8 +21,6 @@ import NotFound from "./pages/NotFound";
 
 import PortalAuth from "./pages/portal/PortalAuth";
 import PortalCadastro from "./pages/portal/PortalCadastro";
-import PortalFinanceiro from "./pages/portal/PortalFinanceiro";
-import PortalPrestacaoContas from "./pages/portal/PortalPrestacaoContas";
 import PortalPerfil from "./pages/portal/PortalPerfil";
 
 const queryClient = new QueryClient();
@@ -48,8 +44,6 @@ const App = () => (
                   <PortalLayout>
                     <Routes>
                       <Route path="/" element={<PortalCadastro />} />
-                      <Route path="/financeiro" element={<PortalFinanceiro />} />
-                      <Route path="/prestacao-contas" element={<PortalPrestacaoContas />} />
                       <Route path="/perfil" element={<PortalPerfil />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
@@ -75,26 +69,10 @@ const App = () => (
                         }
                       />
                       <Route
-                        path="/tesouraria"
-                        element={
-                          <ProtectedRoute module="tesouraria">
-                            <Tesouraria />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
                         path="/configuracoes"
                         element={
                           <ProtectedRoute module="configuracoes">
                             <Configuracoes />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/relatorios"
-                        element={
-                          <ProtectedRoute module="dashboard">
-                            <Relatorios />
                           </ProtectedRoute>
                         }
                       />

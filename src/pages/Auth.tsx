@@ -58,7 +58,7 @@ export default function Auth() {
         case "secretario":
           return "/secretaria";
         case "tesoureiro":
-          return "/tesouraria";
+          return "/";
         default:
           return "/";
       }

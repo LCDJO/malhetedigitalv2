@@ -6,13 +6,10 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, Loader2, Building2, Wallet, ScrollText, Tags, SlidersHorizontal, BookOpen } from "lucide-react";
+import { Save, Loader2, Building2, ScrollText, SlidersHorizontal } from "lucide-react";
 import { TabDadosLoja, type DadosLojaConfig } from "@/components/configuracoes/TabDadosLoja";
-import { TabParametrosFinanceiros } from "@/components/configuracoes/TabParametrosFinanceiros";
 import { TabRegrasMaconicas } from "@/components/configuracoes/TabRegrasMaconicas";
-import { TabCategoriasFinanceiras, type CategoriaFinanceira } from "@/components/configuracoes/TabCategoriasFinanceiras";
 import { TabPreferencias } from "@/components/configuracoes/TabPreferencias";
-import { TabPlanoContas } from "@/components/configuracoes/TabPlanoContas";
 
 interface LodgeConfig extends DadosLojaConfig {
   id: string;
@@ -25,7 +22,7 @@ interface LodgeConfig extends DadosLojaConfig {
   tempo_minimo_aprendiz: number;
   tempo_minimo_companheiro: number;
   exigir_quitacao_para_avanco: boolean;
-  categorias_financeiras: CategoriaFinanceira[];
+  categorias_financeiras: any[];
   permitir_lancamento_retroativo: boolean;
   exigir_aprovacao_tesouraria: boolean;
   notificar_inadimplencia: boolean;
@@ -97,7 +94,6 @@ export default function Configuracoes() {
       return;
     }
 
-    // Validate required fields
     if (!config.lodge_name.trim() || !config.lodge_number.trim() || !config.orient.trim() || !config.potencia.trim()) {
       toast.error("Preencha todos os campos obrigatórios.");
       return;
@@ -113,7 +109,6 @@ export default function Configuracoes() {
     if (error) {
       toast.error("Erro ao salvar configurações.");
     } else {
-      // Build diff for audit log
       const prev = previousConfig.current;
       const changes: Record<string, { de: unknown; para: unknown }> = {};
       for (const key of Object.keys(rest) as (keyof typeof rest)[]) {
@@ -166,12 +161,11 @@ export default function Configuracoes() {
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-12">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-serif font-bold">Configurações da Loja</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Parâmetros institucionais, financeiros e comportamentais do sistema.
+            Parâmetros institucionais e comportamentais do sistema.
           </p>
         </div>
         <Button onClick={handleSave} disabled={saving || !canWrite} className="gap-2">
@@ -180,26 +174,16 @@ export default function Configuracoes() {
         </Button>
       </div>
 
-      {/* Tabs */}
       <Tabs defaultValue="dados" className="w-full">
         <TabsList className="w-full justify-start flex-wrap h-auto gap-1 bg-muted/50 p-1">
           <TabsTrigger value="dados" className="gap-1.5 text-xs sm:text-sm">
             <Building2 className="h-3.5 w-3.5" /> Dados da Loja
           </TabsTrigger>
-          <TabsTrigger value="financeiro" className="gap-1.5 text-xs sm:text-sm">
-            <Wallet className="h-3.5 w-3.5" /> Parâmetros Financeiros
-          </TabsTrigger>
           <TabsTrigger value="regras" className="gap-1.5 text-xs sm:text-sm">
             <ScrollText className="h-3.5 w-3.5" /> Regras Maçônicas
           </TabsTrigger>
-          <TabsTrigger value="categorias" className="gap-1.5 text-xs sm:text-sm">
-            <Tags className="h-3.5 w-3.5" /> Categorias Financeiras
-          </TabsTrigger>
           <TabsTrigger value="preferencias" className="gap-1.5 text-xs sm:text-sm">
             <SlidersHorizontal className="h-3.5 w-3.5" /> Preferências
-          </TabsTrigger>
-          <TabsTrigger value="plano_contas" className="gap-1.5 text-xs sm:text-sm">
-            <BookOpen className="h-3.5 w-3.5" /> Plano de Contas
           </TabsTrigger>
         </TabsList>
 
@@ -207,35 +191,18 @@ export default function Configuracoes() {
           <TabDadosLoja config={config} canWrite={canWrite} onChange={set} onLogoUpload={handleLogoUpload} />
         </TabsContent>
 
-        <TabsContent value="financeiro" className="mt-6">
-          <TabParametrosFinanceiros config={config} canWrite={canWrite} onChange={set} />
-        </TabsContent>
-
         <TabsContent value="regras" className="mt-6">
           <TabRegrasMaconicas config={config} canWrite={canWrite} onChange={set} />
-        </TabsContent>
-
-        <TabsContent value="categorias" className="mt-6">
-          <TabCategoriasFinanceiras
-            categorias={config.categorias_financeiras}
-            canWrite={canWrite}
-            onChange={(cats) => set("categorias_financeiras", cats)}
-          />
         </TabsContent>
 
         <TabsContent value="preferencias" className="mt-6">
           <TabPreferencias config={config} canWrite={canWrite} onChange={set} />
         </TabsContent>
-
-        <TabsContent value="plano_contas" className="mt-6">
-          <TabPlanoContas />
-        </TabsContent>
       </Tabs>
 
-      {/* Impact notice */}
       <div className="flex items-center gap-2 text-xs text-muted-foreground px-1">
         <Badge variant="outline" className="text-[10px]">Atenção</Badge>
-        Alterações aqui impactam Secretaria, Tesouraria e Dashboard imediatamente após salvar.
+        Alterações aqui impactam o sistema imediatamente após salvar.
       </div>
     </div>
   );
