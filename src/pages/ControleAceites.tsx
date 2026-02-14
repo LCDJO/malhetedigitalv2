@@ -75,12 +75,13 @@ const ControleAceites = () => {
       termosQuery = termosQuery.or(`tenant_id.eq.${tenantId},tenant_id.is.null`);
     }
 
-    const [termosRes, aceitesRes, profilesRes, rolesRes, advertisersRes] = await Promise.all([
+    const [termosRes, aceitesRes, profilesRes, rolesRes, advertisersRes, tenantUsersRes] = await Promise.all([
       termosQuery,
       supabase.from("aceites_termos").select("*").order("data_hora_aceite", { ascending: false }),
       supabase.from("profiles").select("id, full_name"),
       supabase.from("user_roles").select("user_id, role"),
       supabase.from("advertisers").select("user_id"),
+      supabase.from("tenant_users").select("user_id"),
     ]);
 
     const termosData = (termosRes.data ?? []) as TermoRow[];
@@ -90,6 +91,9 @@ const ControleAceites = () => {
 
     const advertiserUserIds = new Set(
       ((advertisersRes.data ?? []) as { user_id: string }[]).map((a) => a.user_id)
+    );
+    const tenantUserIds = new Set(
+      ((tenantUsersRes.data ?? []) as { user_id: string }[]).map((t) => t.user_id)
     );
 
     setTermos(termosData);
@@ -101,10 +105,10 @@ const ControleAceites = () => {
     // Build accepted rows
     const aceiteRows: AceiteRow[] = aceites
       .filter((a) => {
-        // Exclude advertiser-only users
+        // Exclude advertiser/orphan users — only show platform users (have a role or belong to a tenant)
         const hasRole = roleMap.has(a.usuario_id);
-        const isAdvertiser = advertiserUserIds.has(a.usuario_id);
-        return hasRole || !isAdvertiser;
+        const belongsToTenant = tenantUserIds.has(a.usuario_id);
+        return hasRole || belongsToTenant;
       })
       .map((a) => ({
         id: a.id,
@@ -136,10 +140,10 @@ const ControleAceites = () => {
       const pending = profiles
         .filter((p) => !acceptedUserIds.has(p.id))
         .filter((p) => {
-          // Exclude advertiser-only users (no platform/lodge role)
+          // Exclude advertiser/orphan users — only show platform users
           const hasRole = roleMap.has(p.id);
-          const isAdvertiser = advertiserUserIds.has(p.id);
-          return hasRole || !isAdvertiser;
+          const belongsToTenant = tenantUserIds.has(p.id);
+          return hasRole || belongsToTenant;
         })
         .map((p) => ({
           id: p.id,
