@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
-    const { user_id, company_name, trading_name, document_type, document_number, email, phone, website, representative_name, representative_phone, representative_email } = await req.json();
+    const { user_id, company_name, trading_name, document_type, document_number, email, phone, website, representative_name, representative_cpf, representative_phone, representative_email, representative_address } = await req.json();
 
     if (!user_id || !company_name || !document_number || !email) {
       return new Response(JSON.stringify({ error: "Campos obrigatórios faltando." }), {
@@ -34,8 +34,10 @@ Deno.serve(async (req) => {
       phone: phone || null,
       website: website || null,
       representative_name: representative_name || null,
+      representative_cpf: representative_cpf || null,
       representative_phone: representative_phone || null,
       representative_email: representative_email || null,
+      representative_address: representative_address || null,
       status: "pendente",
     }).select().single();
 

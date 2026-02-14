@@ -17,6 +17,7 @@ import {
   FileText,
   ShieldCheck,
   RefreshCw,
+  UserCheck,
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -63,7 +64,7 @@ export default function AnuncianteAuth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // Register
+  // Register - Empresa
   const [regCompanyName, setRegCompanyName] = useState("");
   const [regTradingName, setRegTradingName] = useState("");
   const [regDocType, setRegDocType] = useState<"cnpj" | "cpf">("cnpj");
@@ -73,6 +74,13 @@ export default function AnuncianteAuth() {
   const [regWebsite, setRegWebsite] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [regConfirmPw, setRegConfirmPw] = useState("");
+
+  // Register - Representante Legal
+  const [repName, setRepName] = useState("");
+  const [repCpf, setRepCpf] = useState("");
+  const [repEmail, setRepEmail] = useState("");
+  const [repPhone, setRepPhone] = useState("");
+  const [repAddress, setRepAddress] = useState("");
 
   // Verification
   const [verifyEmail, setVerifyEmail] = useState("");
@@ -216,6 +224,11 @@ export default function AnuncianteAuth() {
         email: regEmail.trim().toLowerCase(),
         phone: regPhone.trim() || null,
         website: regWebsite.trim() || null,
+        representative_name: repName.trim() || null,
+        representative_cpf: repCpf.replace(/\D/g, "") || null,
+        representative_email: repEmail.trim().toLowerCase() || null,
+        representative_phone: repPhone.trim() || null,
+        representative_address: repAddress.trim() || null,
       },
     });
 
@@ -476,6 +489,39 @@ export default function AnuncianteAuth() {
                         <Input value={regWebsite} onChange={(e) => setRegWebsite(e.target.value)} placeholder="https://..." />
                       </div>
                     </div>
+
+                    {/* Representante Legal */}
+                    <div className="pt-3 mt-3 border-t border-border">
+                      <div className="flex items-center gap-2 mb-3">
+                        <UserCheck className="h-4 w-4 text-accent" />
+                        <p className="font-semibold text-sm">Representante Legal</p>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="space-y-1.5">
+                          <Label>Nome Completo</Label>
+                          <Input value={repName} onChange={(e) => setRepName(e.target.value)} placeholder="Nome do representante" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>CPF</Label>
+                          <Input value={repCpf} onChange={(e) => setRepCpf(e.target.value)} placeholder="000.000.000-00" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-1.5">
+                            <Label>E-mail</Label>
+                            <Input type="email" value={repEmail} onChange={(e) => setRepEmail(e.target.value)} placeholder="representante@email.com" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label>Telefone</Label>
+                            <Input value={repPhone} onChange={(e) => setRepPhone(e.target.value)} placeholder="(00) 00000-0000" />
+                          </div>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>Endereço</Label>
+                          <Input value={repAddress} onChange={(e) => setRepAddress(e.target.value)} placeholder="Rua, nº, bairro, cidade - UF" />
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="space-y-1.5">
                       <Label>Senha *</Label>
                       <div className="relative">

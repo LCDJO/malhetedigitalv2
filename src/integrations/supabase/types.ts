@@ -344,6 +344,8 @@ export type Database = {
           logo_url: string | null
           phone: string | null
           rejection_reason: string | null
+          representative_address: string | null
+          representative_cpf: string | null
           representative_email: string | null
           representative_name: string | null
           representative_phone: string | null
@@ -367,6 +369,8 @@ export type Database = {
           logo_url?: string | null
           phone?: string | null
           rejection_reason?: string | null
+          representative_address?: string | null
+          representative_cpf?: string | null
           representative_email?: string | null
           representative_name?: string | null
           representative_phone?: string | null
@@ -390,6 +394,8 @@ export type Database = {
           logo_url?: string | null
           phone?: string | null
           rejection_reason?: string | null
+          representative_address?: string | null
+          representative_cpf?: string | null
           representative_email?: string | null
           representative_name?: string | null
           representative_phone?: string | null
