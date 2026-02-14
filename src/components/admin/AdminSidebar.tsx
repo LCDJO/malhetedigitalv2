@@ -64,6 +64,9 @@ const integracaoPagamentos = [
 ];
 
 const integracaoBancos = [
+  { title: "Banco do Brasil", url: "/admin/integracoes/bancos/bb", icon: Building2 },
+  { title: "Bradesco", url: "/admin/integracoes/bancos/bradesco", icon: Building2 },
+  { title: "Itaú", url: "/admin/integracoes/bancos/itau", icon: Building2 },
   { title: "Sicredi", url: "/admin/integracoes/bancos/sicredi", icon: Building2 },
 ];
 

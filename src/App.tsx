@@ -44,6 +44,9 @@ import AdminIntegracoes from "./pages/admin/AdminIntegracoes";
 import AdminIntegracoesWhatsapp from "./pages/admin/AdminIntegracoesWhatsapp";
 import AdminIntegracoesTelegram from "./pages/admin/AdminIntegracoesTelegram";
 import AdminIntegracoesSicredi from "./pages/admin/AdminIntegracoesSicredi";
+import AdminIntegracoesBB from "./pages/admin/AdminIntegracoesBB";
+import AdminIntegracoesBradesco from "./pages/admin/AdminIntegracoesBradesco";
+import AdminIntegracoesItau from "./pages/admin/AdminIntegracoesItau";
 import AdminIntegracoesStripe from "./pages/admin/AdminIntegracoesStripe";
 import AdminAnunciantes from "./pages/admin/AdminAnunciantes";
 
@@ -108,6 +111,9 @@ const App = () => (
                       <Route path="/integracoes/whatsapp" element={<AdminIntegracoesWhatsapp />} />
                       <Route path="/integracoes/telegram" element={<AdminIntegracoesTelegram />} />
                       <Route path="/integracoes/stripe" element={<AdminIntegracoesStripe />} />
+                      <Route path="/integracoes/bancos/bb" element={<AdminIntegracoesBB />} />
+                      <Route path="/integracoes/bancos/bradesco" element={<AdminIntegracoesBradesco />} />
+                      <Route path="/integracoes/bancos/itau" element={<AdminIntegracoesItau />} />
                       <Route path="/integracoes/bancos/sicredi" element={<AdminIntegracoesSicredi />} />
                       <Route path="/anunciantes" element={<AdminAnunciantes />} />
                       <Route path="*" element={<NotFound />} />
