@@ -61,8 +61,10 @@ const integracaoComunicacao = [
 
 const integracaoPagamentos = [
   { title: "Stripe", url: "/admin/integracoes/stripe", icon: CreditCard },
-  { title: "Bancos", url: "/admin/integracoes/bancos", icon: Building2 },
-  { title: "Sicredi", url: "/admin/integracoes/sicredi", icon: Building2 },
+];
+
+const integracaoBancos = [
+  { title: "Sicredi", url: "/admin/integracoes/bancos/sicredi", icon: Building2 },
 ];
 
 const adsItems = [
@@ -77,9 +79,11 @@ export function AdminSidebar() {
   const { profile } = useAuth();
   const location = useLocation();
   const isComunicacaoRoute = location.pathname.startsWith("/admin/integracoes/email") || location.pathname.startsWith("/admin/integracoes/whatsapp") || location.pathname.startsWith("/admin/integracoes/telegram");
-  const isPagamentosRoute = location.pathname.startsWith("/admin/integracoes/stripe");
+  const isPagamentosRoute = location.pathname.startsWith("/admin/integracoes/stripe") || location.pathname.startsWith("/admin/integracoes/bancos");
+  const isBancosRoute = location.pathname.startsWith("/admin/integracoes/bancos");
   const [comunicacaoOpen, setComunicacaoOpen] = useState(isComunicacaoRoute);
   const [pagamentosOpen, setPagamentosOpen] = useState(isPagamentosRoute);
+  const [bancosOpen, setBancosOpen] = useState(isBancosRoute);
 
   const initials = profile?.full_name
     ? profile.full_name.split(" ").filter(Boolean).map((w) => w[0]).slice(0, 2).join("").toUpperCase()
@@ -228,6 +232,43 @@ export function AdminSidebar() {
                           </SidebarMenuButton>
                         </SidebarMenuItem>
                       ))}
+
+                      {/* Sub-submenu: Bancos */}
+                      <Collapsible open={bancosOpen} onOpenChange={setBancosOpen}>
+                        <SidebarMenuItem>
+                          <CollapsibleTrigger asChild>
+                            <SidebarMenuButton
+                              tooltip="Bancos"
+                              className={cn(
+                                "text-sidebar-foreground/65 hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground transition-all duration-150 rounded-md text-[13px]",
+                                bancosOpen && "bg-sidebar-accent/50 text-sidebar-accent-foreground"
+                              )}
+                            >
+                              <Building2 className="h-3.5 w-3.5" />
+                              <span>Bancos</span>
+                              <ChevronDown className={cn("ml-auto h-3 w-3 transition-transform duration-200", !bancosOpen && "-rotate-90")} />
+                            </SidebarMenuButton>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent>
+                            <SidebarMenu className="ml-3 mt-0.5 border-l border-sidebar-border pl-2">
+                              {integracaoBancos.map((item) => (
+                                <SidebarMenuItem key={item.title}>
+                                  <SidebarMenuButton asChild tooltip={item.title}>
+                                    <NavLink
+                                      to={item.url}
+                                      className="text-sidebar-foreground/65 hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground transition-all duration-150 rounded-md text-[12px]"
+                                      activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold shadow-sm"
+                                    >
+                                      <item.icon className="h-3 w-3" />
+                                      <span>{item.title}</span>
+                                    </NavLink>
+                                  </SidebarMenuButton>
+                                </SidebarMenuItem>
+                              ))}
+                            </SidebarMenu>
+                          </CollapsibleContent>
+                        </SidebarMenuItem>
+                      </Collapsible>
                     </SidebarMenu>
                   </CollapsibleContent>
                 </SidebarMenuItem>
