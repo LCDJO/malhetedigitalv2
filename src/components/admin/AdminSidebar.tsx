@@ -45,7 +45,7 @@ const complianceItems = [
 ];
 
 const adsItems = [
-  { title: "Banner Login", url: "/admin/banner-login", icon: Monitor },
+  { title: "Banner", url: "/admin/banner-login", icon: Monitor },
   { title: "Analytics", url: "/admin/banner-analytics", icon: BarChart3 },
 ];
 
