@@ -63,14 +63,17 @@ export default function Auth() {
 
     supabase
       .from("login_banners")
-      .select("tipo, media_url, duracao_segundos")
+      .select("tipo, media_url, duracao_segundos, pagina")
       .eq("ativo", true)
       .lte("data_inicio", new Date().toISOString())
       .order("created_at", { ascending: false })
       .then(({ data }) => {
         if (data && data.length > 0) {
           const now = new Date();
-          const active = (data as any[]).filter((b) => !b.data_fim || new Date(b.data_fim) > now);
+          const active = (data as any[]).filter((b) =>
+            (!b.data_fim || new Date(b.data_fim) > now) &&
+            (b.pagina === "loja" || b.pagina === "todos")
+          );
           setBanners(active);
         }
       });

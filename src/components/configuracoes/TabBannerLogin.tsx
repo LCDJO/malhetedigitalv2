@@ -21,6 +21,15 @@ import {
   Image as ImageIcon, Video, Plus, Pencil, Trash2, Upload, Eye, Calendar,
 } from "lucide-react";
 
+type BannerPagina = "todos" | "admin" | "loja" | "portal";
+
+const PAGINA_OPTIONS: { value: BannerPagina; label: string }[] = [
+  { value: "todos", label: "Todos os Portais" },
+  { value: "admin", label: "SuperAdmin" },
+  { value: "loja", label: "Login da Loja" },
+  { value: "portal", label: "Portal do Irmão" },
+];
+
 interface Banner {
   id: string;
   titulo: string;
@@ -30,6 +39,7 @@ interface Banner {
   data_fim: string | null;
   ativo: boolean;
   duracao_segundos: number;
+  pagina: BannerPagina;
   created_at: string;
 }
 
@@ -48,6 +58,7 @@ export function TabBannerLogin() {
   const [dataInicio, setDataInicio] = useState("");
   const [dataFim, setDataFim] = useState("");
   const [duracaoSegundos, setDuracaoSegundos] = useState(8);
+  const [pagina, setPagina] = useState<BannerPagina>("todos");
   const [file, setFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
 
@@ -70,6 +81,7 @@ export function TabBannerLogin() {
     setDataInicio(new Date().toISOString().slice(0, 16));
     setDataFim("");
     setDuracaoSegundos(8);
+    setPagina("todos");
     setFile(null);
     setFilePreview(null);
     setEditBanner(null);
@@ -88,6 +100,7 @@ export function TabBannerLogin() {
     setDataInicio(b.data_inicio.slice(0, 16));
     setDataFim(b.data_fim ? b.data_fim.slice(0, 16) : "");
     setDuracaoSegundos(b.duracao_segundos ?? 8);
+    setPagina((b.pagina as BannerPagina) ?? "todos");
     setFile(null);
     setFilePreview(b.media_url);
     setDialogOpen(true);
@@ -153,6 +166,7 @@ export function TabBannerLogin() {
         data_inicio: new Date(dataInicio).toISOString(),
         data_fim: dataFim ? new Date(dataFim).toISOString() : null,
         duracao_segundos: duracaoSegundos,
+        pagina,
       };
 
       if (editBanner) {
@@ -239,6 +253,7 @@ export function TabBannerLogin() {
               <TableRow className="bg-muted/40">
                 <TableHead>Título</TableHead>
                 <TableHead>Tipo</TableHead>
+                <TableHead>Página</TableHead>
                 <TableHead>Período</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
@@ -247,13 +262,13 @@ export function TabBannerLogin() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-10">
+                  <TableCell colSpan={6} className="text-center py-10">
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto" />
                   </TableCell>
                 </TableRow>
               ) : banners.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
                     Nenhum banner cadastrado.
                   </TableCell>
                 </TableRow>
@@ -273,6 +288,11 @@ export function TabBannerLogin() {
                     <TableCell>
                       <Badge variant="outline" className="text-xs capitalize">
                         {b.tipo}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary" className="text-xs">
+                        {PAGINA_OPTIONS.find((p) => p.value === b.pagina)?.label ?? "Todos"}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
@@ -406,6 +426,20 @@ export function TabBannerLogin() {
                   <video src={filePreview} className="w-full h-32 object-cover" muted />
                 </div>
               )}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Exibir em *</Label>
+              <Select value={pagina} onValueChange={(v) => setPagina(v as BannerPagina)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PAGINA_OPTIONS.map((p) => (
+                    <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid grid-cols-3 gap-3">
