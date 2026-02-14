@@ -9,12 +9,10 @@ import { Badge } from "@/components/ui/badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import {
-  UserPlus, Search, Users, MoreHorizontal, Pencil, Eye,
+  UserPlus, Search, Users, Pencil, Eye,
   ShieldCheck, ShieldOff, KeyRound, Trash2, Loader2, Crown,
 } from "lucide-react";
 import { useAuditLog } from "@/hooks/useAuditLog";
@@ -284,7 +282,7 @@ export default function GestaoUsuarios() {
                 <TableHead>Email</TableHead>
                 <TableHead>Cargo</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right w-16">Ações</TableHead>
+                <TableHead className="text-right w-56">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -320,41 +318,64 @@ export default function GestaoUsuarios() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuItem onClick={() => setDetailUser(user)}>
-                            <Eye className="h-4 w-4 mr-2" /> Ver Detalhes
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => navigate(`/secretaria?edit_email=${encodeURIComponent(user.email)}`)}>
-                            <Pencil className="h-4 w-4 mr-2" /> Editar na Secretaria
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setResetUser(user)}>
-                            <KeyRound className="h-4 w-4 mr-2" /> Resetar Senha
-                          </DropdownMenuItem>
+                      <TooltipProvider delayDuration={300}>
+                        <div className="flex items-center justify-end gap-1">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDetailUser(user)}>
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Ver Detalhes</TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/secretaria?edit_email=${encodeURIComponent(user.email)}`)}>
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Editar na Secretaria</TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setResetUser(user)}>
+                                <KeyRound className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Resetar Senha</TooltipContent>
+                          </Tooltip>
                           {user.role !== "administrador" && (
-                            <DropdownMenuItem onClick={() => promoteToAdmin(user)}>
-                              <Crown className="h-4 w-4 mr-2 text-amber-500" /> Tornar Administrador
-                            </DropdownMenuItem>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => promoteToAdmin(user)}>
+                                  <Crown className="h-4 w-4 text-amber-500" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Tornar Administrador</TooltipContent>
+                            </Tooltip>
                           )}
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => toggleActive(user)}>
-                            {user.is_active ? (
-                              <><ShieldOff className="h-4 w-4 mr-2 text-destructive" /> <span className="text-destructive">Desativar</span></>
-                            ) : (
-                              <><ShieldCheck className="h-4 w-4 mr-2 text-success" /> <span className="text-success">Ativar</span></>
-                            )}
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => setDeleteUser(user)} className="text-destructive focus:text-destructive">
-                            <Trash2 className="h-4 w-4 mr-2" /> Excluir
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toggleActive(user)}>
+                                {user.is_active ? (
+                                  <ShieldOff className="h-4 w-4 text-destructive" />
+                                ) : (
+                                  <ShieldCheck className="h-4 w-4 text-success" />
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>{user.is_active ? "Desativar" : "Ativar"}</TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteUser(user)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Excluir</TooltipContent>
+                          </Tooltip>
+                        </div>
+                      </TooltipProvider>
                     </TableCell>
                   </TableRow>
                 ))
