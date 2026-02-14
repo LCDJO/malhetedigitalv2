@@ -889,6 +889,7 @@ export type Database = {
         Row: {
           cnpj: string | null
           created_at: string
+          deleted_at: string | null
           email: string | null
           endereco: string | null
           id: string
@@ -899,6 +900,7 @@ export type Database = {
           orient: string | null
           plan_features: Json
           potencia: string | null
+          purge_at: string | null
           rito: string | null
           settings: Json
           slug: string
@@ -910,6 +912,7 @@ export type Database = {
         Insert: {
           cnpj?: string | null
           created_at?: string
+          deleted_at?: string | null
           email?: string | null
           endereco?: string | null
           id?: string
@@ -920,6 +923,7 @@ export type Database = {
           orient?: string | null
           plan_features?: Json
           potencia?: string | null
+          purge_at?: string | null
           rito?: string | null
           settings?: Json
           slug: string
@@ -931,6 +935,7 @@ export type Database = {
         Update: {
           cnpj?: string | null
           created_at?: string
+          deleted_at?: string | null
           email?: string | null
           endereco?: string | null
           id?: string
@@ -941,6 +946,7 @@ export type Database = {
           orient?: string | null
           plan_features?: Json
           potencia?: string | null
+          purge_at?: string | null
           rito?: string | null
           settings?: Json
           slug?: string
