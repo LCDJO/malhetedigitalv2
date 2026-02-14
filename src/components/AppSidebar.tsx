@@ -1,16 +1,15 @@
 import {
-  BookOpen,
-  Stamp,
-  Settings,
   LayoutDashboard,
+  Zap,
+  Trophy,
+  Settings,
   Users,
   ScrollText,
-  ShieldAlert,
-  Scale,
-  ClipboardCheck,
+  Building2,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useAuth, roleLabels } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
 import {
   Sidebar,
   SidebarContent,
@@ -28,22 +27,23 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 
 const menuItems = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard, module: "dashboard" },
-  { title: "Secretaria", url: "/secretaria", icon: BookOpen, module: "secretaria" },
-  { title: "Chancelaria", url: "/chancelaria", icon: Stamp, module: "chancelaria" },
-  
-  { title: "Configurações", url: "/configuracoes", icon: Settings, module: "configuracoes" },
-  { title: "Gestão de Usuários", url: "/gestao-usuarios", icon: Users, module: "configuracoes" },
-  { title: "Log de Auditoria", url: "/log-auditoria", icon: ScrollText, module: "configuracoes" },
-  { title: "Incidentes", url: "/incidentes", icon: ShieldAlert, module: "configuracoes" },
-  { title: "Termos e LGPD", url: "/gestao-termos", icon: Scale, module: "configuracoes" },
-  { title: "Controle de Aceites", url: "/controle-aceites", icon: ClipboardCheck, module: "configuracoes" },
+  { title: "Dashboard", url: "/app", icon: LayoutDashboard },
+  { title: "Planos", url: "/app/plans", icon: Zap },
+  { title: "Ranking", url: "/app/ranking", icon: Trophy },
+  { title: "Membros", url: "/app/members", icon: Users },
 ];
+
+const tenantRoleLabels: Record<string, string> = {
+  owner: "Owner",
+  admin: "Admin",
+  member: "Membro",
+};
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const { profile, role, hasModuleAccess } = useAuth();
+  const { profile } = useAuth();
+  const { tenant, tenantRole } = useTenant();
 
   const initials = profile?.full_name
     ? profile.full_name.split(" ").filter(Boolean).map((w) => w[0]).slice(0, 2).join("").toUpperCase()
@@ -54,12 +54,14 @@ export function AppSidebar() {
       <SidebarHeader className="p-5 pb-4">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground font-serif font-bold text-lg shadow-sm">
-            M
+            G
           </div>
           {!collapsed && (
             <div className="flex flex-col">
-              <span className="text-[13px] font-bold text-sidebar-accent-foreground tracking-tight">Malhete Digital</span>
-              <span className="text-[11px] text-sidebar-foreground/50 font-medium">Gestão Maçônica</span>
+              <span className="text-[13px] font-bold text-sidebar-accent-foreground tracking-tight">Gamify</span>
+              <span className="text-[11px] text-sidebar-foreground/50 font-medium truncate max-w-[140px]">
+                {tenant?.name || "Recorrência"}
+              </span>
             </div>
           )}
         </div>
@@ -70,29 +72,45 @@ export function AppSidebar() {
       <SidebarContent className="pt-5 px-2">
         <SidebarGroup>
           <SidebarGroupLabel className="admin-section-title text-sidebar-foreground/40 px-3 mb-1">
-            Módulos
+            Menu
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => {
-                const hasAccess = hasModuleAccess(item.module);
-                if (!hasAccess) return null; // Ocultar menus não autorizados
-                return (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild tooltip={item.title}>
-                      <NavLink
-                        to={item.url}
-                        end={item.url === "/"}
-                        className="text-sidebar-foreground/65 hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground transition-all duration-150 rounded-md"
-                        activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold shadow-sm"
-                      >
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
+              {menuItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild tooltip={item.title}>
+                    <NavLink
+                      to={item.url}
+                      end={item.url === "/app"}
+                      className="text-sidebar-foreground/65 hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground transition-all duration-150 rounded-md"
+                      activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold shadow-sm"
+                    >
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.title}</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Tenant switch */}
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Trocar workspace">
+                  <NavLink
+                    to="/tenants"
+                    className="text-sidebar-foreground/65 hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground transition-all duration-150 rounded-md"
+                    activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold shadow-sm"
+                  >
+                    <Building2 className="h-4 w-4" />
+                    <span>Workspaces</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -109,13 +127,10 @@ export function AppSidebar() {
               <span className="text-[12px] font-medium text-sidebar-accent-foreground truncate">
                 {profile?.full_name ?? "Carregando..."}
               </span>
-              {role && (
+              {tenantRole && (
                 <Badge variant="outline" className="mt-0.5 w-fit text-[9px] px-1.5 py-0 border-sidebar-border text-sidebar-foreground/60">
-                  {roleLabels[role]}
+                  {tenantRoleLabels[tenantRole] ?? tenantRole}
                 </Badge>
-              )}
-              {!role && (
-                <span className="text-[10px] text-sidebar-foreground/40 truncate">Sem cargo atribuído</span>
               )}
             </div>
           )}
