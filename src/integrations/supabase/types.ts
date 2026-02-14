@@ -322,6 +322,7 @@ export type Database = {
           created_by: string | null
           data_fim: string | null
           data_inicio: string
+          duracao_segundos: number
           id: string
           media_url: string
           tenant_id: string | null
@@ -335,6 +336,7 @@ export type Database = {
           created_by?: string | null
           data_fim?: string | null
           data_inicio?: string
+          duracao_segundos?: number
           id?: string
           media_url: string
           tenant_id?: string | null
@@ -348,6 +350,7 @@ export type Database = {
           created_by?: string | null
           data_fim?: string | null
           data_inicio?: string
+          duracao_segundos?: number
           id?: string
           media_url?: string
           tenant_id?: string | null
