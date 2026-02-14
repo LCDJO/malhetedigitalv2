@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   LayoutDashboard,
   Building2,
@@ -73,8 +74,10 @@ export function AdminSidebar() {
   const collapsed = state === "collapsed";
   const { profile } = useAuth();
   const location = useLocation();
-  const comunicacaoOpen = location.pathname.startsWith("/admin/integracoes/email") || location.pathname.startsWith("/admin/integracoes/whatsapp") || location.pathname.startsWith("/admin/integracoes/telegram");
-  const pagamentosOpen = location.pathname.startsWith("/admin/integracoes/stripe");
+  const isComunicacaoRoute = location.pathname.startsWith("/admin/integracoes/email") || location.pathname.startsWith("/admin/integracoes/whatsapp") || location.pathname.startsWith("/admin/integracoes/telegram");
+  const isPagamentosRoute = location.pathname.startsWith("/admin/integracoes/stripe");
+  const [comunicacaoOpen, setComunicacaoOpen] = useState(isComunicacaoRoute);
+  const [pagamentosOpen, setPagamentosOpen] = useState(isPagamentosRoute);
 
   const initials = profile?.full_name
     ? profile.full_name.split(" ").filter(Boolean).map((w) => w[0]).slice(0, 2).join("").toUpperCase()
@@ -155,7 +158,7 @@ export function AdminSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {/* Submenu: Comunicação */}
-              <Collapsible open={comunicacaoOpen} defaultOpen={comunicacaoOpen}>
+              <Collapsible open={comunicacaoOpen} onOpenChange={setComunicacaoOpen}>
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
                     <SidebarMenuButton
@@ -192,7 +195,7 @@ export function AdminSidebar() {
               </Collapsible>
 
               {/* Submenu: Pagamentos */}
-              <Collapsible open={pagamentosOpen} defaultOpen={pagamentosOpen}>
+              <Collapsible open={pagamentosOpen} onOpenChange={setPagamentosOpen}>
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
                     <SidebarMenuButton
