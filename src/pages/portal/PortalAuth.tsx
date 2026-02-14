@@ -38,7 +38,7 @@ export default function PortalAuth() {
   const [firstAccessCim, setFirstAccessCim] = useState("");
 
   // Banners
-  const [banners, setBanners] = useState<{ tipo: string; media_url: string; duracao_segundos: number }[]>([]);
+  const [banners, setBanners] = useState<{ id: string; tipo: string; media_url: string; duracao_segundos: number }[]>([]);
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   const [bannerFading, setBannerFading] = useState(false);
 
@@ -46,7 +46,7 @@ export default function PortalAuth() {
   useEffect(() => {
     supabase
       .from("login_banners")
-      .select("tipo, media_url, duracao_segundos, pagina")
+      .select("id, tipo, media_url, duracao_segundos, pagina")
       .eq("ativo", true)
       .lte("data_inicio", new Date().toISOString())
       .order("created_at", { ascending: false })
@@ -61,6 +61,14 @@ export default function PortalAuth() {
         }
       });
   }, []);
+
+  // Track impressions
+  useEffect(() => {
+    if (banners.length === 0) return;
+    const b = banners[currentBannerIndex];
+    if (!b) return;
+    supabase.from("banner_impressions").insert({ banner_id: b.id, pagina: "portal" }).then(() => {});
+  }, [banners, currentBannerIndex]);
 
   // Rotate banners
   useEffect(() => {

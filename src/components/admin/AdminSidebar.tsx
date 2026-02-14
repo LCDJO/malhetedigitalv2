@@ -10,6 +10,7 @@ import {
   Scale,
   ClipboardCheck,
   Megaphone,
+  BarChart3,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
@@ -45,6 +46,7 @@ const complianceItems = [
 
 const adsItems = [
   { title: "Banner Login", url: "/admin/banner-login", icon: Monitor },
+  { title: "Analytics", url: "/admin/banner-analytics", icon: BarChart3 },
 ];
 
 export function AdminSidebar() {

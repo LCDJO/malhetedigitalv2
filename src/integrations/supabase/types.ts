@@ -141,6 +141,35 @@ export type Database = {
           },
         ]
       }
+      banner_impressions: {
+        Row: {
+          banner_id: string
+          created_at: string
+          id: string
+          pagina: string
+        }
+        Insert: {
+          banner_id: string
+          created_at?: string
+          id?: string
+          pagina?: string
+        }
+        Update: {
+          banner_id?: string
+          created_at?: string
+          id?: string
+          pagina?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "banner_impressions_banner_id_fkey"
+            columns: ["banner_id"]
+            isOneToOne: false
+            referencedRelation: "login_banners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       incidentes: {
         Row: {
           acoes_tomadas: string | null
