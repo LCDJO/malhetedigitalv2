@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePortalMemberContext } from "@/components/portal/PortalLayout";
+import { PortalBannerCarousel } from "@/components/portal/PortalBannerCarousel";
 import { useLodgeConfig } from "@/hooks/useLodgeConfig";
 import { Link } from "react-router-dom";
 import {
@@ -57,6 +58,9 @@ export default function PortalDashboard() {
 
   return (
     <div className="space-y-6 max-w-4xl">
+      {/* Banner carousel */}
+      <PortalBannerCarousel />
+
       {/* Welcome */}
       <div>
         <h1 className="text-2xl font-serif font-bold text-foreground">

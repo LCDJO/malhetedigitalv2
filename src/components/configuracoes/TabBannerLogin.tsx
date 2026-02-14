@@ -19,8 +19,47 @@ import {
 } from "@/components/ui/select";
 import { ConfirmSensitiveAction } from "@/components/ConfirmSensitiveAction";
 import {
-  Image as ImageIcon, Video, Plus, Pencil, Trash2, Upload, Eye, Calendar,
+  Image as ImageIcon, Video, Plus, Pencil, Trash2, Upload, Eye, Calendar, Info,
 } from "lucide-react";
+
+/* ─── Grupo (posicionamento) de banner ─── */
+
+export interface BannerGrupo {
+  value: string;
+  label: string;
+  description: string;
+  width: number;
+  height: number;
+  aspectRatio: string;     // e.g. "16/9"
+  aspectPercent: string;   // for padding-bottom trick
+}
+
+export const BANNER_GRUPOS: BannerGrupo[] = [
+  {
+    value: "login",
+    label: "Tela de Login",
+    description: "Painel lateral das telas de autenticação",
+    width: 1920,
+    height: 1080,
+    aspectRatio: "16/9",
+    aspectPercent: "56.25%",
+  },
+  {
+    value: "portal_dashboard",
+    label: "Dashboard do Portal",
+    description: "Banner destaque no dashboard do Portal do Irmão",
+    width: 1200,
+    height: 300,
+    aspectRatio: "4/1",
+    aspectPercent: "25%",
+  },
+];
+
+export function getGrupo(value: string): BannerGrupo {
+  return BANNER_GRUPOS.find((g) => g.value === value) ?? BANNER_GRUPOS[0];
+}
+
+/* ─── Página (visibilidade) ─── */
 
 const PAGINA_CHECKBOXES: { value: string; label: string }[] = [
   { value: "admin", label: "SuperAdmin" },
@@ -46,6 +85,8 @@ function getPaginaLabels(pagina: string): string[] {
   return items.map((v) => PAGINA_CHECKBOXES.find((p) => p.value === v)?.label ?? v);
 }
 
+/* ─── Types ─── */
+
 interface Banner {
   id: string;
   titulo: string;
@@ -56,8 +97,11 @@ interface Banner {
   ativo: boolean;
   duracao_segundos: number;
   pagina: string;
+  grupo: string;
   created_at: string;
 }
+
+/* ─── Component ─── */
 
 export function TabBannerLogin() {
   const [banners, setBanners] = useState<Banner[]>([]);
@@ -67,10 +111,12 @@ export function TabBannerLogin() {
   const [saving, setSaving] = useState(false);
   const [deleteBanner, setDeleteBanner] = useState<Banner | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [filterGrupo, setFilterGrupo] = useState("todos");
 
   // Form state
   const [titulo, setTitulo] = useState("");
   const [tipo, setTipo] = useState<"imagem" | "video">("imagem");
+  const [grupo, setGrupo] = useState("login");
   const [dataInicio, setDataInicio] = useState("");
   const [dataFim, setDataFim] = useState("");
   const [duracaoSegundos, setDuracaoSegundos] = useState(8);
@@ -94,6 +140,7 @@ export function TabBannerLogin() {
   const resetForm = () => {
     setTitulo("");
     setTipo("imagem");
+    setGrupo("login");
     setDataInicio(new Date().toISOString().slice(0, 16));
     setDataFim("");
     setDuracaoSegundos(8);
@@ -113,6 +160,7 @@ export function TabBannerLogin() {
     setEditBanner(b);
     setTitulo(b.titulo);
     setTipo(b.tipo);
+    setGrupo(b.grupo || "login");
     setDataInicio(b.data_inicio.slice(0, 16));
     setDataFim(b.data_fim ? b.data_fim.slice(0, 16) : "");
     setDuracaoSegundos(b.duracao_segundos ?? 8);
@@ -143,11 +191,7 @@ export function TabBannerLogin() {
     }
 
     setFile(f);
-    if (isImage) {
-      setFilePreview(URL.createObjectURL(f));
-    } else {
-      setFilePreview(URL.createObjectURL(f));
-    }
+    setFilePreview(URL.createObjectURL(f));
   };
 
   const handleSave = async () => {
@@ -160,7 +204,6 @@ export function TabBannerLogin() {
     try {
       let mediaUrl = editBanner?.media_url || "";
 
-      // Upload file if new
       if (file) {
         const ext = file.name.split(".").pop() || "bin";
         const path = `banners/${Date.now()}.${ext}`;
@@ -184,6 +227,7 @@ export function TabBannerLogin() {
         data_fim: dataFim ? new Date(dataFim).toISOString() : null,
         duracao_segundos: duracaoSegundos,
         pagina: serializePaginas(paginasSelecionadas),
+        grupo,
       };
 
       if (editBanner) {
@@ -245,6 +289,12 @@ export function TabBannerLogin() {
   const formatDate = (d: string) =>
     new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
+  const selectedGrupo = getGrupo(grupo);
+
+  const filteredBanners = filterGrupo === "todos"
+    ? banners
+    : banners.filter((b) => (b.grupo || "login") === filterGrupo);
+
   return (
     <div className="space-y-4">
       <Card className="border-border/60">
@@ -256,12 +306,25 @@ export function TabBannerLogin() {
                 Banners
               </CardTitle>
               <CardDescription className="mt-1">
-                Gerencie as mídias exibidas no painel lateral da tela de autenticação.
+                Gerencie os banners exibidos nas diferentes áreas da plataforma.
               </CardDescription>
             </div>
-            <Button onClick={openCreate} size="sm" className="gap-1.5">
-              <Plus className="h-4 w-4" /> Novo Banner
-            </Button>
+            <div className="flex items-center gap-2">
+              <Select value={filterGrupo} onValueChange={setFilterGrupo}>
+                <SelectTrigger className="w-[180px] h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os Grupos</SelectItem>
+                  {BANNER_GRUPOS.map((g) => (
+                    <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button onClick={openCreate} size="sm" className="gap-1.5">
+                <Plus className="h-4 w-4" /> Novo Banner
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -269,6 +332,7 @@ export function TabBannerLogin() {
             <TableHeader>
               <TableRow className="bg-muted/40">
                 <TableHead>Título</TableHead>
+                <TableHead>Grupo</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Página</TableHead>
                 <TableHead>Período</TableHead>
@@ -280,95 +344,103 @@ export function TabBannerLogin() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-10">
+                  <TableCell colSpan={8} className="text-center py-10">
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto" />
                   </TableCell>
                 </TableRow>
-              ) : banners.length === 0 ? (
+              ) : filteredBanners.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">
                     Nenhum banner cadastrado.
                   </TableCell>
                 </TableRow>
               ) : (
-                banners.map((b) => (
-                  <TableRow key={b.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        {b.tipo === "imagem" ? (
-                          <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                        ) : (
-                          <Video className="h-3.5 w-3.5 text-muted-foreground" />
-                        )}
-                        {b.titulo}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="text-xs capitalize">
-                        {b.tipo}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {getPaginaLabels(b.pagina).map((label) => (
-                          <Badge key={label} variant="secondary" className="text-[10px]">
-                            {label}
-                          </Badge>
-                        ))}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {formatDate(b.data_inicio)}
-                        {b.data_fim && <> — {formatDate(b.data_fim)}</>}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                      {b.duracao_segundos}s
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          checked={b.ativo}
-                          onCheckedChange={() => toggleAtivo(b)}
-                          className="scale-90"
-                        />
-                        <Badge
-                          variant={isActive(b) ? "default" : "secondary"}
-                          className="text-[10px]"
-                        >
-                          {isActive(b) ? "Exibindo" : b.ativo ? "Agendado" : "Inativo"}
+                filteredBanners.map((b) => {
+                  const g = getGrupo(b.grupo || "login");
+                  return (
+                    <TableRow key={b.id}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {b.tipo === "imagem" ? (
+                            <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                          ) : (
+                            <Video className="h-3.5 w-3.5 text-muted-foreground" />
+                          )}
+                          {b.titulo}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-[10px] whitespace-nowrap">
+                          {g.label}
                         </Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          variant="ghost" size="icon" className="h-8 w-8"
-                          onClick={() => setPreviewUrl(b.media_url)}
-                          title="Visualizar"
-                        >
-                          <Eye className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          variant="ghost" size="icon" className="h-8 w-8"
-                          onClick={() => openEdit(b)}
-                          title="Editar"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          variant="ghost" size="icon" className="h-8 w-8"
-                          onClick={() => setDeleteBanner(b)}
-                          title="Excluir"
-                        >
-                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs capitalize">
+                          {b.tipo}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {getPaginaLabels(b.pagina).map((label) => (
+                            <Badge key={label} variant="secondary" className="text-[10px]">
+                              {label}
+                            </Badge>
+                          ))}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {formatDate(b.data_inicio)}
+                          {b.data_fim && <> — {formatDate(b.data_fim)}</>}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                        {b.duracao_segundos}s
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={b.ativo}
+                            onCheckedChange={() => toggleAtivo(b)}
+                            className="scale-90"
+                          />
+                          <Badge
+                            variant={isActive(b) ? "default" : "secondary"}
+                            className="text-[10px]"
+                          >
+                            {isActive(b) ? "Exibindo" : b.ativo ? "Agendado" : "Inativo"}
+                          </Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost" size="icon" className="h-8 w-8"
+                            onClick={() => setPreviewUrl(b.media_url)}
+                            title="Visualizar"
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost" size="icon" className="h-8 w-8"
+                            onClick={() => openEdit(b)}
+                            title="Editar"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost" size="icon" className="h-8 w-8"
+                            onClick={() => setDeleteBanner(b)}
+                            title="Excluir"
+                          >
+                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
@@ -386,6 +458,32 @@ export function TabBannerLogin() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 py-2">
             {/* Left column — Media upload & preview */}
             <div className="space-y-4">
+              {/* Grupo selector — FIRST so dimensions update preview */}
+              <div className="space-y-1.5">
+                <Label>Grupo (Posicionamento) *</Label>
+                <Select value={grupo} onValueChange={(v) => { setGrupo(v); setFile(null); setFilePreview(editBanner?.media_url || null); }}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {BANNER_GRUPOS.map((g) => (
+                      <SelectItem key={g.value} value={g.value}>
+                        <div className="flex flex-col">
+                          <span>{g.label}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="flex items-start gap-1.5 p-2 rounded-md bg-muted/50 border border-border/50">
+                  <Info className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
+                  <div className="text-[11px] text-muted-foreground">
+                    <p className="font-medium text-foreground/70">{selectedGrupo.description}</p>
+                    <p>Tamanho ideal: <strong>{selectedGrupo.width} × {selectedGrupo.height} px</strong> ({selectedGrupo.aspectRatio.replace("/", ":")})</p>
+                  </div>
+                </div>
+              </div>
+
               <div className="space-y-1.5">
                 <Label>Tipo de Mídia *</Label>
                 <Select value={tipo} onValueChange={(v) => { setTipo(v as "imagem" | "video"); setFile(null); setFilePreview(editBanner?.media_url || null); }}>
@@ -428,29 +526,31 @@ export function TabBannerLogin() {
                     <span className="text-[10px] text-muted-foreground">
                       {tipo === "imagem" ? "JPG, PNG, WebP" : "MP4, WebM"} • Máx 20MB
                     </span>
-                    <span className="text-[10px] text-muted-foreground">
-                      Tamanho ideal: 1920 × 1080 px (16:9)
+                    <span className="text-[10px] text-muted-foreground font-medium">
+                      {selectedGrupo.width} × {selectedGrupo.height} px ({selectedGrupo.aspectRatio.replace("/", ":")})
                     </span>
                   </label>
                 </div>
               </div>
 
-              {/* Preview area */}
+              {/* Preview area — uses grupo aspect ratio */}
               {filePreview && (
                 <div className="rounded-lg overflow-hidden border border-border bg-muted/30">
-                  <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+                  <div className="relative w-full" style={{ paddingBottom: selectedGrupo.aspectPercent }}>
                     {tipo === "imagem" ? (
                       <img src={filePreview} alt="Preview" className="absolute inset-0 w-full h-full object-cover" />
                     ) : (
                       <video src={filePreview} className="absolute inset-0 w-full h-full object-cover" muted autoPlay loop playsInline />
                     )}
                   </div>
-                  <p className="text-[10px] text-muted-foreground text-center py-1.5">Pré-visualização (16:9)</p>
+                  <p className="text-[10px] text-muted-foreground text-center py-1.5">
+                    Pré-visualização ({selectedGrupo.aspectRatio.replace("/", ":")})
+                  </p>
                 </div>
               )}
 
               {!filePreview && (
-                <div className="rounded-lg border border-dashed border-border bg-muted/20 flex items-center justify-center" style={{ aspectRatio: "16/9" }}>
+                <div className="rounded-lg border border-dashed border-border bg-muted/20 flex items-center justify-center" style={{ aspectRatio: selectedGrupo.aspectRatio }}>
                   <div className="text-center text-muted-foreground/50">
                     <ImageIcon className="h-10 w-10 mx-auto mb-2 opacity-40" />
                     <p className="text-xs">Nenhuma mídia selecionada</p>

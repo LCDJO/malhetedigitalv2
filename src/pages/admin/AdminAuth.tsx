@@ -24,8 +24,9 @@ export default function AdminAuth() {
   useEffect(() => {
     supabase
       .from("login_banners")
-      .select("id, tipo, media_url, duracao_segundos, pagina")
+      .select("id, tipo, media_url, duracao_segundos, pagina, data_fim, grupo")
       .eq("ativo", true)
+      .eq("grupo", "login")
       .lte("data_inicio", new Date().toISOString())
       .order("created_at", { ascending: false })
       .then(({ data }) => {
