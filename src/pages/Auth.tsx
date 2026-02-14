@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { LogIn, UserPlus, Eye, EyeOff, KeyRound, ArrowLeft, Building2, User, MapPin, Phone } from "lucide-react";
+import { AdSlot } from "@/components/ads/AdSlot";
 import BootstrapWizard from "@/components/BootstrapWizard";
 
 type AuthView = "login" | "signup" | "forgot" | "reset";
@@ -721,6 +722,11 @@ export default function Auth() {
             )}
           </Card>
           </div>
+        </div>
+
+        {/* Ad slot below login form */}
+        <div className="w-full max-w-md mx-auto mt-4">
+          <AdSlot slotSlug="login_bottom" page="login" aspectRatio="25%" />
         </div>
 
         {/* Footer */}

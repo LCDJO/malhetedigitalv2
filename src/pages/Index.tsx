@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Users, UserCheck, GraduationCap, Shield, Activity } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
+import { AdSlot } from "@/components/ads/AdSlot";
 import { useLodgeConfig } from "@/hooks/useLodgeConfig";
 import { formatCurrency } from "@/components/dashboard/DashboardData";
 import { SectionHeader } from "@/components/dashboard/SectionHeader";
@@ -143,6 +144,9 @@ const Index = () => {
           className="[animation-delay:240ms]"
         />
       </div>
+
+      {/* Ad slot — lodge dashboard */}
+      <AdSlot slotSlug="lodge_dashboard_bottom" page="lodge_dashboard" aspectRatio="20%" />
 
     </div>
   );
