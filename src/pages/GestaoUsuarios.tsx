@@ -96,7 +96,7 @@ export default function GestaoUsuarios() {
     if (!session?.access_token || !tenantId) return;
     setLoading(true);
     const { ok, data } = await apiCall("list", "GET");
-    if (ok) setUsers(data);
+    if (ok) setUsers(data.filter((u: UserRow) => !!u.role));
     else toast.error(data.error || "Erro ao carregar usuários");
     setLoading(false);
   }, [session?.access_token, tenantId, apiCall]);
