@@ -215,19 +215,22 @@ export function PortalLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <PortalMemberContext.Provider value={member}>
-      <div className="min-h-screen bg-background flex">
+      <div className="min-h-[100dvh] bg-background flex">
         {/* Desktop sidebar */}
-        <aside className="hidden md:flex w-64 border-r bg-card shrink-0 flex-col">
+        <aside className="hidden md:flex w-64 border-r bg-card shrink-0 flex-col sticky top-0 h-screen">
           {sidebar}
         </aside>
 
         {/* Mobile overlay */}
         {mobileOpen && (
           <div className="fixed inset-0 z-50 md:hidden">
-            <div className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
-            <aside className="absolute left-0 top-0 bottom-0 w-72 bg-card shadow-xl flex flex-col animate-in slide-in-from-left duration-200">
-              <div className="absolute right-3 top-3">
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setMobileOpen(false)}>
+            <div
+              className="absolute inset-0 bg-black/50 backdrop-blur-[2px] animate-in fade-in duration-200"
+              onClick={() => setMobileOpen(false)}
+            />
+            <aside className="absolute left-0 top-0 bottom-0 w-[280px] max-w-[85vw] bg-card shadow-2xl flex flex-col animate-in slide-in-from-left duration-250">
+              <div className="absolute right-3 top-3 z-10">
+                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full" onClick={() => setMobileOpen(false)}>
                   <X className="h-4 w-4" />
                 </Button>
               </div>
@@ -239,14 +242,19 @@ export function PortalLayout({ children }: { children: React.ReactNode }) {
         {/* Main */}
         <div className="flex-1 flex flex-col min-w-0">
           {/* Mobile header */}
-          <header className="h-[52px] border-b bg-card/80 backdrop-blur-sm flex items-center px-4 md:hidden shrink-0">
-            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setMobileOpen(true)}>
+          <header className="h-14 border-b bg-card/90 backdrop-blur-md flex items-center px-4 md:hidden shrink-0 sticky top-0 z-40">
+            <Button variant="ghost" size="icon" className="h-10 w-10 -ml-1" onClick={() => setMobileOpen(true)}>
               <Menu className="h-5 w-5" />
             </Button>
-            <span className="ml-3 text-sm font-semibold">Portal do Irmão</span>
+            <span className="ml-2 text-sm font-semibold truncate">Portal do Irmão</span>
+            <Avatar className="h-8 w-8 ml-auto">
+              <AvatarFallback className="bg-primary text-primary-foreground text-[10px] font-semibold">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
           </header>
 
-          <main className="flex-1 overflow-auto p-5 md:p-7">
+          <main className="flex-1 overflow-auto p-4 sm:p-5 md:p-7">
             {children}
           </main>
         </div>
