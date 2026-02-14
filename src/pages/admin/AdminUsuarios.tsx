@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/table";
 import { toast } from "sonner";
 import {
-  UserPlus, Pencil, ShieldCheck, ShieldOff, Search, Users, Shield, Trash2, User, MapPin, KeyRound, Lock,
+  UserPlus, Pencil, ShieldCheck, ShieldOff, Search, Users, Shield, Trash2, User, MapPin, KeyRound, Lock, Copy,
 } from "lucide-react";
 import { ConfirmSensitiveAction } from "@/components/ConfirmSensitiveAction";
 
@@ -53,13 +53,18 @@ export default function AdminUsuarios() {
   const [newPassword, setNewPassword] = useState("");
   const [savingPassword, setSavingPassword] = useState(false);
 
-  // 2FA status map
+  // 2FA status map & setup
   const [twoFAMap, setTwoFAMap] = useState<Record<string, boolean>>({});
   const [disabling2FA, setDisabling2FA] = useState(false);
+  const [setupMode, setSetupMode] = useState(false);
+  const [tfaSecret, setTfaSecret] = useState("");
+  const [tfaCode, setTfaCode] = useState("");
+  const [verifying2FA, setVerifying2FA] = useState(false);
+  const [backupCodes, setBackupCodes] = useState<string[]>([]);
 
   const apiCall = useCallback(
-    async (action: string, method: string, body?: Record<string, unknown>, extraParams?: string) => {
-      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-users?action=${action}${extraParams || ""}`;
+    async (fnName: string, action: string, method: string, body?: Record<string, unknown>, extraParams?: string) => {
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${fnName}?action=${action}${extraParams || ""}`;
       const resp = await fetch(url, {
         method,
         headers: {
@@ -77,7 +82,7 @@ export default function AdminUsuarios() {
   const fetchUsers = useCallback(async () => {
     if (!session?.access_token) return;
     setLoading(true);
-    const { ok, data } = await apiCall("list", "GET");
+    const { ok, data } = await apiCall("admin-users", "list", "GET");
     if (ok) setUsers(data);
     else toast.error(data.error || "Erro ao carregar usuários");
     setLoading(false);
@@ -85,7 +90,7 @@ export default function AdminUsuarios() {
 
   const fetch2FAStatus = useCallback(async () => {
     if (!session?.access_token) return;
-    const { ok, data } = await apiCall("2fa_status", "GET");
+    const { ok, data } = await apiCall("admin-users", "2fa_status", "GET");
     if (ok) setTwoFAMap(data);
   }, [session?.access_token, apiCall]);
 
@@ -115,6 +120,10 @@ export default function AdminUsuarios() {
     });
     setEditUserId(user.id);
     setNewPassword("");
+    setSetupMode(false);
+    setTfaSecret("");
+    setTfaCode("");
+    setBackupCodes([]);
     setDialogOpen(true);
   };
 
@@ -129,7 +138,7 @@ export default function AdminUsuarios() {
         if (form.password.length < 6) {
           toast.error("Senha deve ter no mínimo 6 caracteres"); setSaving(false); return;
         }
-        const { ok, data } = await apiCall("create", "POST", {
+        const { ok, data } = await apiCall("admin-users", "create", "POST", {
           email: form.email.trim(),
           full_name: form.full_name.trim(),
           password: form.password,
@@ -142,7 +151,7 @@ export default function AdminUsuarios() {
         if (!ok) { toast.error(data.error || "Erro ao criar"); setSaving(false); return; }
         toast.success("SuperAdmin criado com sucesso");
       } else {
-        const { ok, data } = await apiCall("update", "PUT", {
+        const { ok, data } = await apiCall("admin-users", "update", "PUT", {
           user_id: editUserId,
           full_name: form.full_name.trim(),
           role: "superadmin",
@@ -165,7 +174,7 @@ export default function AdminUsuarios() {
     }
     setSavingPassword(true);
     try {
-      const { ok, data } = await apiCall("reset_password", "PUT", {
+      const { ok, data } = await apiCall("admin-users", "reset_password", "PUT", {
         user_id: editUserId,
         new_password: newPassword,
       });
@@ -179,7 +188,7 @@ export default function AdminUsuarios() {
     if (!editUserId) return;
     setDisabling2FA(true);
     try {
-      const { ok, data } = await apiCall("disable_2fa", "PUT", { user_id: editUserId });
+      const { ok, data } = await apiCall("admin-users", "disable_2fa", "PUT", { user_id: editUserId });
       if (!ok) { toast.error(data.error || "Erro ao desativar 2FA"); return; }
       toast.success("2FA desativado para este usuário");
       setTwoFAMap((prev) => {
@@ -190,8 +199,56 @@ export default function AdminUsuarios() {
     } catch { toast.error("Erro inesperado"); } finally { setDisabling2FA(false); }
   };
 
+  // 2FA setup flow (for the currently logged-in user editing their own 2FA)
+  const isEditingSelf = editUserId === session?.user?.id;
+
+  const startSetup2FA = async () => {
+    const { ok, data } = await apiCall("admin-2fa", "setup", "POST");
+    if (ok) {
+      setTfaSecret(data.secret);
+      setSetupMode(true);
+    } else {
+      toast.error(data.error || "Erro ao iniciar configuração");
+    }
+  };
+
+  const verifyAndEnable2FA = async () => {
+    if (tfaCode.length !== 6) { toast.error("Digite o código de 6 dígitos"); return; }
+    setVerifying2FA(true);
+    const { ok, data } = await apiCall("admin-2fa", "verify", "POST", { code: tfaCode });
+    setVerifying2FA(false);
+    if (ok && data.success) {
+      setTwoFAMap((prev) => ({ ...prev, [editUserId!]: true }));
+      setSetupMode(false);
+      setBackupCodes(data.backup_codes || []);
+      toast.success("2FA ativado com sucesso!");
+    } else {
+      toast.error(data.error || "Código incorreto");
+    }
+  };
+
+  const disableOwn2FA = async () => {
+    const { ok, data } = await apiCall("admin-2fa", "disable", "POST");
+    if (ok) {
+      setTwoFAMap((prev) => {
+        const copy = { ...prev };
+        delete copy[editUserId!];
+        return copy;
+      });
+      setBackupCodes([]);
+      toast.success("2FA desativado");
+    } else {
+      toast.error(data.error || "Erro ao desativar");
+    }
+  };
+
+  const copySecret = () => {
+    navigator.clipboard.writeText(tfaSecret);
+    toast.success("Chave copiada!");
+  };
+
   const toggleActive = async (user: UserRow) => {
-    const { ok, data } = await apiCall("update", "PUT", { user_id: user.id, is_active: !user.is_active });
+    const { ok, data } = await apiCall("admin-users", "update", "PUT", { user_id: user.id, is_active: !user.is_active });
     if (!ok) { toast.error(data.error || "Erro"); return; }
     toast.success(user.is_active ? "Usuário desativado" : "Usuário ativado");
     fetchUsers();
@@ -199,7 +256,7 @@ export default function AdminUsuarios() {
 
   const handleDelete = async () => {
     if (!deleteUser) return;
-    const { ok, data } = await apiCall("delete", "DELETE", { user_id: deleteUser.id });
+    const { ok, data } = await apiCall("admin-users", "delete", "DELETE", { user_id: deleteUser.id });
     if (!ok) { toast.error(data.error || "Erro ao excluir"); return; }
     toast.success("Usuário excluído com sucesso");
     setDeleteUser(null);
@@ -495,8 +552,8 @@ export default function AdminUsuarios() {
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {editUserId && is2FAActive(editUserId)
-                          ? "Este usuário configurou autenticação TOTP."
-                          : "O usuário ainda não ativou a autenticação em dois fatores."}
+                          ? (isEditingSelf ? "Sua conta está protegida com autenticação TOTP." : "Este usuário configurou autenticação TOTP.")
+                          : (isEditingSelf ? "Recomendamos ativar para maior segurança." : "O usuário ainda não ativou a autenticação em dois fatores.")}
                       </p>
                     </div>
                   </div>
@@ -505,7 +562,65 @@ export default function AdminUsuarios() {
                   </Badge>
                 </div>
 
-                {editUserId && is2FAActive(editUserId) && (
+                {/* Self: can setup 2FA */}
+                {isEditingSelf && !is2FAActive(editUserId!) && !setupMode && (
+                  <Button onClick={startSetup2FA} className="gap-2">
+                    <KeyRound className="h-4 w-4" />
+                    Configurar 2FA
+                  </Button>
+                )}
+
+                {/* Self: setup mode */}
+                {isEditingSelf && setupMode && (
+                  <div className="space-y-4 pt-2">
+                    <Separator />
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold">1. Copie a chave secreta</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Abra seu app autenticador (Google Authenticator, Authy, etc.) e adicione manualmente com a chave abaixo:
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <code className="flex-1 bg-muted px-3 py-2 rounded text-xs font-mono break-all">
+                          {tfaSecret}
+                        </code>
+                        <Button variant="outline" size="icon" onClick={copySecret} title="Copiar">
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold">2. Digite o código gerado</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Insira o código de 6 dígitos exibido no seu autenticador.
+                      </p>
+                      <div className="flex items-center gap-2 max-w-xs">
+                        <Input
+                          value={tfaCode}
+                          onChange={(e) => setTfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                          placeholder="000000"
+                          maxLength={6}
+                          className="text-center text-lg font-mono tracking-widest"
+                        />
+                        <Button onClick={verifyAndEnable2FA} disabled={verifying2FA || tfaCode.length !== 6}>
+                          {verifying2FA ? "Verificando..." : "Ativar"}
+                        </Button>
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => setSetupMode(false)}>
+                      Cancelar
+                    </Button>
+                  </div>
+                )}
+
+                {/* Self: disable own 2FA */}
+                {isEditingSelf && is2FAActive(editUserId!) && !setupMode && (
+                  <Button variant="destructive" size="sm" onClick={disableOwn2FA} className="gap-2">
+                    <ShieldOff className="h-4 w-4" /> Desativar 2FA
+                  </Button>
+                )}
+
+                {/* Admin: disable another user's 2FA */}
+                {!isEditingSelf && editUserId && is2FAActive(editUserId) && (
                   <div className="space-y-2">
                     <p className="text-xs text-muted-foreground">
                       Como administrador, você pode desativar o 2FA deste usuário em caso de perda do autenticador.
@@ -523,10 +638,31 @@ export default function AdminUsuarios() {
                   </div>
                 )}
 
-                {editUserId && !is2FAActive(editUserId) && (
+                {/* Admin: user hasn't enabled 2FA */}
+                {!isEditingSelf && editUserId && !is2FAActive(editUserId) && (
                   <p className="text-xs text-muted-foreground italic">
                     O próprio usuário deve ativar o 2FA nas configurações da sua conta.
                   </p>
+                )}
+
+                {/* Backup codes */}
+                {backupCodes.length > 0 && (
+                  <div className="space-y-2 pt-2">
+                    <Separator />
+                    <Label className="text-sm font-semibold text-destructive">
+                      ⚠️ Códigos de Recuperação
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Guarde esses códigos em local seguro. Cada código pode ser usado uma única vez.
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {backupCodes.map((bc, i) => (
+                        <code key={i} className="bg-muted px-3 py-1.5 rounded text-xs font-mono text-center">
+                          {bc}
+                        </code>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </TabsContent>
             </Tabs>
