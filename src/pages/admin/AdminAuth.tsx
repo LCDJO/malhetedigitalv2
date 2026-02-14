@@ -33,7 +33,7 @@ export default function AdminAuth() {
           const now = new Date();
           const active = (data as any[]).filter((b) =>
             (!b.data_fim || new Date(b.data_fim) > now) &&
-            (b.pagina === "admin" || b.pagina === "todos")
+            (b.pagina === "todos" || b.pagina?.includes("admin"))
           );
           setBanners(active);
         }

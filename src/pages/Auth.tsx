@@ -72,7 +72,7 @@ export default function Auth() {
           const now = new Date();
           const active = (data as any[]).filter((b) =>
             (!b.data_fim || new Date(b.data_fim) > now) &&
-            (b.pagina === "loja" || b.pagina === "todos")
+            (b.pagina === "todos" || b.pagina?.includes("loja"))
           );
           setBanners(active);
         }

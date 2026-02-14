@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
@@ -21,14 +22,29 @@ import {
   Image as ImageIcon, Video, Plus, Pencil, Trash2, Upload, Eye, Calendar,
 } from "lucide-react";
 
-type BannerPagina = "todos" | "admin" | "loja" | "portal";
-
-const PAGINA_OPTIONS: { value: BannerPagina; label: string }[] = [
-  { value: "todos", label: "Todos os Portais" },
+const PAGINA_CHECKBOXES: { value: string; label: string }[] = [
   { value: "admin", label: "SuperAdmin" },
   { value: "loja", label: "Login da Loja" },
   { value: "portal", label: "Portal do Irmão" },
 ];
+
+function parsePaginas(pagina: string): string[] {
+  if (!pagina || pagina === "todos") return ["admin", "loja", "portal"];
+  return pagina.split(",").filter(Boolean);
+}
+
+function serializePaginas(selected: string[]): string {
+  if (selected.length === 0) return "todos";
+  const sorted = [...selected].sort();
+  if (sorted.length === 3 && sorted.join(",") === "admin,loja,portal") return "todos";
+  return sorted.join(",");
+}
+
+function getPaginaLabels(pagina: string): string[] {
+  const items = parsePaginas(pagina);
+  if (items.length === 3) return ["Todos"];
+  return items.map((v) => PAGINA_CHECKBOXES.find((p) => p.value === v)?.label ?? v);
+}
 
 interface Banner {
   id: string;
@@ -39,7 +55,7 @@ interface Banner {
   data_fim: string | null;
   ativo: boolean;
   duracao_segundos: number;
-  pagina: BannerPagina;
+  pagina: string;
   created_at: string;
 }
 
@@ -58,7 +74,7 @@ export function TabBannerLogin() {
   const [dataInicio, setDataInicio] = useState("");
   const [dataFim, setDataFim] = useState("");
   const [duracaoSegundos, setDuracaoSegundos] = useState(8);
-  const [pagina, setPagina] = useState<BannerPagina>("todos");
+  const [paginasSelecionadas, setPaginasSelecionadas] = useState<string[]>(["admin", "loja", "portal"]);
   const [file, setFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
 
@@ -81,7 +97,7 @@ export function TabBannerLogin() {
     setDataInicio(new Date().toISOString().slice(0, 16));
     setDataFim("");
     setDuracaoSegundos(8);
-    setPagina("todos");
+    setPaginasSelecionadas(["admin", "loja", "portal"]);
     setFile(null);
     setFilePreview(null);
     setEditBanner(null);
@@ -100,7 +116,7 @@ export function TabBannerLogin() {
     setDataInicio(b.data_inicio.slice(0, 16));
     setDataFim(b.data_fim ? b.data_fim.slice(0, 16) : "");
     setDuracaoSegundos(b.duracao_segundos ?? 8);
-    setPagina((b.pagina as BannerPagina) ?? "todos");
+    setPaginasSelecionadas(parsePaginas(b.pagina));
     setFile(null);
     setFilePreview(b.media_url);
     setDialogOpen(true);
@@ -138,6 +154,7 @@ export function TabBannerLogin() {
     if (!titulo.trim()) { toast.error("Título é obrigatório"); return; }
     if (!dataInicio) { toast.error("Data de início é obrigatória"); return; }
     if (!editBanner && !file) { toast.error("Selecione um arquivo"); return; }
+    if (paginasSelecionadas.length === 0) { toast.error("Selecione ao menos uma página"); return; }
 
     setSaving(true);
     try {
@@ -166,7 +183,7 @@ export function TabBannerLogin() {
         data_inicio: new Date(dataInicio).toISOString(),
         data_fim: dataFim ? new Date(dataFim).toISOString() : null,
         duracao_segundos: duracaoSegundos,
-        pagina,
+        pagina: serializePaginas(paginasSelecionadas),
       };
 
       if (editBanner) {
@@ -291,9 +308,13 @@ export function TabBannerLogin() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className="text-xs">
-                        {PAGINA_OPTIONS.find((p) => p.value === b.pagina)?.label ?? "Todos"}
-                      </Badge>
+                      <div className="flex flex-wrap gap-1">
+                        {getPaginaLabels(b.pagina).map((label) => (
+                          <Badge key={label} variant="secondary" className="text-[10px]">
+                            {label}
+                          </Badge>
+                        ))}
+                      </div>
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
                       <div className="flex items-center gap-1">
@@ -417,29 +438,45 @@ export function TabBannerLogin() {
                 </label>
               </div>
               {filePreview && tipo === "imagem" && (
-                <div className="mt-2 rounded-lg overflow-hidden border border-border">
-                  <img src={filePreview} alt="Preview" className="w-full h-32 object-cover" />
+                <div className="mt-3 rounded-lg overflow-hidden border border-border bg-muted/30">
+                  <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+                    <img src={filePreview} alt="Preview" className="absolute inset-0 w-full h-full object-cover" />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground text-center py-1.5">Pré-visualização (16:9)</p>
                 </div>
               )}
               {filePreview && tipo === "video" && (
-                <div className="mt-2 rounded-lg overflow-hidden border border-border">
-                  <video src={filePreview} className="w-full h-32 object-cover" muted />
+                <div className="mt-3 rounded-lg overflow-hidden border border-border bg-muted/30">
+                  <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+                    <video src={filePreview} className="absolute inset-0 w-full h-full object-cover" muted autoPlay loop playsInline />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground text-center py-1.5">Pré-visualização (16:9)</p>
                 </div>
               )}
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label>Exibir em *</Label>
-              <Select value={pagina} onValueChange={(v) => setPagina(v as BannerPagina)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PAGINA_OPTIONS.map((p) => (
-                    <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex flex-wrap gap-4">
+                {PAGINA_CHECKBOXES.map((p) => (
+                  <label key={p.value} className="flex items-center gap-2 cursor-pointer">
+                    <Checkbox
+                      checked={paginasSelecionadas.includes(p.value)}
+                      onCheckedChange={(checked) => {
+                        setPaginasSelecionadas((prev) =>
+                          checked
+                            ? [...prev, p.value]
+                            : prev.filter((v) => v !== p.value)
+                        );
+                      }}
+                    />
+                    <span className="text-sm">{p.label}</span>
+                  </label>
+                ))}
+              </div>
+              {paginasSelecionadas.length === 3 && (
+                <p className="text-[10px] text-muted-foreground">Todos os portais selecionados</p>
+              )}
             </div>
 
             <div className="grid grid-cols-3 gap-3">
