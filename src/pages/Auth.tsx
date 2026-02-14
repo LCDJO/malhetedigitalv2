@@ -2,19 +2,20 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { LogIn, UserPlus, Eye, EyeOff, KeyRound, ArrowLeft } from "lucide-react";
+import BootstrapWizard from "@/components/BootstrapWizard";
 
 type AuthView = "login" | "signup" | "forgot" | "reset";
 
 export default function Auth() {
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { user, role, loading: authLoading } = useAuth();
 
   const [view, setView] = useState<AuthView>("login");
   const [email, setEmail] = useState("");
@@ -23,19 +24,48 @@ export default function Auth() {
   const [fullName, setFullName] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [needsBootstrap, setNeedsBootstrap] = useState<boolean | null>(null);
 
+  // Check if bootstrap is needed
+  useEffect(() => {
+    supabase.functions.invoke("bootstrap", { method: "GET" }).then(({ data }) => {
+      setNeedsBootstrap(data?.needs_bootstrap ?? false);
+    }).catch(() => setNeedsBootstrap(false));
+  }, []);
+
+  // Detect password recovery event from URL
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") setView("reset");
+      if (event === "PASSWORD_RECOVERY") {
+        setView("reset");
+      }
     });
     return () => subscription.unsubscribe();
   }, []);
 
+  // Redirect authenticated users based on role
   useEffect(() => {
     if (authLoading || !user) return;
-    if (view === "reset") return;
-    navigate("/tenants", { replace: true });
-  }, [user, authLoading, navigate, view]);
+    if (view === "reset") return; // Don't redirect during password reset
+
+    // Role-based redirect
+    const getRedirectPath = () => {
+      if (!role) return "/";
+      switch (role) {
+        case "administrador":
+        case "veneravel":
+          return "/";
+        case "secretario":
+          return "/secretaria";
+        case "tesoureiro":
+          return "/tesouraria";
+        default:
+          return "/";
+      }
+    };
+
+    navigate(getRedirectPath(), { replace: true });
+  }, [user, role, authLoading, navigate, view]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,124 +73,275 @@ export default function Auth() {
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
-    if (error) toast.error(error.message === "Invalid login credentials" ? "Email ou senha incorretos." : error.message);
-    else toast.success("Login realizado!");
+    if (error) {
+      toast.error(error.message === "Invalid login credentials"
+        ? "Email ou senha incorretos."
+        : error.message);
+    } else {
+      toast.success("Login realizado com sucesso.");
+    }
   };
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password || !fullName.trim()) { toast.error("Preencha todos os campos."); return; }
-    if (password.length < 6) { toast.error("Senha deve ter no mínimo 6 caracteres."); return; }
+    if (password.length < 6) { toast.error("A senha deve ter no mínimo 6 caracteres."); return; }
     setLoading(true);
     const { error } = await supabase.auth.signUp({
-      email, password,
-      options: { data: { full_name: fullName.trim() }, emailRedirectTo: window.location.origin },
+      email,
+      password,
+      options: {
+        data: { full_name: fullName.trim() },
+        emailRedirectTo: window.location.origin,
+      },
     });
     setLoading(false);
-    if (error) toast.error(error.message);
-    else { toast.success("Conta criada! Verifique seu email."); setView("login"); }
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Conta criada! Verifique seu email para confirmar o cadastro.");
+      setView("login");
+    }
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) { toast.error("Informe seu email."); return; }
     setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/auth` });
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth`,
+    });
     setLoading(false);
-    if (error) toast.error(error.message);
-    else toast.success("Email de redefinição enviado!");
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Email de redefinição enviado! Verifique sua caixa de entrada.");
+    }
   };
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!password || !confirmPassword) { toast.error("Preencha todos os campos."); return; }
-    if (password.length < 6) { toast.error("Senha mínima: 6 caracteres."); return; }
-    if (password !== confirmPassword) { toast.error("Senhas não coincidem."); return; }
+    if (password.length < 6) { toast.error("A senha deve ter no mínimo 6 caracteres."); return; }
+    if (password !== confirmPassword) { toast.error("As senhas não coincidem."); return; }
     setLoading(true);
     const { error } = await supabase.auth.updateUser({ password });
     setLoading(false);
-    if (error) toast.error(error.message);
-    else { toast.success("Senha redefinida!"); setView("login"); }
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Senha redefinida com sucesso!");
+      setView("login");
+    }
   };
 
+  // Password toggle button
   const PwToggle = () => (
-    <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setShowPw(!showPw)}>
+    <button
+      type="button"
+      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+      onClick={() => setShowPw(!showPw)}
+    >
       {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
     </button>
   );
 
+  // Show loading while checking bootstrap
+  if (needsBootstrap === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  // Show bootstrap wizard if system needs initialization
+  if (needsBootstrap) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <BootstrapWizard onComplete={() => setNeedsBootstrap(false)} />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex bg-background">
+      {/* Left side - Auth Card */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-12">
         <div className="w-full max-w-md space-y-6">
+          {/* Branding */}
           <div className="text-center space-y-2">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-primary text-primary-foreground font-serif font-bold text-2xl shadow-lg">M</div>
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-primary text-primary-foreground font-serif font-bold text-2xl shadow-lg">
+              M
+            </div>
             <h1 className="text-2xl font-serif font-bold tracking-tight">Malhete Digital</h1>
-            <p className="text-sm text-muted-foreground">Sistema de Gestão Inteligente</p>
+            <p className="text-sm text-muted-foreground">Sistema de Gestão Maçônica</p>
           </div>
 
           <Card>
+            {/* Forgot Password View */}
             {view === "forgot" && (
               <>
                 <CardHeader className="pb-3">
-                  <button onClick={() => setView("login")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-2 w-fit">
-                    <ArrowLeft className="h-3.5 w-3.5" /> Voltar
+                  <button
+                    onClick={() => setView("login")}
+                    className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-2 w-fit"
+                  >
+                    <ArrowLeft className="h-3.5 w-3.5" />
+                    Voltar ao login
                   </button>
                   <div className="flex items-center gap-2">
                     <KeyRound className="h-5 w-5 text-primary" />
-                    <div><p className="font-semibold text-sm">Redefinir Senha</p><p className="text-xs text-muted-foreground">Informe seu email</p></div>
+                    <div>
+                      <p className="font-semibold text-sm">Redefinir Senha</p>
+                      <p className="text-xs text-muted-foreground">Informe seu email para receber o link</p>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleForgotPassword} className="space-y-4">
-                    <div><Label>Email</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" /></div>
-                    <Button type="submit" className="w-full" disabled={loading}>{loading ? "Enviando..." : "Enviar Link"}</Button>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="forgot-email">Email</Label>
+                      <Input
+                        id="forgot-email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="seu@email.com"
+                        autoComplete="email"
+                      />
+                    </div>
+                    <Button type="submit" className="w-full" disabled={loading}>
+                      {loading ? "Enviando..." : "Enviar Link de Redefinição"}
+                    </Button>
                   </form>
                 </CardContent>
               </>
             )}
 
+            {/* Reset Password View */}
             {view === "reset" && (
               <>
                 <CardHeader className="pb-3">
                   <div className="flex items-center gap-2">
                     <KeyRound className="h-5 w-5 text-primary" />
-                    <div><p className="font-semibold text-sm">Nova Senha</p></div>
+                    <div>
+                      <p className="font-semibold text-sm">Nova Senha</p>
+                      <p className="text-xs text-muted-foreground">Defina sua nova senha de acesso</p>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleResetPassword} className="space-y-4">
-                    <div><Label>Nova Senha</Label><div className="relative"><Input type={showPw ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} /><PwToggle /></div></div>
-                    <div><Label>Confirmar</Label><Input type={showPw ? "text" : "password"} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} /></div>
-                    <Button type="submit" className="w-full" disabled={loading}>{loading ? "Salvando..." : "Redefinir"}</Button>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="reset-password">Nova Senha</Label>
+                      <div className="relative">
+                        <Input
+                          id="reset-password"
+                          type={showPw ? "text" : "password"}
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder="Mínimo 6 caracteres"
+                          autoComplete="new-password"
+                        />
+                        <PwToggle />
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="reset-confirm">Confirmar Nova Senha</Label>
+                      <div className="relative">
+                        <Input
+                          id="reset-confirm"
+                          type={showPw ? "text" : "password"}
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          placeholder="Repita a nova senha"
+                          autoComplete="new-password"
+                        />
+                      </div>
+                    </div>
+                    <Button type="submit" className="w-full" disabled={loading}>
+                      {loading ? "Salvando..." : "Redefinir Senha"}
+                    </Button>
                   </form>
                 </CardContent>
               </>
             )}
 
+            {/* Login / Signup Tabs */}
             {(view === "login" || view === "signup") && (
               <Tabs value={view} onValueChange={(v) => setView(v as AuthView)}>
                 <CardHeader className="pb-3">
                   <TabsList className="w-full bg-muted/60">
-                    <TabsTrigger value="login" className="flex-1 gap-1.5"><LogIn className="h-3.5 w-3.5" /> Entrar</TabsTrigger>
-                    <TabsTrigger value="signup" className="flex-1 gap-1.5"><UserPlus className="h-3.5 w-3.5" /> Criar Conta</TabsTrigger>
+                    <TabsTrigger value="login" className="flex-1 gap-1.5 data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                      <LogIn className="h-3.5 w-3.5" />
+                      Entrar
+                    </TabsTrigger>
+                    <TabsTrigger value="signup" className="flex-1 gap-1.5 data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                      <UserPlus className="h-3.5 w-3.5" />
+                      Criar Conta
+                    </TabsTrigger>
                   </TabsList>
                 </CardHeader>
+
                 <CardContent>
                   <TabsContent value="login" className="mt-0">
                     <form onSubmit={handleLogin} className="space-y-4">
-                      <div><Label>Email</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" /></div>
-                      <div><Label>Senha</Label><div className="relative"><Input type={showPw ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••" /><PwToggle /></div></div>
-                      <Button type="submit" className="w-full" disabled={loading}>{loading ? "Entrando..." : "Entrar"}</Button>
-                      <button type="button" onClick={() => setView("forgot")} className="w-full text-center text-xs text-muted-foreground hover:text-foreground">Esqueceu sua senha?</button>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="login-email">Email</Label>
+                        <Input id="login-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" autoComplete="email" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="login-password">Senha</Label>
+                        <div className="relative">
+                          <Input id="login-password" type={showPw ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••" autoComplete="current-password" />
+                          <PwToggle />
+                        </div>
+                      </div>
+                      <Button type="submit" className="w-full" disabled={loading}>
+                        {loading ? "Entrando..." : "Entrar"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => navigate("/portal/auth")}
+                      >
+                        Portal do Irmão
+                      </Button>
+                      <button
+                        type="button"
+                        onClick={() => setView("forgot")}
+                        className="w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        Esqueceu sua senha?
+                      </button>
                     </form>
                   </TabsContent>
+
                   <TabsContent value="signup" className="mt-0">
                     <form onSubmit={handleSignup} className="space-y-4">
-                      <div><Label>Nome Completo</Label><Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="João da Silva" /></div>
-                      <div><Label>Email</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" /></div>
-                      <div><Label>Senha</Label><div className="relative"><Input type={showPw ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Mín. 6 caracteres" /><PwToggle /></div></div>
-                      <Button type="submit" className="w-full" disabled={loading}>{loading ? "Criando..." : "Criar Conta"}</Button>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="signup-name">Nome Completo</Label>
+                        <Input id="signup-name" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Ex: João da Silva" maxLength={100} autoComplete="name" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="signup-email">Email</Label>
+                        <Input id="signup-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" autoComplete="email" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="signup-password">Senha</Label>
+                        <div className="relative">
+                          <Input id="signup-password" type={showPw ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Mínimo 6 caracteres" autoComplete="new-password" />
+                          <PwToggle />
+                        </div>
+                      </div>
+                      <Button type="submit" className="w-full" disabled={loading}>
+                        {loading ? "Criando conta..." : "Criar Conta"}
+                      </Button>
+                      <p className="text-[10px] text-muted-foreground text-center">
+                        Após o cadastro, um administrador precisará atribuir seu cargo.
+                      </p>
                     </form>
                   </TabsContent>
                 </CardContent>
@@ -170,18 +351,32 @@ export default function Auth() {
         </div>
       </div>
 
+      {/* Right side - Banner */}
       <div className="hidden lg:flex lg:w-1/2 bg-primary/5 items-center justify-center relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-accent/10" />
         <div className="relative z-10 text-center space-y-6 p-12 max-w-lg">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/15 text-primary font-serif font-bold text-4xl">M</div>
-          <h2 className="text-3xl font-serif font-bold text-foreground/90">Gestão Inteligente</h2>
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/15 text-primary font-serif font-bold text-4xl">
+            M
+          </div>
+          <h2 className="text-3xl font-serif font-bold text-foreground/90">
+            Gestão Maçônica Moderna
+          </h2>
           <p className="text-muted-foreground text-base leading-relaxed">
-            XP, rankings, carteiras digitais e afiliados. Tudo multi-tenant, pronto para escalar.
+            Gerencie sua Loja com eficiência, transparência e segurança. Controle financeiro, secretaria, tesouraria e muito mais em um só lugar.
           </p>
           <div className="flex justify-center gap-8 pt-4">
-            <div className="text-center"><div className="text-2xl font-bold text-primary">Multi</div><div className="text-xs text-muted-foreground">Tenant</div></div>
-            <div className="text-center"><div className="text-2xl font-bold text-primary">SaaS</div><div className="text-xs text-muted-foreground">Escalável</div></div>
-            <div className="text-center"><div className="text-2xl font-bold text-primary">API</div><div className="text-xs text-muted-foreground">REST</div></div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-primary">100%</div>
+              <div className="text-xs text-muted-foreground">Digital</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-primary">LGPD</div>
+              <div className="text-xs text-muted-foreground">Compatível</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-primary">24/7</div>
+              <div className="text-xs text-muted-foreground">Disponível</div>
+            </div>
           </div>
         </div>
       </div>

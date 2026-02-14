@@ -1,19 +1,18 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Users, UserCheck, GraduationCap, Shield, Activity } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
 import { useLodgeConfig } from "@/hooks/useLodgeConfig";
+import { formatCurrency } from "@/components/dashboard/DashboardData";
+import { SectionHeader } from "@/components/dashboard/SectionHeader";
 
 const grauLabels: Record<string, string> = {
   aprendiz: "Aprendiz (1°)",
   companheiro: "Companheiro (2°)",
   mestre: "Mestre (3°)",
 };
-
-function formatCurrency(v: number) {
-  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
 
 const Index = () => {
   const { config } = useLodgeConfig();
@@ -23,14 +22,16 @@ const Index = () => {
     totalMembros: 0,
     porGrau: {} as Record<string, number>,
     mestresInstalados: 0,
+    inadimplentes: 0,
   });
 
   useEffect(() => {
     (async () => {
-      const [activeRes, inactiveRes, allRes] = await Promise.all([
+      const [activeRes, inactiveRes, allRes, inadRes] = await Promise.all([
         supabase.from("members").select("id", { count: "exact", head: true }).eq("status", "ativo"),
         supabase.from("members").select("id", { count: "exact", head: true }).neq("status", "ativo"),
         supabase.from("members").select("id, degree, master_installed").eq("status", "ativo"),
+        supabase.from("member_transactions").select("member_id").eq("status", "em_aberto"),
       ]);
 
       const porGrau: Record<string, number> = {};
@@ -42,18 +43,26 @@ const Index = () => {
         }
       }
 
+      const inadSet = new Set(inadRes.data?.map((t) => t.member_id) ?? []);
+
       setStats({
         totalAtivos: activeRes.count ?? 0,
         totalInativos: inactiveRes.count ?? 0,
         totalMembros: (activeRes.count ?? 0) + (inactiveRes.count ?? 0),
         porGrau,
         mestresInstalados,
+        inadimplentes: inadSet.size,
       });
     })();
   }, []);
 
+  const adimplencia = stats.totalAtivos > 0
+    ? ((stats.totalAtivos - stats.inadimplentes) / stats.totalAtivos * 100).toFixed(1)
+    : "100.0";
+
   return (
     <div className="space-y-8 max-w-6xl mx-auto pb-12">
+      {/* Header */}
       <div>
         <h1 className="text-2xl font-serif font-bold">Painel da Loja</h1>
         <p className="text-sm text-muted-foreground mt-1">
@@ -63,7 +72,7 @@ const Index = () => {
 
       {/* Info da Loja */}
       <section className="space-y-4">
-        <h2 className="text-base font-semibold">Dados da Loja</h2>
+        <SectionHeader title="Dados da Loja" subtitle="Informações institucionais" />
         <Card>
           <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 text-sm">
             <div><span className="text-muted-foreground">Nome:</span> <strong>{config.lodge_name || "—"}</strong></div>
@@ -76,7 +85,7 @@ const Index = () => {
 
       {/* Distribuição por grau */}
       <section className="space-y-4">
-        <h2 className="text-base font-semibold">Quadro de Obreiros</h2>
+        <SectionHeader title="Quadro de Obreiros" subtitle="Distribuição por grau maçônico" />
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {(["aprendiz", "companheiro", "mestre"] as const).map((grau) => (
             <Card key={grau}>
@@ -110,12 +119,20 @@ const Index = () => {
           className="[animation-delay:0ms]"
         />
         <StatCard
+          title="Taxa de Adimplência"
+          value={`${adimplencia}%`}
+          description={`${stats.inadimplentes} irmão(s) com pendência`}
+          icon={UserCheck}
+          trend={{ value: stats.inadimplentes === 0 ? "Quadro em dia" : `${stats.inadimplentes} inadimplente(s)`, positive: stats.inadimplentes === 0 }}
+          className="[animation-delay:80ms]"
+        />
+        <StatCard
           title="Mestres Instalados"
           value={String(stats.mestresInstalados)}
           description="Mestres com instalação registrada"
           icon={Shield}
           trend={{ value: `de ${stats.totalAtivos} ativos`, positive: true }}
-          className="[animation-delay:80ms]"
+          className="[animation-delay:160ms]"
         />
         <StatCard
           title="Mensalidade Padrão"
@@ -123,9 +140,10 @@ const Index = () => {
           description={`Vencimento dia ${config.dia_vencimento}`}
           icon={Activity}
           trend={{ value: `Potência: ${config.potencia || "—"}`, positive: true }}
-          className="[animation-delay:160ms]"
+          className="[animation-delay:240ms]"
         />
       </div>
+
     </div>
   );
 };
