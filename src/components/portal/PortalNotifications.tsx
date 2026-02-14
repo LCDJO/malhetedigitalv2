@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePortalMemberContext } from "./PortalLayout";
-import { Bell, Check, CheckCheck, Wallet, Calendar, Info, Loader2 } from "lucide-react";
+import { Bell, CheckCheck, Wallet, Calendar, Info, Loader2, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -22,6 +22,7 @@ interface Notification {
 const typeIcons: Record<string, any> = {
   financeiro: Wallet,
   reuniao: Calendar,
+  lgpd: ShieldAlert,
   geral: Info,
 };
 
@@ -150,6 +151,8 @@ export function PortalNotifications() {
                           ? "bg-[hsl(142_50%_25%/0.3)] text-[hsl(142_60%_55%)]"
                           : n.type === "reuniao"
                           ? "bg-[hsl(42_65%_50%/0.15)] text-[hsl(42_60%_68%)]"
+                          : n.type === "lgpd"
+                          ? "bg-[hsl(0_60%_30%/0.3)] text-[hsl(0_70%_65%)]"
                           : "bg-[hsl(220_18%_14%)] text-[hsl(220_10%_55%)]"
                       )}
                     >
