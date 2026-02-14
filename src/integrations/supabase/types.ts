@@ -533,9 +533,12 @@ export type Database = {
           id: string
           interval_days: number
           is_active: boolean
+          max_members: number
+          modules: Json
           name: string
           price: number
-          tenant_id: string
+          stripe_price_id: string | null
+          tenant_id: string | null
           updated_at: string
         }
         Insert: {
@@ -545,9 +548,12 @@ export type Database = {
           id?: string
           interval_days?: number
           is_active?: boolean
+          max_members?: number
+          modules?: Json
           name: string
           price?: number
-          tenant_id: string
+          stripe_price_id?: string | null
+          tenant_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -557,9 +563,12 @@ export type Database = {
           id?: string
           interval_days?: number
           is_active?: boolean
+          max_members?: number
+          modules?: Json
           name?: string
           price?: number
-          tenant_id?: string
+          stripe_price_id?: string | null
+          tenant_id?: string | null
           updated_at?: string
         }
         Relationships: [
