@@ -6,12 +6,24 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { LogIn, UserPlus, Eye, EyeOff, KeyRound, ArrowLeft } from "lucide-react";
+import { LogIn, UserPlus, Eye, EyeOff, KeyRound, ArrowLeft, Building2, User, MapPin, Phone } from "lucide-react";
 import BootstrapWizard from "@/components/BootstrapWizard";
 
 type AuthView = "login" | "signup" | "forgot" | "reset";
+
+const POTENCIAS = [
+  "Grande Oriente do Brasil (GOB)",
+  "Grande Loja (GL)",
+  "Confederação Maçônica do Brasil (COMAB)",
+  "Outra",
+];
+
+const ESTADOS = [
+  "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO",
+];
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -29,13 +41,26 @@ export default function Auth() {
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   const [bannerFading, setBannerFading] = useState(false);
 
+  // Lodge registration fields
+  const [lodgeName, setLodgeName] = useState("");
+  const [lodgeNumber, setLodgeNumber] = useState("");
+  const [potencia, setPotencia] = useState("");
+  const [orient, setOrient] = useState("");
+  const [cep, setCep] = useState("");
+  const [rua, setRua] = useState("");
+  const [numeroEndereco, setNumeroEndereco] = useState("");
+  const [complemento, setComplemento] = useState("");
+  const [bairro, setBairro] = useState("");
+  const [cidade, setCidade] = useState("");
+  const [estado, setEstado] = useState("");
+  const [telefone, setTelefone] = useState("");
+
   // Check if bootstrap is needed + fetch banners
   useEffect(() => {
     supabase.functions.invoke("bootstrap", { method: "GET" }).then(({ data }) => {
       setNeedsBootstrap(data?.needs_bootstrap ?? false);
     }).catch(() => setNeedsBootstrap(false));
 
-    // Fetch all active banners
     supabase
       .from("login_banners")
       .select("tipo, media_url, duracao_segundos")
@@ -44,7 +69,6 @@ export default function Auth() {
       .order("created_at", { ascending: false })
       .then(({ data }) => {
         if (data && data.length > 0) {
-          // Filter out expired banners
           const now = new Date();
           const active = (data as any[]).filter((b) => !b.data_fim || new Date(b.data_fim) > now);
           setBanners(active);
@@ -82,28 +106,40 @@ export default function Auth() {
   // Redirect authenticated users based on role
   useEffect(() => {
     if (authLoading || !user) return;
-    if (view === "reset") return; // Don't redirect during password reset
+    if (view === "reset") return;
 
-    // Role-based redirect
     const getRedirectPath = () => {
       if (!role) return "/";
       switch (role) {
-        case "superadmin":
-          return "/admin";
+        case "superadmin": return "/admin";
         case "administrador":
-        case "veneravel":
-          return "/";
-        case "secretario":
-          return "/secretaria";
-        case "tesoureiro":
-          return "/tesouraria";
-        default:
-          return "/";
+        case "veneravel": return "/";
+        case "secretario": return "/secretaria";
+        case "tesoureiro": return "/tesouraria";
+        default: return "/";
       }
     };
 
     navigate(getRedirectPath(), { replace: true });
   }, [user, role, authLoading, navigate, view]);
+
+  // CEP auto-fill
+  const handleCepBlur = async () => {
+    const cleanCep = cep.replace(/\D/g, "");
+    if (cleanCep.length !== 8) return;
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      const data = await res.json();
+      if (!data.erro) {
+        setRua(data.logradouro || "");
+        setBairro(data.bairro || "");
+        setCidade(data.localidade || "");
+        setEstado(data.uf || "");
+      }
+    } catch {
+      // ignore
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,26 +156,57 @@ export default function Auth() {
     }
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
+  const handleRegisterLodge = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password || !fullName.trim()) { toast.error("Preencha todos os campos."); return; }
-    if (password.length < 6) { toast.error("A senha deve ter no mínimo 6 caracteres."); return; }
+
+    // Validate lodge fields
+    if (!lodgeName.trim() || !lodgeNumber.trim() || !potencia || !orient.trim()) {
+      toast.error("Preencha todas as informações obrigatórias da Loja.");
+      return;
+    }
+    // Validate admin fields
+    if (!fullName.trim() || !email.trim() || !password) {
+      toast.error("Preencha todas as informações do administrador.");
+      return;
+    }
+    if (password.length < 6) {
+      toast.error("A senha deve ter no mínimo 6 caracteres.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      toast.error("As senhas não coincidem.");
+      return;
+    }
+
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullName.trim() },
-        emailRedirectTo: window.location.origin,
+    const { data, error } = await supabase.functions.invoke("register-lodge", {
+      body: {
+        lodge_name: lodgeName.trim(),
+        lodge_number: lodgeNumber.trim(),
+        potencia,
+        orient: orient.trim(),
+        cep: cep.trim(),
+        rua: rua.trim(),
+        numero_endereco: numeroEndereco.trim(),
+        complemento: complemento.trim(),
+        bairro: bairro.trim(),
+        cidade: cidade.trim(),
+        estado,
+        telefone: telefone.trim(),
+        full_name: fullName.trim(),
+        email: email.trim(),
+        password,
       },
     });
     setLoading(false);
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success("Conta criada! Verifique seu email para confirmar o cadastro.");
-      setView("login");
+
+    if (error || data?.error) {
+      toast.error(data?.error || error?.message || "Erro ao cadastrar.");
+      return;
     }
+
+    toast.success("Loja cadastrada com sucesso! Verifique seu email para confirmar o cadastro.");
+    setView("login");
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
@@ -173,7 +240,6 @@ export default function Auth() {
     }
   };
 
-  // Password toggle button
   const PwToggle = () => (
     <button
       type="button"
@@ -184,7 +250,6 @@ export default function Auth() {
     </button>
   );
 
-  // Show loading while checking bootstrap
   if (needsBootstrap === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -193,7 +258,6 @@ export default function Auth() {
     );
   }
 
-  // Show bootstrap wizard if system needs initialization
   if (needsBootstrap) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -202,6 +266,282 @@ export default function Auth() {
     );
   }
 
+  // ─── SIGNUP VIEW (Full-page form) ─────────────────────────────
+  if (view === "signup") {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="max-w-3xl mx-auto px-4 py-8 sm:py-12">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <button
+              onClick={() => setView("login")}
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6 mx-auto sm:mx-0 w-fit"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              Voltar ao login
+            </button>
+            <div className="flex justify-center mb-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary text-primary-foreground font-serif font-bold text-2xl shadow-lg">
+                M
+              </div>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-serif font-bold text-foreground">
+              Cadastre sua Loja e Crie sua Conta
+            </h1>
+            <p className="text-sm text-muted-foreground mt-2">
+              Comece a modernizar a gestão da sua Loja Maçônica
+            </p>
+          </div>
+
+          <form onSubmit={handleRegisterLodge} className="space-y-6">
+            {/* Seção 1: Informações da Loja */}
+            <Card>
+              <CardHeader className="pb-4">
+                <div className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5 text-primary" />
+                  <h2 className="text-lg font-serif font-semibold">Informações da Loja</h2>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="lodge-name">Nome da Loja *</Label>
+                    <Input
+                      id="lodge-name"
+                      value={lodgeName}
+                      onChange={(e) => setLodgeName(e.target.value)}
+                      placeholder="Ex: ARLS União e Progresso"
+                      maxLength={150}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="lodge-number">Número da Loja *</Label>
+                    <Input
+                      id="lodge-number"
+                      value={lodgeNumber}
+                      onChange={(e) => setLodgeNumber(e.target.value)}
+                      placeholder="Ex: 236"
+                      maxLength={20}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label>Potência Maçônica *</Label>
+                    <Select value={potencia} onValueChange={setPotencia}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a Potência" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {POTENCIAS.map((p) => (
+                          <SelectItem key={p} value={p}>{p}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="orient">Oriente *</Label>
+                    <Input
+                      id="orient"
+                      value={orient}
+                      onChange={(e) => setOrient(e.target.value)}
+                      placeholder="Ex: Manaus"
+                      maxLength={100}
+                    />
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="cep">CEP</Label>
+                    <Input
+                      id="cep"
+                      value={cep}
+                      onChange={(e) => setCep(e.target.value)}
+                      onBlur={handleCepBlur}
+                      placeholder="Ex: 01000-000"
+                      maxLength={9}
+                    />
+                    <p className="text-[10px] text-muted-foreground">Digite o CEP para preenchimento automático</p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="telefone">WhatsApp / Telefone</Label>
+                    <Input
+                      id="telefone"
+                      value={telefone}
+                      onChange={(e) => setTelefone(e.target.value)}
+                      placeholder="Ex: (11) 99999-9999"
+                      maxLength={20}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="sm:col-span-2 space-y-1.5">
+                    <Label htmlFor="rua">Rua</Label>
+                    <Input
+                      id="rua"
+                      value={rua}
+                      onChange={(e) => setRua(e.target.value)}
+                      placeholder="Ex: Rua dos Maçons"
+                      maxLength={200}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="numero-endereco">Número</Label>
+                    <Input
+                      id="numero-endereco"
+                      value={numeroEndereco}
+                      onChange={(e) => setNumeroEndereco(e.target.value)}
+                      placeholder="Ex: 123"
+                      maxLength={10}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="complemento">Complemento</Label>
+                    <Input
+                      id="complemento"
+                      value={complemento}
+                      onChange={(e) => setComplemento(e.target.value)}
+                      placeholder="Ex: Sala 1"
+                      maxLength={100}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="bairro">Bairro</Label>
+                    <Input
+                      id="bairro"
+                      value={bairro}
+                      onChange={(e) => setBairro(e.target.value)}
+                      placeholder="Ex: Centro"
+                      maxLength={100}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="cidade">Cidade</Label>
+                    <Input
+                      id="cidade"
+                      value={cidade}
+                      onChange={(e) => setCidade(e.target.value)}
+                      placeholder="Ex: São Paulo"
+                      maxLength={100}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Estado</Label>
+                    <Select value={estado} onValueChange={setEstado}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o Estado" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ESTADOS.map((uf) => (
+                          <SelectItem key={uf} value={uf}>{uf}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Seção 2: Informações do Administrador */}
+            <Card>
+              <CardHeader className="pb-4">
+                <div className="flex items-center gap-2">
+                  <User className="h-5 w-5 text-primary" />
+                  <h2 className="text-lg font-serif font-semibold">Informações do Administrador</h2>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="admin-name">Nome Completo *</Label>
+                    <Input
+                      id="admin-name"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="Ex: João da Silva"
+                      maxLength={100}
+                      autoComplete="name"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="admin-email">Email *</Label>
+                    <Input
+                      id="admin-email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="seu@email.com"
+                      autoComplete="email"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="admin-password">Senha *</Label>
+                    <div className="relative">
+                      <Input
+                        id="admin-password"
+                        type={showPw ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Mínimo 6 caracteres"
+                        autoComplete="new-password"
+                      />
+                      <PwToggle />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="admin-confirm">Confirmar Senha *</Label>
+                    <div className="relative">
+                      <Input
+                        id="admin-confirm"
+                        type={showPw ? "text" : "password"}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Repita a senha"
+                        autoComplete="new-password"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Submit */}
+            <Button type="submit" className="w-full h-12 text-base gap-2" disabled={loading}>
+              {loading ? "Cadastrando..." : (
+                <>
+                  <Building2 className="h-4 w-4" />
+                  Cadastrar Loja e Criar Conta
+                </>
+              )}
+            </Button>
+
+            <p className="text-center text-sm text-muted-foreground">
+              Já tem uma conta?{" "}
+              <button type="button" onClick={() => setView("login")} className="text-primary hover:underline font-medium">
+                Faça login aqui
+              </button>
+            </p>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── LOGIN / FORGOT / RESET VIEWS (Split layout) ─────────────
   return (
     <div className="relative flex h-screen w-full bg-background">
       {/* Left side - Auth */}
@@ -315,84 +655,57 @@ export default function Auth() {
               </>
             )}
 
-            {/* Login / Signup Tabs */}
-            {(view === "login" || view === "signup") && (
-              <Tabs value={view} onValueChange={(v) => setView(v as AuthView)}>
+            {/* Login View */}
+            {view === "login" && (
+              <>
                 <CardHeader className="pb-3">
-                  <TabsList className="w-full bg-muted/60">
-                    <TabsTrigger value="login" className="flex-1 gap-1.5 data-[state=active]:bg-card data-[state=active]:shadow-sm">
-                      <LogIn className="h-3.5 w-3.5" />
-                      Entrar
-                    </TabsTrigger>
-                    <TabsTrigger value="signup" className="flex-1 gap-1.5 data-[state=active]:bg-card data-[state=active]:shadow-sm">
-                      <UserPlus className="h-3.5 w-3.5" />
-                      Criar Conta
-                    </TabsTrigger>
-                  </TabsList>
+                  <p className="font-semibold text-sm">Acesse sua conta</p>
                 </CardHeader>
-
                 <CardContent>
-                  <TabsContent value="login" className="mt-0">
-                    <form onSubmit={handleLogin} className="space-y-4">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="login-email">Email</Label>
-                        <Input id="login-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" autoComplete="email" />
+                  <form onSubmit={handleLogin} className="space-y-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="login-email">Email</Label>
+                      <Input id="login-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" autoComplete="email" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="login-password">Senha</Label>
+                      <div className="relative">
+                        <Input id="login-password" type={showPw ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••" autoComplete="current-password" />
+                        <PwToggle />
                       </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="login-password">Senha</Label>
-                        <div className="relative">
-                          <Input id="login-password" type={showPw ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••" autoComplete="current-password" />
-                          <PwToggle />
-                        </div>
-                      </div>
-                      <Button type="submit" className="w-full" disabled={loading}>
-                        {loading ? "Entrando..." : "Entrar"}
-                      </Button>
+                    </div>
+                    <Button type="submit" className="w-full" disabled={loading}>
+                      {loading ? "Entrando..." : "Entrar"}
+                    </Button>
+                    <div className="flex flex-col gap-2">
                       <Button
                         type="button"
                         variant="outline"
-                        className="w-full"
+                        className="w-full gap-2"
+                        onClick={() => setView("signup")}
+                      >
+                        <Building2 className="h-4 w-4" />
+                        Cadastre sua Loja
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="w-full text-muted-foreground"
                         onClick={() => navigate("/portal/auth")}
                       >
                         Portal do Irmão
                       </Button>
-                      <button
-                        type="button"
-                        onClick={() => setView("forgot")}
-                        className="w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        Esqueceu sua senha?
-                      </button>
-                    </form>
-                  </TabsContent>
-
-                  <TabsContent value="signup" className="mt-0">
-                    <form onSubmit={handleSignup} className="space-y-4">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="signup-name">Nome Completo</Label>
-                        <Input id="signup-name" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Ex: João da Silva" maxLength={100} autoComplete="name" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="signup-email">Email</Label>
-                        <Input id="signup-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" autoComplete="email" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="signup-password">Senha</Label>
-                        <div className="relative">
-                          <Input id="signup-password" type={showPw ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Mínimo 6 caracteres" autoComplete="new-password" />
-                          <PwToggle />
-                        </div>
-                      </div>
-                      <Button type="submit" className="w-full" disabled={loading}>
-                        {loading ? "Criando conta..." : "Criar Conta"}
-                      </Button>
-                      <p className="text-[10px] text-muted-foreground text-center">
-                        Após o cadastro, um administrador precisará atribuir seu cargo.
-                      </p>
-                    </form>
-                  </TabsContent>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setView("forgot")}
+                      className="w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      Esqueceu sua senha?
+                    </button>
+                  </form>
                 </CardContent>
-              </Tabs>
+              </>
             )}
           </Card>
           </div>
@@ -436,7 +749,6 @@ export default function Auth() {
                   )}
                 </div>
               ))}
-              {/* Dots indicator */}
               {banners.length > 1 && (
                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-20">
                   {banners.map((_, i) => (
