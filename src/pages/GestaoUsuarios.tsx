@@ -180,13 +180,16 @@ export default function GestaoUsuarios() {
 
   const handleDelete = async () => {
     if (!deleteUser) return;
-    const { ok, data } = await apiCall("delete", "DELETE", { user_id: deleteUser.id });
-    if (!ok) { toast.error(data.error || "Erro ao excluir"); return; }
-    toast.success(`${deleteUser.full_name} excluído permanentemente`);
-    logAction({ action: "DELETE_USER", targetTable: "profiles", targetId: deleteUser.id, details: { email: deleteUser.email } });
+    // Instead of deleting from DB, remove admin role
+    const { ok, data } = await apiCall("update", "PUT", { user_id: deleteUser.id, role: null });
+    if (!ok) { toast.error(data.error || "Erro ao remover permissão"); return; }
+    toast.success(`Permissão de administrador removida de ${deleteUser.full_name}`);
+    logAction({ action: "REMOVE_ADMIN", targetTable: "user_roles", targetId: deleteUser.id, details: { email: deleteUser.email } });
     setDeleteUser(null);
     fetchUsers();
   };
+
+  const adminCount = users.filter((u) => u.role === "administrador").length;
 
   // Filters
   const filtered = users.filter((u) => {
@@ -378,11 +381,20 @@ export default function GestaoUsuarios() {
                           </Tooltip>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteUser(user)}>
+                              <Button
+                                variant="ghost" size="icon"
+                                className="h-8 w-8 text-destructive hover:text-destructive"
+                                disabled={user.role === "administrador" && adminCount <= 1}
+                                onClick={() => setDeleteUser(user)}
+                              >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </TooltipTrigger>
-                            <TooltipContent>Excluir</TooltipContent>
+                            <TooltipContent>
+                              {user.role === "administrador" && adminCount <= 1
+                                ? "Último administrador — não pode remover"
+                                : "Remover permissão de admin"}
+                            </TooltipContent>
                           </Tooltip>
                         </div>
                       </TooltipProvider>
