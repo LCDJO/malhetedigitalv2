@@ -31,6 +31,8 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminLojas from "./pages/admin/AdminLojas";
 import AdminPlaceholder from "./pages/admin/AdminPlaceholder";
+import AdminUsuarios from "./pages/admin/AdminUsuarios";
+import AdminConfigSuperAdmin from "./pages/admin/AdminConfigSuperAdmin";
 import AdminAuth from "./pages/admin/AdminAuth";
 
 const queryClient = new QueryClient();
@@ -56,9 +58,9 @@ const App = () => (
                     <Routes>
                       <Route path="/" element={<AdminDashboard />} />
                       <Route path="/lojas" element={<AdminLojas />} />
-                      <Route path="/usuarios" element={<AdminPlaceholder title="Gestão de Usuários" />} />
+                      <Route path="/usuarios" element={<AdminUsuarios />} />
                       <Route path="/planos" element={<AdminPlaceholder title="Planos e Assinaturas" />} />
-                      <Route path="/configuracoes" element={<AdminPlaceholder title="Configurações Globais" />} />
+                      <Route path="/configuracoes" element={<AdminConfigSuperAdmin />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </AdminLayout>
