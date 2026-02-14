@@ -46,6 +46,44 @@ export type Database = {
           },
         ]
       }
+      affiliate_relationships: {
+        Row: {
+          commission_percent: number
+          created_at: string
+          id: string
+          is_active: boolean
+          referred_id: string
+          referrer_id: string
+          tenant_id: string
+        }
+        Insert: {
+          commission_percent?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          referred_id: string
+          referrer_id: string
+          tenant_id: string
+        }
+        Update: {
+          commission_percent?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          referred_id?: string
+          referrer_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_relationships_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           action: string
@@ -223,63 +261,6 @@ export type Database = {
         }
         Relationships: []
       }
-      member_transactions: {
-        Row: {
-          conta_plano_id: string | null
-          created_at: string
-          created_by: string | null
-          data: string
-          descricao: string
-          forma_pagamento: string | null
-          id: string
-          member_id: string
-          status: string
-          tipo: string
-          valor: number
-        }
-        Insert: {
-          conta_plano_id?: string | null
-          created_at?: string
-          created_by?: string | null
-          data?: string
-          descricao?: string
-          forma_pagamento?: string | null
-          id?: string
-          member_id: string
-          status?: string
-          tipo: string
-          valor: number
-        }
-        Update: {
-          conta_plano_id?: string | null
-          created_at?: string
-          created_by?: string | null
-          data?: string
-          descricao?: string
-          forma_pagamento?: string | null
-          id?: string
-          member_id?: string
-          status?: string
-          tipo?: string
-          valor?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "member_transactions_conta_plano_id_fkey"
-            columns: ["conta_plano_id"]
-            isOneToOne: false
-            referencedRelation: "plano_contas"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "member_transactions_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "members"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       members: {
         Row: {
           address: string | null
@@ -349,46 +330,49 @@ export type Database = {
         }
         Relationships: []
       }
-      plano_contas: {
+      plans: {
         Row: {
-          codigo: string
-          conta_pai_id: string | null
           created_at: string
-          created_by: string | null
+          description: string | null
+          features: Json
           id: string
-          nome: string
-          status: string
-          tipo: string
+          interval_days: number
+          is_active: boolean
+          name: string
+          price: number
+          tenant_id: string
           updated_at: string
         }
         Insert: {
-          codigo: string
-          conta_pai_id?: string | null
           created_at?: string
-          created_by?: string | null
+          description?: string | null
+          features?: Json
           id?: string
-          nome: string
-          status?: string
-          tipo: string
+          interval_days?: number
+          is_active?: boolean
+          name: string
+          price?: number
+          tenant_id: string
           updated_at?: string
         }
         Update: {
-          codigo?: string
-          conta_pai_id?: string | null
           created_at?: string
-          created_by?: string | null
+          description?: string | null
+          features?: Json
           id?: string
-          nome?: string
-          status?: string
-          tipo?: string
+          interval_days?: number
+          is_active?: boolean
+          name?: string
+          price?: number
+          tenant_id?: string
           updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "plano_contas_conta_pai_id_fkey"
-            columns: ["conta_pai_id"]
+            foreignKeyName: "plans_tenant_id_fkey"
+            columns: ["tenant_id"]
             isOneToOne: false
-            referencedRelation: "plano_contas"
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -447,6 +431,44 @@ export type Database = {
         }
         Relationships: []
       }
+      ranking_snapshots: {
+        Row: {
+          created_at: string
+          id: string
+          period: string
+          rank: number | null
+          tenant_id: string
+          user_id: string
+          xp_total: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          period: string
+          rank?: number | null
+          tenant_id: string
+          user_id: string
+          xp_total?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          period?: string
+          rank?: number | null
+          tenant_id?: string
+          user_id?: string
+          xp_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ranking_snapshots_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       solicitacoes_titular: {
         Row: {
           created_at: string
@@ -483,6 +505,128 @@ export type Database = {
           solicitante_id?: string
           status?: Database["public"]["Enums"]["status_solicitacao"]
           tipo?: Database["public"]["Enums"]["tipo_solicitacao_titular"]
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          canceled_at: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          plan_id: string
+          started_at: string
+          status: Database["public"]["Enums"]["subscription_status"]
+          tenant_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          canceled_at?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          plan_id: string
+          started_at?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          tenant_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          canceled_at?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          plan_id?: string
+          started_at?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          tenant_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_users: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          role: Database["public"]["Enums"]["tenant_role"]
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          role?: Database["public"]["Enums"]["tenant_role"]
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          role?: Database["public"]["Enums"]["tenant_role"]
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_users_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenants: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          logo_url: string | null
+          name: string
+          settings: Json
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          name: string
+          settings?: Json
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          name?: string
+          settings?: Json
+          slug?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -537,24 +681,144 @@ export type Database = {
         }
         Relationships: []
       }
+      wallet_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          reference_id: string | null
+          tenant_id: string
+          type: Database["public"]["Enums"]["transaction_type"]
+          wallet_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          reference_id?: string | null
+          tenant_id: string
+          type: Database["public"]["Enums"]["transaction_type"]
+          wallet_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          reference_id?: string | null
+          tenant_id?: string
+          type?: Database["public"]["Enums"]["transaction_type"]
+          wallet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_transactions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallet_transactions_wallet_id_fkey"
+            columns: ["wallet_id"]
+            isOneToOne: false
+            referencedRelation: "wallets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wallets: {
+        Row: {
+          balance: number
+          created_at: string
+          id: string
+          level: number
+          tenant_id: string
+          updated_at: string
+          user_id: string
+          xp_total: number
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          id?: string
+          level?: number
+          tenant_id: string
+          updated_at?: string
+          user_id: string
+          xp_total?: number
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          id?: string
+          level?: number
+          tenant_id?: string
+          updated_at?: string
+          user_id?: string
+          xp_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallets_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      xp_logs: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          tenant_id: string
+          user_id: string
+          xp_amount: number
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          tenant_id: string
+          user_id: string
+          xp_amount: number
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          tenant_id?: string
+          user_id?: string
+          xp_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "xp_logs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
       count_failed_attempts: { Args: { _identifier: string }; Returns: number }
-      financial_kpis: {
-        Args: { _from: string; _to: string }
-        Returns: {
-          total_despesas: number
-          total_receitas: number
-          total_transacoes: number
-        }[]
-      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      get_user_tenant_ids: { Args: { _user_id: string }; Returns: string[] }
       has_module_access: {
         Args: { _module: string; _user_id: string }
         Returns: boolean
@@ -566,18 +830,25 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_tenant_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["tenant_role"]
+          _tenant_id: string
+          _user_id: string
+        }
+        Returns: boolean
+      }
       is_active_member: { Args: { _email: string }; Returns: boolean }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
-      lookup_email_by_cpf: { Args: { _cpf: string }; Returns: string }
-      member_financial_summary: {
-        Args: { _member_id: string }
-        Returns: {
-          meses_atraso: number
-          total_creditos: number
-          total_debitos: number
-          total_transacoes: number
-        }[]
+      is_tenant_admin: {
+        Args: { _tenant_id: string; _user_id: string }
+        Returns: boolean
       }
+      is_tenant_member: {
+        Args: { _tenant_id: string; _user_id: string }
+        Returns: boolean
+      }
+      lookup_email_by_cpf: { Args: { _cpf: string }; Returns: string }
     }
     Enums: {
       app_role:
@@ -593,7 +864,10 @@ export type Database = {
         | "em_andamento"
         | "concluida"
         | "rejeitada"
+      subscription_status: "active" | "paused" | "canceled" | "expired"
+      tenant_role: "owner" | "admin" | "member"
       tipo_solicitacao_titular: "correcao" | "exclusao" | "exportacao"
+      transaction_type: "credit" | "debit"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -736,7 +1010,10 @@ export const Constants = {
         "concluida",
         "rejeitada",
       ],
+      subscription_status: ["active", "paused", "canceled", "expired"],
+      tenant_role: ["owner", "admin", "member"],
       tipo_solicitacao_titular: ["correcao", "exclusao", "exportacao"],
+      transaction_type: ["credit", "debit"],
     },
   },
 } as const
