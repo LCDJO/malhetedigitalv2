@@ -23,6 +23,7 @@ import {
   FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PortalFooter } from "./PortalFooter";
 
 // Context to share member data across portal pages
 const PortalMemberContext = createContext<PortalMember | null>(null);
@@ -303,6 +304,9 @@ export function PortalLayout({ children }: { children: React.ReactNode }) {
           <main className="flex-1 overflow-auto p-4 sm:p-5 md:p-7">
             {children}
           </main>
+
+          {/* Footer institucional */}
+          <PortalFooter />
         </div>
       </div>
     </PortalMemberContext.Provider>
