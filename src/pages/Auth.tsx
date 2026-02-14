@@ -116,24 +116,32 @@ export default function Auth() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Redirect authenticated users based on role
+  // Redirect authenticated users based on role (block advertisers)
   useEffect(() => {
     if (authLoading || !user) return;
     if (view === "reset") return;
 
-    const getRedirectPath = () => {
-      if (!role) return "/";
-      switch (role) {
-        case "superadmin": return "/admin";
-        case "administrador":
-        case "veneravel": return "/";
-        case "secretario": return "/secretaria";
-        case "tesoureiro": return "/tesouraria";
-        default: return "/";
+    // Check if user is an advertiser — if so, redirect to advertiser portal
+    supabase.rpc("is_advertiser", { _user_id: user.id }).then(({ data: isAdv }) => {
+      if (isAdv) {
+        navigate("/anunciante/auth", { replace: true });
+        return;
       }
-    };
 
-    navigate(getRedirectPath(), { replace: true });
+      const getRedirectPath = () => {
+        if (!role) return "/";
+        switch (role) {
+          case "superadmin": return "/admin";
+          case "administrador":
+          case "veneravel": return "/";
+          case "secretario": return "/secretaria";
+          case "tesoureiro": return "/tesouraria";
+          default: return "/";
+        }
+      };
+
+      navigate(getRedirectPath(), { replace: true });
+    });
   }, [user, role, authLoading, navigate, view]);
 
   // CEP auto-fill
@@ -159,14 +167,28 @@ export default function Auth() {
     if (!email || !password) { toast.error("Preencha todos os campos."); return; }
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
     if (error) {
+      setLoading(false);
       toast.error(error.message === "Invalid login credentials"
         ? "Email ou senha incorretos."
         : error.message);
-    } else {
-      toast.success("Login realizado com sucesso.");
+      return;
     }
+
+    // Block advertisers from accessing lodge panel
+    const currentUser = (await supabase.auth.getUser()).data.user;
+    if (currentUser) {
+      const { data: isAdv } = await supabase.rpc("is_advertiser", { _user_id: currentUser.id });
+      if (isAdv) {
+        await supabase.auth.signOut();
+        setLoading(false);
+        toast.error("Esta conta é de anunciante. Acesse pelo Portal do Anunciante.");
+        return;
+      }
+    }
+
+    setLoading(false);
+    toast.success("Login realizado com sucesso.");
   };
 
   const handleRegisterLodge = async (e: React.FormEvent) => {

@@ -98,11 +98,18 @@ export default function PortalAuth() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Redirect authenticated users to portal
+  // Redirect authenticated users to portal (block advertisers)
   useEffect(() => {
     if (authLoading || !user) return;
     if (view === "reset" || view === "force_change" || view === "first_access") return;
-    navigate("/portal", { replace: true });
+
+    supabase.rpc("is_advertiser", { _user_id: user.id }).then(({ data: isAdv }) => {
+      if (isAdv) {
+        navigate("/anunciante/auth", { replace: true });
+        return;
+      }
+      navigate("/portal", { replace: true });
+    });
   }, [user, authLoading, navigate, view]);
 
   const logAttempt = async (id: string, success: boolean) => {
@@ -212,9 +219,20 @@ export default function PortalAuth() {
       return;
     }
 
+    // Block advertisers from accessing Portal do Irmão
+    const currentUser = (await supabase.auth.getUser()).data.user;
+    if (currentUser) {
+      const { data: isAdv } = await supabase.rpc("is_advertiser", { _user_id: currentUser.id });
+      if (isAdv) {
+        await supabase.auth.signOut();
+        setLoading(false);
+        toast.error("Esta conta é de anunciante. Acesse pelo Portal do Anunciante.");
+        return;
+      }
+    }
+
     await logAttempt(identifier, true);
 
-    const currentUser = (await supabase.auth.getUser()).data.user;
     await supabase.from("audit_log").insert({
       user_id: currentUser?.id,
       user_name: email,
