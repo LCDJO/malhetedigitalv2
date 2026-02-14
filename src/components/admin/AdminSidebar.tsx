@@ -12,9 +12,14 @@ import {
   Megaphone,
   BarChart3,
   Plug,
+  Mail,
+  MessageCircle,
+  Send,
+  ChevronDown,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLocation } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
@@ -30,6 +35,8 @@ import {
 } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { cn } from "@/lib/utils";
 
 const menuItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
@@ -43,7 +50,12 @@ const complianceItems = [
   { title: "Termos e LGPD", url: "/admin/gestao-termos", icon: Scale },
   { title: "Controle de Aceites", url: "/admin/controle-aceites", icon: ClipboardCheck },
   { title: "Configurações", url: "/admin/configuracoes", icon: Settings },
-  { title: "Integrações", url: "/admin/integracoes", icon: Plug },
+];
+
+const integracaoComunicacao = [
+  { title: "Email", url: "/admin/integracoes/email", icon: Mail },
+  { title: "WhatsApp", url: "/admin/integracoes/whatsapp", icon: MessageCircle },
+  { title: "Telegram", url: "/admin/integracoes/telegram", icon: Send },
 ];
 
 const adsItems = [
@@ -56,6 +68,8 @@ export function AdminSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { profile } = useAuth();
+  const location = useLocation();
+  const integracoesOpen = location.pathname.startsWith("/admin/integracoes");
 
   const initials = profile?.full_name
     ? profile.full_name.split(" ").filter(Boolean).map((w) => w[0]).slice(0, 2).join("").toUpperCase()
@@ -129,6 +143,50 @@ export function AdminSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
+        <SidebarGroup className="mt-2">
+          <SidebarGroupLabel className="admin-section-title text-sidebar-foreground/40 px-3 mb-1">
+            Integrações
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <Collapsible open={integracoesOpen} defaultOpen={integracoesOpen}>
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton
+                      tooltip="Comunicação"
+                      className={cn(
+                        "text-sidebar-foreground/65 hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground transition-all duration-150 rounded-md",
+                        integracoesOpen && "bg-sidebar-accent/50 text-sidebar-accent-foreground"
+                      )}
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      <span>Comunicação</span>
+                      <ChevronDown className={cn("ml-auto h-3.5 w-3.5 transition-transform duration-200", !integracoesOpen && "-rotate-90")} />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenu className="ml-4 mt-0.5 border-l border-sidebar-border pl-2">
+                      {integracaoComunicacao.map((item) => (
+                        <SidebarMenuItem key={item.title}>
+                          <SidebarMenuButton asChild tooltip={item.title}>
+                            <NavLink
+                              to={item.url}
+                              className="text-sidebar-foreground/65 hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground transition-all duration-150 rounded-md text-[13px]"
+                              activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold shadow-sm"
+                            >
+                              <item.icon className="h-3.5 w-3.5" />
+                              <span>{item.title}</span>
+                            </NavLink>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))}
+                    </SidebarMenu>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
 
         <SidebarGroup className="mt-2">
           <SidebarGroupLabel className="admin-section-title text-sidebar-foreground/40 px-3 mb-1">
