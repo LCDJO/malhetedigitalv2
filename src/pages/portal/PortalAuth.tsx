@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Eye, EyeOff, KeyRound, ArrowLeft, LogIn, ShieldAlert, Loader2 } from "lucide-react";
+import { Eye, EyeOff, KeyRound, ArrowLeft, LogIn, ShieldAlert, Loader2, UserPlus } from "lucide-react";
 
-type PortalAuthView = "login" | "forgot" | "reset" | "force_change";
+type PortalAuthView = "login" | "forgot" | "reset" | "force_change" | "first_access";
 
 const MAX_ATTEMPTS = 5;
 
@@ -34,6 +34,8 @@ export default function PortalAuth() {
   const [loading, setLoading] = useState(false);
   const [blocked, setBlocked] = useState(false);
   const [forceChangeEmail, setForceChangeEmail] = useState<string | null>(null);
+  const [firstAccessCpf, setFirstAccessCpf] = useState("");
+  const [firstAccessCim, setFirstAccessCim] = useState("");
 
   // Detect password recovery event
   useEffect(() => {
@@ -48,7 +50,7 @@ export default function PortalAuth() {
   // Redirect authenticated users to portal
   useEffect(() => {
     if (authLoading || !user) return;
-    if (view === "reset" || view === "force_change") return;
+    if (view === "reset" || view === "force_change" || view === "first_access") return;
     navigate("/portal", { replace: true });
   }, [user, authLoading, navigate, view]);
 
@@ -79,6 +81,49 @@ export default function PortalAuth() {
       return data as string;
     }
     return id.trim().toLowerCase();
+  };
+
+  const handleFirstAccess = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const cpfClean = firstAccessCpf.replace(/\D/g, "");
+    if (cpfClean.length !== 11) {
+      toast.error("Informe um CPF válido.");
+      return;
+    }
+    if (!firstAccessCim.trim()) {
+      toast.error("Informe seu CIM.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("first-access", {
+        body: { cpf: firstAccessCpf, cim: firstAccessCim },
+      });
+
+      if (error || data?.error) {
+        toast.error(data?.error || "Erro ao validar primeiro acesso.");
+        setLoading(false);
+        return;
+      }
+
+      // Set the returned session
+      if (data.session) {
+        await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        });
+
+        setForceChangeEmail(data.email);
+        setView("force_change");
+        toast.info("Acesso validado! Defina sua senha pessoal.");
+      }
+    } catch (err) {
+      toast.error("Erro de conexão. Tente novamente.");
+    }
+
+    setLoading(false);
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -479,13 +524,80 @@ export default function PortalAuth() {
                     {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
                     {loading ? "Entrando..." : "Entrar"}
                   </Button>
-                  <button
-                    type="button"
-                    onClick={() => setView("forgot")}
-                    className="w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    Esqueceu sua senha?
-                  </button>
+                  <div className="space-y-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setView("forgot")}
+                      className="w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      Esqueceu sua senha?
+                    </button>
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-card px-2 text-muted-foreground">ou</span>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full gap-1.5"
+                      onClick={() => setView("first_access")}
+                    >
+                      <UserPlus className="h-4 w-4" />
+                      Primeiro Acesso
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </>
+          )}
+
+          {/* First Access */}
+          {view === "first_access" && (
+            <>
+              <CardHeader className="pb-3">
+                <button
+                  onClick={() => setView("login")}
+                  className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-2 w-fit"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5" />
+                  Voltar ao login
+                </button>
+                <div className="flex items-center gap-2">
+                  <UserPlus className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="font-semibold text-sm">Primeiro Acesso</p>
+                    <p className="text-xs text-muted-foreground">Informe seu CPF e CIM para ativar seu acesso</p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleFirstAccess} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label>CPF</Label>
+                    <Input
+                      value={firstAccessCpf}
+                      onChange={(e) => setFirstAccessCpf(e.target.value)}
+                      placeholder="000.000.000-00"
+                      autoComplete="off"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>CIM</Label>
+                    <Input
+                      value={firstAccessCim}
+                      onChange={(e) => setFirstAccessCim(e.target.value)}
+                      placeholder="Número do CIM"
+                      autoComplete="off"
+                    />
+                  </div>
+                  <Button type="submit" className="w-full gap-1.5" disabled={loading}>
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
+                    {loading ? "Validando..." : "Ativar Acesso"}
+                  </Button>
                 </form>
               </CardContent>
             </>
