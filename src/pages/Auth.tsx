@@ -183,18 +183,27 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen flex bg-background">
-      {/* Left side - Auth Card */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-12">
-        <div className="w-full max-w-md space-y-6">
-          {/* Branding */}
-          <div className="text-center space-y-2">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-primary text-primary-foreground font-serif font-bold text-2xl shadow-lg">
-              M
-            </div>
-            <h1 className="text-2xl font-serif font-bold tracking-tight">Malhete Digital</h1>
-            <p className="text-sm text-muted-foreground">Sistema de Gestão Maçônica</p>
+    <div className="relative flex h-screen w-full bg-background">
+      {/* Left side - Auth */}
+      <div className="flex h-full w-full lg:w-1/2 flex-col items-center justify-between px-6 py-8">
+        {/* Logo top */}
+        <div className="flex w-full flex-1 items-center justify-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary text-primary-foreground font-serif font-bold text-2xl shadow-lg">
+            M
           </div>
+        </div>
+
+        {/* Form area */}
+        <div className="z-10 flex w-full items-center md:max-w-[90%] 2xl:max-w-[50%]">
+          <div className="flex w-full flex-col gap-4">
+            <div>
+              <h1 className="mb-1 text-xl font-serif font-bold tracking-tight text-foreground md:text-2xl xl:text-3xl">
+                Bem-Vindo!
+              </h1>
+              <p className="text-sm text-muted-foreground tracking-wide">
+                Sistema de Gestão Maçônica — Malhete Digital
+              </p>
+            </div>
 
           <Card>
             {/* Forgot Password View */}
@@ -366,58 +375,68 @@ export default function Auth() {
               </Tabs>
             )}
           </Card>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="w-full pt-6 pb-2 text-center">
+          <p className="text-xs text-muted-foreground">
+            © {new Date().getFullYear()} Malhete Digital — Todos os direitos reservados.
+          </p>
         </div>
       </div>
 
       {/* Right side - Banner */}
-      <div className="hidden lg:flex lg:w-1/2 bg-primary/5 items-center justify-center relative overflow-hidden">
-        {banner ? (
-          banner.tipo === "video" ? (
-            <video
-              src={banner.media_url}
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="absolute inset-0 w-full h-full object-cover"
-            />
+      <div className="hidden lg:flex lg:w-1/2 p-4">
+        <div className="relative flex h-full w-full items-center justify-center rounded-2xl bg-muted/60 overflow-hidden">
+          {banner ? (
+            banner.tipo === "video" ? (
+              <video
+                src={banner.media_url}
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="absolute inset-0 w-full h-full object-cover rounded-2xl"
+              />
+            ) : (
+              <img
+                src={banner.media_url}
+                alt="Banner"
+                className="absolute inset-0 w-full h-full object-cover rounded-2xl"
+              />
+            )
           ) : (
-            <img
-              src={banner.media_url}
-              alt="Banner"
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-          )
-        ) : (
-          <>
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-accent/10" />
-            <div className="relative z-10 text-center space-y-6 p-12 max-w-lg">
-              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/15 text-primary font-serif font-bold text-4xl">
-                M
-              </div>
-              <h2 className="text-3xl font-serif font-bold text-foreground/90">
-                Gestão Maçônica Moderna
-              </h2>
-              <p className="text-muted-foreground text-base leading-relaxed">
-                Gerencie sua Loja com eficiência, transparência e segurança. Controle financeiro, secretaria, tesouraria e muito mais em um só lugar.
-              </p>
-              <div className="flex justify-center gap-8 pt-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-primary">100%</div>
-                  <div className="text-xs text-muted-foreground">Digital</div>
+            <>
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-accent/10 rounded-2xl" />
+              <div className="relative z-10 text-center space-y-6 p-12 max-w-lg">
+                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/15 text-primary font-serif font-bold text-4xl">
+                  M
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-primary">LGPD</div>
-                  <div className="text-xs text-muted-foreground">Compatível</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-primary">24/7</div>
-                  <div className="text-xs text-muted-foreground">Disponível</div>
+                <h2 className="text-3xl font-serif font-bold text-foreground/90">
+                  Gestão Maçônica Moderna
+                </h2>
+                <p className="text-muted-foreground text-base leading-relaxed">
+                  Gerencie sua Loja com eficiência, transparência e segurança. Controle financeiro, secretaria, tesouraria e muito mais em um só lugar.
+                </p>
+                <div className="flex justify-center gap-8 pt-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-primary">100%</div>
+                    <div className="text-xs text-muted-foreground">Digital</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-primary">LGPD</div>
+                    <div className="text-xs text-muted-foreground">Compatível</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-primary">24/7</div>
+                    <div className="text-xs text-muted-foreground">Disponível</div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </>
-        )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
