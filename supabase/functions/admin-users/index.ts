@@ -317,6 +317,44 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ─── DELETE ────────────────────────────────────────────
+    if (req.method === "DELETE" && action === "delete") {
+      const body = await req.json();
+      const { user_id } = body;
+
+      if (!user_id) {
+        return new Response(
+          JSON.stringify({ error: "user_id é obrigatório" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Prevent self-deletion
+      if (user_id === claims.user.id) {
+        return new Response(
+          JSON.stringify({ error: "Você não pode excluir a si mesmo" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Remove role, profile, and auth user
+      await adminClient.from("user_roles").delete().eq("user_id", user_id);
+      await adminClient.from("tenant_users").delete().eq("user_id", user_id);
+      await adminClient.from("profiles").delete().eq("id", user_id);
+      const { error: delErr } = await adminClient.auth.admin.deleteUser(user_id);
+
+      if (delErr) {
+        return new Response(JSON.stringify({ error: delErr.message }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // ─── ADD TO TENANT ───────────────────────────────────────
     if (req.method === "POST" && action === "add_to_tenant") {
       const body = await req.json();
