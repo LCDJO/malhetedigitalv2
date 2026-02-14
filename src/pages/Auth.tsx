@@ -132,10 +132,7 @@ export default function Auth() {
         if (!role) return "/";
         switch (role) {
           case "superadmin": return "/admin";
-          case "administrador":
-          case "veneravel": return "/";
-          case "secretario": return "/secretaria";
-          case "tesoureiro": return "/tesouraria";
+          case "administrador": return "/";
           default: return "/";
         }
       };
