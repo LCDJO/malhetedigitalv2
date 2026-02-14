@@ -34,6 +34,7 @@ import AdminPlanos from "./pages/admin/AdminPlanos";
 import AdminUsuarios from "./pages/admin/AdminUsuarios";
 import AdminConfigSuperAdmin from "./pages/admin/AdminConfigSuperAdmin";
 import AdminAuth from "./pages/admin/AdminAuth";
+import AdminBannerLogin from "./pages/admin/AdminBannerLogin";
 
 const queryClient = new QueryClient();
 
@@ -60,6 +61,7 @@ const App = () => (
                       <Route path="/lojas" element={<AdminLojas />} />
                       <Route path="/usuarios" element={<AdminUsuarios />} />
                       <Route path="/planos" element={<AdminPlanos />} />
+                      <Route path="/banner-login" element={<AdminBannerLogin />} />
                       <Route path="/configuracoes" element={<AdminConfigSuperAdmin />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
