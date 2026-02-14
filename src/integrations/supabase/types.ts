@@ -875,42 +875,66 @@ export type Database = {
       }
       tenants: {
         Row: {
+          cnpj: string | null
           created_at: string
+          email: string | null
+          endereco: string | null
           id: string
           is_active: boolean
+          lodge_number: string | null
           logo_url: string | null
           name: string
+          orient: string | null
           plan_features: Json
+          potencia: string | null
+          rito: string | null
           settings: Json
           slug: string
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
+          telefone: string | null
           updated_at: string
         }
         Insert: {
+          cnpj?: string | null
           created_at?: string
+          email?: string | null
+          endereco?: string | null
           id?: string
           is_active?: boolean
+          lodge_number?: string | null
           logo_url?: string | null
           name: string
+          orient?: string | null
           plan_features?: Json
+          potencia?: string | null
+          rito?: string | null
           settings?: Json
           slug: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
+          telefone?: string | null
           updated_at?: string
         }
         Update: {
+          cnpj?: string | null
           created_at?: string
+          email?: string | null
+          endereco?: string | null
           id?: string
           is_active?: boolean
+          lodge_number?: string | null
           logo_url?: string | null
           name?: string
+          orient?: string | null
           plan_features?: Json
+          potencia?: string | null
+          rito?: string | null
           settings?: Json
           slug?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
+          telefone?: string | null
           updated_at?: string
         }
         Relationships: []

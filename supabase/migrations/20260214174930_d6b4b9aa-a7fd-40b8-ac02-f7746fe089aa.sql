@@ -1,0 +1,10 @@
+
+ALTER TABLE public.tenants
+  ADD COLUMN IF NOT EXISTS cnpj text DEFAULT '',
+  ADD COLUMN IF NOT EXISTS endereco text DEFAULT '',
+  ADD COLUMN IF NOT EXISTS email text DEFAULT '',
+  ADD COLUMN IF NOT EXISTS telefone text DEFAULT '',
+  ADD COLUMN IF NOT EXISTS potencia text DEFAULT '',
+  ADD COLUMN IF NOT EXISTS rito text DEFAULT '',
+  ADD COLUMN IF NOT EXISTS orient text DEFAULT '',
+  ADD COLUMN IF NOT EXISTS lodge_number text DEFAULT '';
