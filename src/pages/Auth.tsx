@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -25,12 +25,28 @@ export default function Auth() {
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [needsBootstrap, setNeedsBootstrap] = useState<boolean | null>(null);
+  const [banner, setBanner] = useState<{ tipo: string; media_url: string } | null>(null);
 
   // Check if bootstrap is needed
   useEffect(() => {
     supabase.functions.invoke("bootstrap", { method: "GET" }).then(({ data }) => {
       setNeedsBootstrap(data?.needs_bootstrap ?? false);
     }).catch(() => setNeedsBootstrap(false));
+
+    // Fetch active banner
+    supabase
+      .from("login_banners")
+      .select("tipo, media_url")
+      .eq("ativo", true)
+      .lte("data_inicio", new Date().toISOString())
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          const b = data[0];
+          setBanner(b as { tipo: string; media_url: string });
+        }
+      });
   }, []);
 
   // Detect password recovery event from URL
@@ -355,32 +371,53 @@ export default function Auth() {
 
       {/* Right side - Banner */}
       <div className="hidden lg:flex lg:w-1/2 bg-primary/5 items-center justify-center relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-accent/10" />
-        <div className="relative z-10 text-center space-y-6 p-12 max-w-lg">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/15 text-primary font-serif font-bold text-4xl">
-            M
-          </div>
-          <h2 className="text-3xl font-serif font-bold text-foreground/90">
-            Gestão Maçônica Moderna
-          </h2>
-          <p className="text-muted-foreground text-base leading-relaxed">
-            Gerencie sua Loja com eficiência, transparência e segurança. Controle financeiro, secretaria, tesouraria e muito mais em um só lugar.
-          </p>
-          <div className="flex justify-center gap-8 pt-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-primary">100%</div>
-              <div className="text-xs text-muted-foreground">Digital</div>
+        {banner ? (
+          banner.tipo === "video" ? (
+            <video
+              src={banner.media_url}
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          ) : (
+            <img
+              src={banner.media_url}
+              alt="Banner"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          )
+        ) : (
+          <>
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-accent/10" />
+            <div className="relative z-10 text-center space-y-6 p-12 max-w-lg">
+              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/15 text-primary font-serif font-bold text-4xl">
+                M
+              </div>
+              <h2 className="text-3xl font-serif font-bold text-foreground/90">
+                Gestão Maçônica Moderna
+              </h2>
+              <p className="text-muted-foreground text-base leading-relaxed">
+                Gerencie sua Loja com eficiência, transparência e segurança. Controle financeiro, secretaria, tesouraria e muito mais em um só lugar.
+              </p>
+              <div className="flex justify-center gap-8 pt-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-primary">100%</div>
+                  <div className="text-xs text-muted-foreground">Digital</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-primary">LGPD</div>
+                  <div className="text-xs text-muted-foreground">Compatível</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-primary">24/7</div>
+                  <div className="text-xs text-muted-foreground">Disponível</div>
+                </div>
+              </div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-primary">LGPD</div>
-              <div className="text-xs text-muted-foreground">Compatível</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-primary">24/7</div>
-              <div className="text-xs text-muted-foreground">Disponível</div>
-            </div>
-          </div>
-        </div>
+          </>
+        )}
       </div>
     </div>
   );
