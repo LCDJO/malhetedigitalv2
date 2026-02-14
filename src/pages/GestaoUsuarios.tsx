@@ -15,7 +15,7 @@ import {
 import { toast } from "sonner";
 import {
   UserPlus, Search, Users, MoreHorizontal, Pencil, Eye,
-  ShieldCheck, ShieldOff, KeyRound, Trash2, Loader2,
+  ShieldCheck, ShieldOff, KeyRound, Trash2, Loader2, Crown,
 } from "lucide-react";
 import { useAuditLog } from "@/hooks/useAuditLog";
 import { UserFormDialog } from "@/components/gestao-usuarios/UserFormDialog";
@@ -150,6 +150,14 @@ export default function GestaoUsuarios() {
       setFormOpen(false);
       fetchUsers();
     } catch { toast.error("Erro inesperado"); } finally { setSaving(false); }
+  };
+
+  const promoteToAdmin = async (user: UserRow) => {
+    const { ok, data } = await apiCall("update", "PUT", { user_id: user.id, role: "administrador" });
+    if (!ok) { toast.error(data.error || "Erro ao promover"); return; }
+    toast.success(`${user.full_name} agora é Administrador do Sistema`);
+    logAction({ action: "PROMOTE_ADMIN", targetTable: "user_roles", targetId: user.id, details: { email: user.email, new_role: "administrador" } });
+    fetchUsers();
   };
 
   const toggleActive = async (user: UserRow) => {
@@ -328,6 +336,11 @@ export default function GestaoUsuarios() {
                           <DropdownMenuItem onClick={() => setResetUser(user)}>
                             <KeyRound className="h-4 w-4 mr-2" /> Resetar Senha
                           </DropdownMenuItem>
+                          {user.role !== "administrador" && (
+                            <DropdownMenuItem onClick={() => promoteToAdmin(user)}>
+                              <Crown className="h-4 w-4 mr-2 text-amber-500" /> Tornar Administrador
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => toggleActive(user)}>
                             {user.is_active ? (
