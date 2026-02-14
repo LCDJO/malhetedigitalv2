@@ -117,16 +117,18 @@ Deno.serve(async (req) => {
           profileMap[p.id] = p;
         });
 
-        const users = tenantUsers.map((tu: { user_id: string; role: string; is_active: boolean; created_at: string }) => ({
-          id: tu.user_id,
-          full_name: profileMap[tu.user_id]?.full_name || "—",
-          avatar_url: profileMap[tu.user_id]?.avatar_url || null,
-          email: emailMap[tu.user_id] || "",
-          role: roleMap[tu.user_id] || null,
-          tenant_role: tu.role,
-          is_active: tu.is_active && (profileMap[tu.user_id]?.is_active ?? true),
-          created_at: tu.created_at,
-        }));
+        const users = tenantUsers
+          .filter((tu: { user_id: string }) => !!roleMap[tu.user_id])
+          .map((tu: { user_id: string; role: string; is_active: boolean; created_at: string }) => ({
+            id: tu.user_id,
+            full_name: profileMap[tu.user_id]?.full_name || "—",
+            avatar_url: profileMap[tu.user_id]?.avatar_url || null,
+            email: emailMap[tu.user_id] || "",
+            role: roleMap[tu.user_id] || null,
+            tenant_role: tu.role,
+            is_active: tu.is_active && (profileMap[tu.user_id]?.is_active ?? true),
+            created_at: tu.created_at,
+          }));
 
         return new Response(JSON.stringify(users), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
