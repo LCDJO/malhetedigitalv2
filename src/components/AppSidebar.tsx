@@ -1,12 +1,10 @@
 import {
   BookOpen,
   Stamp,
-  Wallet,
   Settings,
   LayoutDashboard,
   Users,
   ScrollText,
-  FileBarChart,
   ShieldAlert,
   Scale,
   ClipboardCheck,
@@ -33,9 +31,7 @@ const menuItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard, module: "dashboard" },
   { title: "Secretaria", url: "/secretaria", icon: BookOpen, module: "secretaria" },
   { title: "Chancelaria", url: "/chancelaria", icon: Stamp, module: "chancelaria" },
-  { title: "Tesouraria", url: "/tesouraria", icon: Wallet, module: "tesouraria" },
   
-  { title: "Relatórios", url: "/relatorios", icon: FileBarChart, module: "dashboard" },
   { title: "Configurações", url: "/configuracoes", icon: Settings, module: "configuracoes" },
   { title: "Gestão de Usuários", url: "/gestao-usuarios", icon: Users, module: "configuracoes" },
   { title: "Log de Auditoria", url: "/log-auditoria", icon: ScrollText, module: "configuracoes" },

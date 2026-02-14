@@ -278,7 +278,7 @@ export default function PortalAuth() {
             M
           </div>
           <h1 className="text-2xl font-serif font-bold tracking-tight">Portal do Irmão</h1>
-          <p className="text-sm text-muted-foreground">Acesse seus dados, financeiro e prestação de contas</p>
+          <p className="text-sm text-muted-foreground">Acesse seus dados e perfil</p>
         </div>
 
         <Card>

@@ -8,8 +8,6 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   User,
-  Wallet,
-  FileBarChart,
   ShieldCheck,
   LogOut,
   Menu,
@@ -30,8 +28,6 @@ export function usePortalMemberContext() {
 
 const navItems = [
   { to: "/portal", icon: User, label: "Meu Cadastro", end: true },
-  { to: "/portal/financeiro", icon: Wallet, label: "Meu Financeiro" },
-  { to: "/portal/prestacao-contas", icon: FileBarChart, label: "Prestação de Contas" },
   { to: "/portal/perfil", icon: ShieldCheck, label: "Perfil e Segurança" },
 ];
 

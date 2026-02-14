@@ -223,63 +223,6 @@ export type Database = {
         }
         Relationships: []
       }
-      member_transactions: {
-        Row: {
-          conta_plano_id: string | null
-          created_at: string
-          created_by: string | null
-          data: string
-          descricao: string
-          forma_pagamento: string | null
-          id: string
-          member_id: string
-          status: string
-          tipo: string
-          valor: number
-        }
-        Insert: {
-          conta_plano_id?: string | null
-          created_at?: string
-          created_by?: string | null
-          data?: string
-          descricao?: string
-          forma_pagamento?: string | null
-          id?: string
-          member_id: string
-          status?: string
-          tipo: string
-          valor: number
-        }
-        Update: {
-          conta_plano_id?: string | null
-          created_at?: string
-          created_by?: string | null
-          data?: string
-          descricao?: string
-          forma_pagamento?: string | null
-          id?: string
-          member_id?: string
-          status?: string
-          tipo?: string
-          valor?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "member_transactions_conta_plano_id_fkey"
-            columns: ["conta_plano_id"]
-            isOneToOne: false
-            referencedRelation: "plano_contas"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "member_transactions_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "members"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       members: {
         Row: {
           address: string | null
@@ -348,50 +291,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
-      }
-      plano_contas: {
-        Row: {
-          codigo: string
-          conta_pai_id: string | null
-          created_at: string
-          created_by: string | null
-          id: string
-          nome: string
-          status: string
-          tipo: string
-          updated_at: string
-        }
-        Insert: {
-          codigo: string
-          conta_pai_id?: string | null
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          nome: string
-          status?: string
-          tipo: string
-          updated_at?: string
-        }
-        Update: {
-          codigo?: string
-          conta_pai_id?: string | null
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          nome?: string
-          status?: string
-          tipo?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "plano_contas_conta_pai_id_fkey"
-            columns: ["conta_pai_id"]
-            isOneToOne: false
-            referencedRelation: "plano_contas"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       politicas_privacidade: {
         Row: {
@@ -543,14 +442,6 @@ export type Database = {
     }
     Functions: {
       count_failed_attempts: { Args: { _identifier: string }; Returns: number }
-      financial_kpis: {
-        Args: { _from: string; _to: string }
-        Returns: {
-          total_despesas: number
-          total_receitas: number
-          total_transacoes: number
-        }[]
-      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -569,15 +460,6 @@ export type Database = {
       is_active_member: { Args: { _email: string }; Returns: boolean }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       lookup_email_by_cpf: { Args: { _cpf: string }; Returns: string }
-      member_financial_summary: {
-        Args: { _member_id: string }
-        Returns: {
-          meses_atraso: number
-          total_creditos: number
-          total_debitos: number
-          total_transacoes: number
-        }[]
-      }
     }
     Enums: {
       app_role:
