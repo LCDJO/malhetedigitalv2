@@ -49,7 +49,7 @@ export default function TenantSelect() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-lg space-y-6">
         <div className="text-center">
-          <h1 className="text-3xl font-serif font-bold">Gamify Recorrência</h1>
+          <h1 className="text-3xl font-serif font-bold">Malhete Digital</h1>
           <p className="text-muted-foreground mt-2">Selecione ou crie um workspace</p>
         </div>
 

@@ -9,9 +9,9 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Auth from "./pages/Auth";
 import TenantSelect from "./pages/TenantSelect";
-import GamifyDashboard from "./pages/GamifyDashboard";
-import GamifyPlans from "./pages/GamifyPlans";
-import GamifyRanking from "./pages/GamifyRanking";
+import Dashboard from "./pages/Dashboard";
+import Plans from "./pages/Plans";
+import Ranking from "./pages/Ranking";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,9 +45,9 @@ const App = () => (
                   <ProtectedRoute>
                     <DashboardLayout>
                       <Routes>
-                        <Route path="/" element={<GamifyDashboard />} />
-                        <Route path="/plans" element={<GamifyPlans />} />
-                        <Route path="/ranking" element={<GamifyRanking />} />
+                        <Route path="/" element={<Dashboard />} />
+                        <Route path="/plans" element={<Plans />} />
+                        <Route path="/ranking" element={<Ranking />} />
                         <Route path="*" element={<NotFound />} />
                       </Routes>
                     </DashboardLayout>
