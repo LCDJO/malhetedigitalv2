@@ -671,27 +671,39 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address: string | null
           avatar_url: string | null
+          birth_date: string | null
+          cpf: string | null
           created_at: string
           full_name: string
           id: string
           is_active: boolean
+          phone: string | null
           updated_at: string
         }
         Insert: {
+          address?: string | null
           avatar_url?: string | null
+          birth_date?: string | null
+          cpf?: string | null
           created_at?: string
           full_name: string
           id: string
           is_active?: boolean
+          phone?: string | null
           updated_at?: string
         }
         Update: {
+          address?: string | null
           avatar_url?: string | null
+          birth_date?: string | null
+          cpf?: string | null
           created_at?: string
           full_name?: string
           id?: string
           is_active?: boolean
+          phone?: string | null
           updated_at?: string
         }
         Relationships: []
