@@ -10,11 +10,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Pencil, Search, Building2, CreditCard } from "lucide-react";
+import { Plus, Pencil, Search, Building2, CreditCard, Trash2, Undo2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { ConfirmSensitiveAction } from "@/components/ConfirmSensitiveAction";
 import type { Tables } from "@/integrations/supabase/types";
 
-type Tenant = Tables<"tenants">;
+type Tenant = Tables<"tenants"> & { deleted_at?: string | null; purge_at?: string | null };
 type LodgeConfig = Tables<"lodge_config">;
 type Plan = Tables<"plans">;
 
@@ -39,6 +40,7 @@ export default function AdminLojas() {
   const [editing, setEditing] = useState<TenantWithConfig | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [deleteTenant, setDeleteTenant] = useState<TenantWithConfig | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -105,6 +107,15 @@ export default function AdminLojas() {
     return plan?.name || null;
   };
 
+  const isDeleted = (t: TenantWithConfig) => !!(t as any).deleted_at;
+
+  const daysUntilPurge = (t: TenantWithConfig) => {
+    const purgeAt = (t as any).purge_at;
+    if (!purgeAt) return null;
+    const diff = new Date(purgeAt).getTime() - Date.now();
+    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  };
+
   const handleSave = async () => {
     if (!form.name.trim() || !form.slug.trim()) {
       toast({ title: "Preencha nome e slug", variant: "destructive" });
@@ -142,7 +153,6 @@ export default function AdminLojas() {
           await supabase.from("subscriptions").update({ plan_id: form.plan_id }).eq("id", existingSub.id);
         }
       } else {
-        // Get first owner of tenant for user_id, or use a placeholder
         const { data: ownerData } = await supabase
           .from("tenant_users")
           .select("user_id")
@@ -151,7 +161,7 @@ export default function AdminLojas() {
           .limit(1)
           .maybeSingle();
 
-        const userId = ownerData?.user_id || tenantId; // fallback
+        const userId = ownerData?.user_id || tenantId;
 
         await supabase.from("subscriptions").insert({
           tenant_id: tenantId,
@@ -161,7 +171,6 @@ export default function AdminLojas() {
         });
       }
     } else if (tenantId && !form.plan_id && subscriptions[tenantId]) {
-      // Remove subscription if plan was cleared
       await supabase.from("subscriptions").update({ status: "canceled" }).eq("id", subscriptions[tenantId].id);
     }
 
@@ -171,9 +180,48 @@ export default function AdminLojas() {
     fetchData();
   };
 
+  const handleDelete = async () => {
+    if (!deleteTenant) return;
+    const now = new Date();
+    const purgeDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    const { error } = await supabase.from("tenants").update({
+      deleted_at: now.toISOString(),
+      purge_at: purgeDate.toISOString(),
+      is_active: false,
+    } as any).eq("id", deleteTenant.id);
+
+    if (error) {
+      toast({ title: "Erro ao excluir loja", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Loja marcada para exclusão", description: "Os dados serão removidos permanentemente em 30 dias." });
+    }
+    setDeleteTenant(null);
+    fetchData();
+  };
+
+  const handleRestore = async (t: TenantWithConfig) => {
+    const { error } = await supabase.from("tenants").update({
+      deleted_at: null,
+      purge_at: null,
+      is_active: true,
+    } as any).eq("id", t.id);
+
+    if (error) {
+      toast({ title: "Erro ao restaurar", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Loja restaurada com sucesso" });
+    }
+    fetchData();
+  };
+
   const filtered = tenants.filter(
     (t) => t.name.toLowerCase().includes(search.toLowerCase()) || t.slug.toLowerCase().includes(search.toLowerCase())
   );
+
+  // Separate active from deleted
+  const activeTenants = filtered.filter((t) => !isDeleted(t));
+  const deletedTenants = filtered.filter((t) => isDeleted(t));
 
   return (
     <div className="space-y-6">
@@ -192,62 +240,123 @@ export default function AdminLojas() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Buscar por nome ou slug..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
             </div>
-            <Badge variant="secondary" className="text-xs">{filtered.length} {filtered.length === 1 ? "loja" : "lojas"}</Badge>
+            <Badge variant="secondary" className="text-xs">{activeTenants.length} {activeTenants.length === 1 ? "loja ativa" : "lojas ativas"}</Badge>
           </div>
         </CardHeader>
         <CardContent className="p-0">
           {loading ? (
             <div className="flex items-center justify-center py-12"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" /></div>
-          ) : filtered.length === 0 ? (
+          ) : activeTenants.length === 0 && deletedTenants.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 gap-3 text-muted-foreground">
               <Building2 className="h-10 w-10 opacity-40" /><p className="text-sm">Nenhuma loja encontrada.</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Nº</TableHead>
-                  <TableHead>Plano</TableHead>
-                  <TableHead>Potência</TableHead>
-                  <TableHead>Oriente</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Criada em</TableHead>
-                  <TableHead className="w-[80px]">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((t) => (
-                  <TableRow key={t.id}>
-                    <TableCell className="font-medium">{t.name}</TableCell>
-                    <TableCell className="text-muted-foreground text-xs font-mono">{resolve(t, "lodge_number") || "—"}</TableCell>
-                    <TableCell>
-                      {getPlanName(t.id) ? (
-                        <Badge variant="outline" className="text-[10px] gap-1">
-                          <CreditCard className="h-3 w-3" />
-                          {getPlanName(t.id)}
-                        </Badge>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground text-xs">{resolve(t, "potencia") || "—"}</TableCell>
-                    <TableCell className="text-muted-foreground text-xs">{resolve(t, "orient") || "—"}</TableCell>
-                    <TableCell>
-                      <Badge variant={t.is_active ? "default" : "secondary"} className="text-[10px]">{t.is_active ? "Ativa" : "Inativa"}</Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground text-xs">{new Date(t.created_at).toLocaleDateString("pt-BR")}</TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(t)}><Pencil className="h-3.5 w-3.5" /></Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <>
+              {activeTenants.length > 0 && (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Nº</TableHead>
+                      <TableHead>Plano</TableHead>
+                      <TableHead>Potência</TableHead>
+                      <TableHead>Oriente</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Criada em</TableHead>
+                      <TableHead className="w-[100px]">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {activeTenants.map((t) => (
+                      <TableRow key={t.id}>
+                        <TableCell className="font-medium">{t.name}</TableCell>
+                        <TableCell className="text-muted-foreground text-xs font-mono">{resolve(t, "lodge_number") || "—"}</TableCell>
+                        <TableCell>
+                          {getPlanName(t.id) ? (
+                            <Badge variant="outline" className="text-[10px] gap-1">
+                              <CreditCard className="h-3 w-3" />
+                              {getPlanName(t.id)}
+                            </Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-xs">{resolve(t, "potencia") || "—"}</TableCell>
+                        <TableCell className="text-muted-foreground text-xs">{resolve(t, "orient") || "—"}</TableCell>
+                        <TableCell>
+                          <Badge variant={t.is_active ? "default" : "secondary"} className="text-[10px]">{t.is_active ? "Ativa" : "Inativa"}</Badge>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-xs">{new Date(t.created_at).toLocaleDateString("pt-BR")}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(t)} title="Editar">
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeleteTenant(t)} title="Excluir">
+                              <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+
+              {deletedTenants.length > 0 && (
+                <div className="border-t border-border/60">
+                  <div className="px-4 py-3 bg-destructive/5">
+                    <p className="text-xs font-semibold text-destructive uppercase tracking-wider flex items-center gap-1.5">
+                      <Trash2 className="h-3.5 w-3.5" />
+                      Aguardando exclusão definitiva ({deletedTenants.length})
+                    </p>
+                  </div>
+                  <Table>
+                    <TableBody>
+                      {deletedTenants.map((t) => {
+                        const days = daysUntilPurge(t);
+                        return (
+                          <TableRow key={t.id} className="opacity-60">
+                            <TableCell className="font-medium">{t.name}</TableCell>
+                            <TableCell className="text-muted-foreground text-xs font-mono">{resolve(t, "lodge_number") || "—"}</TableCell>
+                            <TableCell>
+                              {getPlanName(t.id) ? (
+                                <Badge variant="outline" className="text-[10px] gap-1">
+                                  <CreditCard className="h-3 w-3" />
+                                  {getPlanName(t.id)}
+                                </Badge>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">—</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground text-xs">{resolve(t, "potencia") || "—"}</TableCell>
+                            <TableCell className="text-muted-foreground text-xs">{resolve(t, "orient") || "—"}</TableCell>
+                            <TableCell>
+                              <Badge variant="destructive" className="text-[10px]">
+                                {days !== null ? `Exclusão em ${days}d` : "Excluindo..."}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-muted-foreground text-xs">
+                              {(t as any).deleted_at ? new Date((t as any).deleted_at).toLocaleDateString("pt-BR") : "—"}
+                            </TableCell>
+                            <TableCell>
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleRestore(t)} title="Restaurar">
+                                <Undo2 className="h-3.5 w-3.5 text-primary" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
 
+      {/* Create / Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
@@ -255,7 +364,6 @@ export default function AdminLojas() {
           </DialogHeader>
 
           <div className="space-y-6 py-2">
-            {/* Identificação */}
             <div className="space-y-4">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                 <Building2 className="h-3.5 w-3.5" /> Identificação
@@ -283,7 +391,6 @@ export default function AdminLojas() {
 
             <Separator />
 
-            {/* Plano */}
             <div className="space-y-4">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                 <CreditCard className="h-3.5 w-3.5" /> Plano de Assinatura
@@ -315,7 +422,6 @@ export default function AdminLojas() {
 
             <Separator />
 
-            {/* Dados Empresariais */}
             <div className="space-y-4">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Dados Empresariais</p>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -340,7 +446,6 @@ export default function AdminLojas() {
 
             <Separator />
 
-            {/* Dados Maçônicos */}
             <div className="space-y-4">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Dados Maçônicos</p>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -366,6 +471,18 @@ export default function AdminLojas() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete confirmation */}
+      <ConfirmSensitiveAction
+        open={!!deleteTenant}
+        onOpenChange={(open) => { if (!open) setDeleteTenant(null); }}
+        title="Excluir Loja"
+        description={`Tem certeza que deseja excluir a loja "${deleteTenant?.name}"? Todos os dados associados (membros, lançamentos, configurações) serão permanentemente removidos após 30 dias. Durante esse período, a exclusão pode ser revertida.`}
+        confirmLabel="Excluir"
+        requireTypedConfirmation="EXCLUIR"
+        destructive
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }
