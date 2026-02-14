@@ -21,6 +21,7 @@ type Plan = Tables<"plans">;
 
 interface TenantWithConfig extends Tenant {
   lodge_config?: LodgeConfig | null;
+  member_count?: number;
 }
 
 const emptyForm = {
@@ -44,11 +45,12 @@ export default function AdminLojas() {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const [{ data: tenantsData }, { data: configsData }, { data: plansData }, { data: subsData }] = await Promise.all([
+    const [{ data: tenantsData }, { data: configsData }, { data: plansData }, { data: subsData }, { data: membersCountData }] = await Promise.all([
       supabase.from("tenants").select("*").order("created_at", { ascending: false }),
       supabase.from("lodge_config").select("*"),
       supabase.from("plans").select("*").eq("is_active", true).order("price"),
       supabase.from("subscriptions").select("id, tenant_id, plan_id, status").eq("status", "active"),
+      supabase.from("members").select("tenant_id"),
     ]);
 
     setPlans(plansData ?? []);
@@ -60,9 +62,15 @@ export default function AdminLojas() {
     const configMap = new Map<string, LodgeConfig>();
     (configsData ?? []).forEach((c) => { if (c.tenant_id) configMap.set(c.tenant_id, c); });
 
+    const memberCountMap = new Map<string, number>();
+    (membersCountData ?? []).forEach((m) => {
+      if (m.tenant_id) memberCountMap.set(m.tenant_id, (memberCountMap.get(m.tenant_id) || 0) + 1);
+    });
+
     const merged: TenantWithConfig[] = (tenantsData ?? []).map((t) => ({
       ...t,
       lodge_config: configMap.get(t.id) ?? null,
+      member_count: memberCountMap.get(t.id) ?? 0,
     }));
 
     setTenants(merged);
@@ -261,6 +269,7 @@ export default function AdminLojas() {
                       <TableHead>Plano</TableHead>
                       <TableHead>Potência</TableHead>
                       <TableHead>Oriente</TableHead>
+                      <TableHead>Membros</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Criada em</TableHead>
                       <TableHead className="w-[100px]">Ações</TableHead>
@@ -283,6 +292,7 @@ export default function AdminLojas() {
                         </TableCell>
                         <TableCell className="text-muted-foreground text-xs">{resolve(t, "potencia") || "—"}</TableCell>
                         <TableCell className="text-muted-foreground text-xs">{resolve(t, "orient") || "—"}</TableCell>
+                        <TableCell className="text-center font-medium">{t.member_count ?? 0}</TableCell>
                         <TableCell>
                           <Badge variant={t.is_active ? "default" : "secondary"} className="text-[10px]">{t.is_active ? "Ativa" : "Inativa"}</Badge>
                         </TableCell>
