@@ -325,6 +325,7 @@ export type Database = {
           duracao_segundos: number
           id: string
           media_url: string
+          pagina: string
           tenant_id: string | null
           tipo: string
           titulo: string
@@ -339,6 +340,7 @@ export type Database = {
           duracao_segundos?: number
           id?: string
           media_url: string
+          pagina?: string
           tenant_id?: string | null
           tipo: string
           titulo: string
@@ -353,6 +355,7 @@ export type Database = {
           duracao_segundos?: number
           id?: string
           media_url?: string
+          pagina?: string
           tenant_id?: string | null
           tipo?: string
           titulo?: string
