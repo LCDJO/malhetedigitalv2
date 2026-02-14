@@ -52,6 +52,8 @@ export default function Auth() {
     const getRedirectPath = () => {
       if (!role) return "/";
       switch (role) {
+        case "superadmin":
+          return "/admin";
         case "administrador":
         case "veneravel":
           return "/";
