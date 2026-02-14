@@ -8,6 +8,8 @@ import {
   ScrollText,
   FileBarChart,
   Shield,
+  Scale,
+  ClipboardCheck,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth, roleLabels } from "@/contexts/AuthContext";
@@ -37,6 +39,11 @@ const menuItems = [
   { title: "Configurações", url: "/configuracoes", icon: Settings, module: "configuracoes" },
   { title: "Gestão de Usuários", url: "/gestao-usuarios", icon: Users, module: "configuracoes" },
   { title: "Log de Auditoria", url: "/log-auditoria", icon: ScrollText, module: "configuracoes" },
+];
+
+const complianceItems = [
+  { title: "Termos e LGPD", url: "/gestao-termos", icon: Scale, module: "configuracoes" },
+  { title: "Controle de Aceites", url: "/controle-aceites", icon: ClipboardCheck, module: "configuracoes" },
 ];
 
 export function AppSidebar() {
@@ -95,6 +102,33 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {/* Compliance section - visible for configuracoes module access */}
+        {hasModuleAccess("configuracoes") && (
+          <SidebarGroup className="mt-2">
+            <SidebarGroupLabel className="admin-section-title text-sidebar-foreground/40 px-3 mb-1">
+              Compliance
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {complianceItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild tooltip={item.title}>
+                      <NavLink
+                        to={item.url}
+                        className="text-sidebar-foreground/65 hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground transition-all duration-150 rounded-md"
+                        activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold shadow-sm"
+                      >
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         {role === "superadmin" && (
           <SidebarGroup className="mt-2">
