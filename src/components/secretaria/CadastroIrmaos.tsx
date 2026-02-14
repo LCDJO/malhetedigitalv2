@@ -16,13 +16,18 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { Search, Plus, Pencil, Eye, X, User, Users, CalendarIcon, Loader2, ChevronLeft, ChevronRight, Filter, Upload, Trash2, KeyRound, Copy, Check } from "lucide-react";
+import { Search, Plus, Pencil, Eye, X, User, Users, CalendarIcon, Loader2, ChevronLeft, ChevronRight, Filter, Upload, Trash2, KeyRound, Copy, Check, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { PermissionGate } from "@/components/PermissionGate";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, roleLabels, type AppRole } from "@/contexts/AuthContext";
 import { useAuditLog } from "@/hooks/useAuditLog";
 import { ImportarCSV } from "./ImportarCSV";
 import { ConfirmSensitiveAction } from "@/components/ConfirmSensitiveAction";
+
+const systemRoles: AppRole[] = [
+  "administrador", "veneravel", "secretario", "tesoureiro",
+  "orador", "chanceler", "consulta",
+];
 
 interface Member {
   id: string;
@@ -118,12 +123,15 @@ const emptyForm = {
   elevation_date: undefined as Date | undefined,
   exaltation_date: undefined as Date | undefined,
   notes: "", avatar_url: null as string | null,
+  is_system_user: false,
+  system_role: "consulta" as AppRole,
+  system_password: "",
 };
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 0] as const; // 0 = todos
 
 export function CadastroIrmaos() {
-  const { hasPermission } = useAuth();
+  const { hasPermission, session } = useAuth();
   const { logAction } = useAuditLog();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
@@ -140,11 +148,51 @@ export function CadastroIrmaos() {
   const [uploading, setUploading] = useState(false);
   const [csvDialogOpen, setCsvDialogOpen] = useState(false);
   const [deletingMember, setDeletingMember] = useState<Member | null>(null);
+  const [tenantId, setTenantId] = useState<string | null>(null);
+  const [systemUserEmails, setSystemUserEmails] = useState<Set<string>>(new Set());
   // Password management
   const [portalPassword, setPortalPassword] = useState("");
   const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
   const [savingPassword, setSavingPassword] = useState(false);
   const [copiedPassword, setCopiedPassword] = useState(false);
+
+  // Resolve tenant
+  useEffect(() => {
+    const resolveTenant = async () => {
+      if (!session?.user?.id) return;
+      const { data } = await supabase
+        .from("tenant_users")
+        .select("tenant_id")
+        .eq("user_id", session.user.id)
+        .eq("is_active", true)
+        .limit(1)
+        .maybeSingle();
+      if (data) setTenantId(data.tenant_id);
+    };
+    resolveTenant();
+  }, [session?.user?.id]);
+
+  // Fetch emails of members who already have system access
+  const fetchSystemUserEmails = useCallback(async () => {
+    if (!tenantId || !session?.access_token) return;
+    try {
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-users?action=list&tenant_id=${tenantId}`;
+      const resp = await fetch(url, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+      });
+      if (resp.ok) {
+        const users = await resp.json();
+        const emails = new Set<string>(users.map((u: { email: string }) => u.email?.toLowerCase()).filter(Boolean));
+        setSystemUserEmails(emails);
+      }
+    } catch { /* silent */ }
+  }, [tenantId, session?.access_token]);
+
+  useEffect(() => { fetchSystemUserEmails(); }, [fetchSystemUserEmails]);
   const fetchMembers = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
@@ -207,6 +255,13 @@ export function CadastroIrmaos() {
     if (!form.full_name.trim()) { toast.error("O campo Nome completo é obrigatório."); return; }
     if (form.cpf && !validateCpf(form.cpf)) { toast.error("CPF inválido. Verifique os dígitos informados."); return; }
 
+    // Validate system user fields
+    if (form.is_system_user && !editingId) {
+      if (!form.email?.trim()) { toast.error("Email é obrigatório para criar acesso ao sistema."); return; }
+      if (!form.system_password || form.system_password.length < 6) { toast.error("Senha do sistema deve ter no mínimo 6 caracteres."); return; }
+      if (!tenantId) { toast.error("Loja não identificada. Contate o administrador."); return; }
+    }
+
     setSaving(true);
     const payload = {
       full_name: form.full_name.trim(),
@@ -243,6 +298,44 @@ export function CadastroIrmaos() {
       } else {
         toast.success("Irmão cadastrado com sucesso no quadro de obreiros.");
         logAction({ action: "CREATE_MEMBER", targetTable: "members", targetId: inserted?.id, details: { full_name: payload.full_name } });
+
+        // Auto-create system user if flag is checked
+        if (form.is_system_user && form.email?.trim() && tenantId && session?.access_token) {
+          try {
+            const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-users?action=create`;
+            const resp = await fetch(url, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${session.access_token}`,
+                apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                email: form.email.trim(),
+                full_name: form.full_name.trim(),
+                password: form.system_password,
+                role: form.system_role,
+                tenant_id: tenantId,
+                tenant_role: "member",
+                cpf: form.cpf?.trim() || undefined,
+                phone: form.phone?.trim() || undefined,
+                address: form.address?.trim() || undefined,
+                birth_date: form.birth_date ? format(form.birth_date, "yyyy-MM-dd") : undefined,
+              }),
+            });
+            const result = await resp.json();
+            if (resp.ok) {
+              toast.success(`Acesso ao sistema criado! Cargo: ${roleLabels[form.system_role]}`);
+              logAction({ action: "CREATE_SYSTEM_USER", targetTable: "profiles", details: { email: form.email.trim(), role: form.system_role } });
+              fetchSystemUserEmails();
+            } else {
+              toast.error(`Membro cadastrado, mas erro ao criar acesso: ${result.error || "Erro desconhecido"}`);
+            }
+          } catch {
+            toast.error("Membro cadastrado, mas erro de conexão ao criar acesso ao sistema.");
+          }
+        }
+
         closeDialog();
         fetchMembers();
       }
@@ -268,6 +361,9 @@ export function CadastroIrmaos() {
       exaltation_date: m.exaltation_date ? new Date(m.exaltation_date + "T12:00:00") : undefined,
       notes: m.notes || "",
       avatar_url: m.avatar_url,
+      is_system_user: false,
+      system_role: "consulta",
+      system_password: "",
     });
     setDialogOpen(true);
   };
@@ -462,7 +558,14 @@ export function CadastroIrmaos() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline" className={cn("text-[10px] px-2 py-0.5", statusBadge[m.status])}>{statusLabels[m.status] || m.status}</Badge>
+                            <div className="flex items-center gap-1">
+                              <Badge variant="outline" className={cn("text-[10px] px-2 py-0.5", statusBadge[m.status])}>{statusLabels[m.status] || m.status}</Badge>
+                              {m.email && systemUserEmails.has(m.email.toLowerCase()) && (
+                                <Badge variant="outline" className="text-[10px] px-2 py-0.5 border-primary/30 bg-primary/10 text-primary gap-0.5">
+                                  <ShieldCheck className="h-3 w-3" /> Sistema
+                                </Badge>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-1">
@@ -629,6 +732,62 @@ export function CadastroIrmaos() {
               <DateField label="Elevação" value={form.elevation_date} onChange={(d) => setForm({ ...form, elevation_date: d })} />
               <DateField label="Exaltação" value={form.exaltation_date} onChange={(d) => setForm({ ...form, exaltation_date: d })} />
             </div>
+
+            {/* Acesso ao Sistema (apenas no cadastro novo) */}
+            {!editingId && (
+              <>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-2">Acesso ao Sistema</p>
+                <div className="rounded-lg border border-border p-4 space-y-4 bg-muted/30">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="is_system_user"
+                      checked={form.is_system_user}
+                      onCheckedChange={(checked) => setForm({ ...form, is_system_user: !!checked })}
+                    />
+                    <Label htmlFor="is_system_user" className="text-sm font-normal cursor-pointer flex items-center gap-1.5">
+                      <ShieldCheck className="h-4 w-4 text-primary" />
+                      Criar como usuário do sistema (Gestão da Loja)
+                    </Label>
+                  </div>
+                  {form.is_system_user && (
+                    <>
+                      <p className="text-xs text-muted-foreground">
+                        Este membro terá acesso ao painel administrativo da Loja com o cargo selecionado abaixo.
+                        O email informado será usado como login.
+                      </p>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <Label>Cargo no Sistema *</Label>
+                          <Select value={form.system_role} onValueChange={(v) => setForm({ ...form, system_role: v as AppRole })}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {systemRoles.map((r) => (
+                                <SelectItem key={r} value={r}>{roleLabels[r]}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>Senha de Acesso *</Label>
+                          <Input
+                            type="password"
+                            value={form.system_password}
+                            onChange={(e) => setForm({ ...form, system_password: e.target.value })}
+                            placeholder="Mínimo 6 caracteres"
+                            maxLength={50}
+                          />
+                        </div>
+                      </div>
+                      {!form.email?.trim() && (
+                        <p className="text-xs text-destructive flex items-center gap-1">
+                          ⚠ Informe o email do membro acima para criar o acesso ao sistema.
+                        </p>
+                      )}
+                    </>
+                  )}
+                </div>
+              </>
+            )}
 
             {/* Acesso ao Portal */}
             {editingId && (
