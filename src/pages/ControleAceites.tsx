@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -7,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { Loader2, Search, CheckCircle2, Clock, ClipboardList } from "lucide-react";
+import { useUserTenant } from "@/core/tenant";
 
 interface AceiteRow {
   id: string;
@@ -32,6 +34,7 @@ interface TermoRow {
   id: string;
   versao: string;
   ativo: boolean;
+  tenant_id: string | null;
 }
 
 const roleLabelsMap: Record<string, string> = {
@@ -45,6 +48,10 @@ const roleLabelsMap: Record<string, string> = {
 };
 
 const ControleAceites = () => {
+  const location = useLocation();
+  const isAdminContext = location.pathname.startsWith("/admin");
+  const { tenantId, loading: tenantLoading } = useUserTenant();
+
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<AceiteRow[]>([]);
   const [pendingUsers, setPendingUsers] = useState<{ id: string; name: string; role: string | null }[]>([]);
@@ -56,10 +63,20 @@ const ControleAceites = () => {
   const [filterStatus, setFilterStatus] = useState("all");
 
   const fetchData = useCallback(async () => {
+    if (!isAdminContext && !tenantId) return;
     setLoading(true);
 
+    // Scope terms query
+    let termosQuery = supabase.from("termos_uso").select("id, versao, ativo, tenant_id").order("data_publicacao", { ascending: false });
+    if (isAdminContext) {
+      termosQuery = termosQuery.is("tenant_id", null);
+    } else if (tenantId) {
+      // Lodge: show lodge-specific terms OR platform defaults (for inheritance)
+      termosQuery = termosQuery.or(`tenant_id.eq.${tenantId},tenant_id.is.null`);
+    }
+
     const [termosRes, aceitesRes, profilesRes, rolesRes] = await Promise.all([
-      supabase.from("termos_uso").select("id, versao, ativo").order("data_publicacao", { ascending: false }),
+      termosQuery,
       supabase.from("aceites_termos").select("*").order("data_hora_aceite", { ascending: false }),
       supabase.from("profiles").select("id, full_name"),
       supabase.from("user_roles").select("user_id, role"),
@@ -89,11 +106,20 @@ const ControleAceites = () => {
 
     setRows(aceiteRows);
 
-    // Find active term and compute pending users
-    const activeTermo = termosData.find((t) => t.ativo);
+    // Find active term: lodge-specific first, then platform default (inheritance)
+    let activeTermo: TermoRow | undefined;
+    if (!isAdminContext && tenantId) {
+      activeTermo = termosData.find((t) => t.ativo && t.tenant_id === tenantId);
+      if (!activeTermo) {
+        activeTermo = termosData.find((t) => t.ativo && t.tenant_id === null);
+      }
+    } else {
+      activeTermo = termosData.find((t) => t.ativo);
+    }
+
     if (activeTermo) {
       const acceptedUserIds = new Set(
-        aceites.filter((a) => a.termo_id === activeTermo.id).map((a) => a.usuario_id)
+        aceites.filter((a) => a.termo_id === activeTermo!.id).map((a) => a.usuario_id)
       );
       const pending = profiles
         .filter((p) => !acceptedUserIds.has(p.id))
@@ -108,18 +134,17 @@ const ControleAceites = () => {
     }
 
     setLoading(false);
-  }, []);
+  }, [isAdminContext, tenantId]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (!tenantLoading) fetchData();
+  }, [fetchData, tenantLoading]);
 
   const activeTermoVersao = useMemo(() => {
     const active = termos.find((t) => t.ativo);
     return active?.versao ?? null;
   }, [termos]);
 
-  // Combine accepted + pending into a unified view
   const allRows = useMemo(() => {
     const accepted = rows.map((r) => ({
       key: r.id,
@@ -159,6 +184,8 @@ const ControleAceites = () => {
   const countAceitos = allRows.filter((r) => r.status === "aceito").length;
   const countPendentes = allRows.filter((r) => r.status === "pendente").length;
 
+  const scopeLabel = isAdminContext ? "Visão Global — Plataforma" : "Visão da Loja";
+
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
       <div>
@@ -166,6 +193,7 @@ const ControleAceites = () => {
         <p className="text-sm text-muted-foreground mt-1">
           Acompanhamento dos aceites de Termos de Uso por usuário — somente leitura
         </p>
+        <Badge variant="outline" className="mt-2 text-xs">{scopeLabel}</Badge>
       </div>
 
       {/* KPIs */}

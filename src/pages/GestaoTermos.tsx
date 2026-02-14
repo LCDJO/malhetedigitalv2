@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import { toast } from "sonner";
 import { ConfirmSensitiveAction } from "@/components/ConfirmSensitiveAction";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { useAuditLog } from "@/hooks/useAuditLog";
+import { useUserTenant } from "@/core/tenant";
 
 interface Termo {
   id: string;
@@ -25,6 +27,7 @@ interface Termo {
   ativo: boolean;
   data_publicacao: string;
   created_at: string;
+  tenant_id: string | null;
 }
 
 interface Politica {
@@ -34,10 +37,18 @@ interface Politica {
   ativo: boolean;
   data_publicacao: string;
   created_at: string;
+  tenant_id: string | null;
 }
 
 const GestaoTermos = () => {
   const { logAction } = useAuditLog();
+  const location = useLocation();
+  const isAdminContext = location.pathname.startsWith("/admin");
+  const { tenantId, loading: tenantLoading } = useUserTenant();
+
+  // Effective scope: SuperAdmin manages platform defaults (tenant_id IS NULL), Lodge manages its own
+  const effectiveTenantId = isAdminContext ? null : tenantId;
+
   const [termos, setTermos] = useState<Termo[]>([]);
   const [politicas, setPoliticas] = useState<Politica[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,13 +73,29 @@ const GestaoTermos = () => {
   const [publishItem, setPublishItem] = useState<{ id: string; type: "termo" | "politica"; versao: string } | null>(null);
 
   const fetchAll = useCallback(async () => {
+    if (!isAdminContext && !tenantId) return;
+
     setLoading(true);
+
+    // Build queries scoped by tenant
+    let termosQuery = supabase.from("termos_uso").select("*").order("data_publicacao", { ascending: false });
+    let politicasQuery = supabase.from("politicas_privacidade").select("*").order("data_publicacao", { ascending: false });
+
+    if (isAdminContext) {
+      termosQuery = termosQuery.is("tenant_id", null);
+      politicasQuery = politicasQuery.is("tenant_id", null);
+    } else if (tenantId) {
+      termosQuery = termosQuery.eq("tenant_id", tenantId);
+      politicasQuery = politicasQuery.eq("tenant_id", tenantId);
+    }
+
     const [termosRes, politicasRes, profilesRes, aceitesRes] = await Promise.all([
-      supabase.from("termos_uso").select("*").order("data_publicacao", { ascending: false }),
-      supabase.from("politicas_privacidade").select("*").order("data_publicacao", { ascending: false }),
+      termosQuery,
+      politicasQuery,
       supabase.from("profiles").select("id, full_name"),
       supabase.from("aceites_termos").select("usuario_id, termo_id"),
     ]);
+
     if (termosRes.data) setTermos(termosRes.data);
     if (politicasRes.data) setPoliticas(politicasRes.data);
 
@@ -93,9 +120,11 @@ const GestaoTermos = () => {
     }
 
     setLoading(false);
-  }, []);
+  }, [isAdminContext, tenantId]);
 
-  useEffect(() => { fetchAll(); }, [fetchAll]);
+  useEffect(() => {
+    if (!tenantLoading) fetchAll();
+  }, [fetchAll, tenantLoading]);
 
   const openNew = (type: "termo" | "politica") => {
     setDialogType(type);
@@ -137,11 +166,17 @@ const GestaoTermos = () => {
         fetchAll();
       }
     } else {
-      const { error } = await supabase.from(table).insert({
+      const insertData: any = {
         versao: versao.trim(),
         conteudo: conteudo.trim(),
         ativo: false,
-      });
+      };
+      // Set tenant_id for lodge-level terms
+      if (!isAdminContext && tenantId) {
+        insertData.tenant_id = tenantId;
+      }
+
+      const { error } = await supabase.from(table).insert(insertData);
       if (error) {
         toast.error("Erro ao criar: " + error.message);
       } else {
@@ -177,6 +212,8 @@ const GestaoTermos = () => {
     setPublishItem(null);
   };
 
+  const scopeLabel = isAdminContext ? "Padrão da Plataforma" : "Específico da Loja";
+
   const renderTable = (items: (Termo | Politica)[], type: "termo" | "politica") => (
     <div className="rounded-md border">
       <Table>
@@ -193,6 +230,11 @@ const GestaoTermos = () => {
             <TableRow>
               <TableCell colSpan={4} className="text-center text-muted-foreground py-12">
                 Nenhum documento cadastrado. Clique em "Criar Novo" para começar.
+                {!isAdminContext && (
+                  <span className="block mt-1 text-xs">
+                    Se não criar documentos próprios, os termos padrão da plataforma serão utilizados automaticamente.
+                  </span>
+                )}
               </TableCell>
             </TableRow>
           ) : (
@@ -243,6 +285,7 @@ const GestaoTermos = () => {
         <p className="text-sm text-muted-foreground mt-1">
           Gerencie Termos de Uso e Política de Privacidade — versionamento, publicação e conformidade LGPD
         </p>
+        <Badge variant="outline" className="mt-2 text-xs">{scopeLabel}</Badge>
       </div>
 
       {/* Compliance indicators */}
@@ -251,7 +294,6 @@ const GestaoTermos = () => {
         const pendingCount = pendingUserNames.length;
         return (
           <div className="space-y-4">
-            {/* KPI cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Card>
                 <CardContent className="flex items-center gap-3 p-4">
@@ -288,7 +330,6 @@ const GestaoTermos = () => {
               </Card>
             </div>
 
-            {/* Progress bar */}
             <Card>
               <CardContent className="p-4 space-y-2">
                 <div className="flex items-center justify-between text-sm">
@@ -299,7 +340,6 @@ const GestaoTermos = () => {
               </CardContent>
             </Card>
 
-            {/* Alert + pending list */}
             {pendingCount > 0 && (
               <Alert variant="destructive" className="border-warning/40 bg-warning/5 text-foreground">
                 <AlertTriangle className="h-4 w-4 !text-warning" />

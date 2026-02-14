@@ -147,6 +147,22 @@ const App = () => (
                           </ProtectedRoute>
                         }
                       />
+                      <Route
+                        path="/gestao-termos"
+                        element={
+                          <ProtectedRoute module="configuracoes">
+                            <GestaoTermos />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/controle-aceites"
+                        element={
+                          <ProtectedRoute module="configuracoes">
+                            <ControleAceites />
+                          </ProtectedRoute>
+                        }
+                      />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </DashboardLayout>
