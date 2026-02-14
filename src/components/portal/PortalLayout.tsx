@@ -17,6 +17,7 @@ import {
   ChevronRight,
   Loader2,
   UserX,
+  Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -29,10 +30,11 @@ export function usePortalMemberContext() {
 }
 
 const navItems = [
-  { to: "/portal", icon: User, label: "Meu Cadastro", end: true },
+  { to: "/portal", icon: User, label: "Meu Perfil", end: true },
+  { to: "/portal/minha-loja", icon: Building2, label: "Minha Loja" },
   { to: "/portal/financeiro", icon: Wallet, label: "Meu Financeiro" },
   { to: "/portal/prestacao-contas", icon: FileBarChart, label: "Prestação de Contas" },
-  { to: "/portal/perfil", icon: ShieldCheck, label: "Perfil e Segurança" },
+  { to: "/portal/seguranca", icon: ShieldCheck, label: "Segurança" },
 ];
 
 export function PortalLayout({ children }: { children: React.ReactNode }) {
