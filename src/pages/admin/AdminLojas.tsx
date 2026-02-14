@@ -14,6 +14,11 @@ import { toast } from "@/hooks/use-toast";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Tenant = Tables<"tenants">;
+type LodgeConfig = Tables<"lodge_config">;
+
+interface TenantWithConfig extends Tenant {
+  lodge_config?: LodgeConfig | null;
+}
 
 const emptyForm = {
   name: "", slug: "", is_active: true,
@@ -22,18 +27,30 @@ const emptyForm = {
 };
 
 export default function AdminLojas() {
-  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [tenants, setTenants] = useState<TenantWithConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<Tenant | null>(null);
+  const [editing, setEditing] = useState<TenantWithConfig | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
 
   const fetchTenants = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase.from("tenants").select("*").order("created_at", { ascending: false });
-    setTenants(data ?? []);
+    const [{ data: tenantsData }, { data: configsData }] = await Promise.all([
+      supabase.from("tenants").select("*").order("created_at", { ascending: false }),
+      supabase.from("lodge_config").select("*"),
+    ]);
+
+    const configMap = new Map<string, LodgeConfig>();
+    (configsData ?? []).forEach((c) => { if (c.tenant_id) configMap.set(c.tenant_id, c); });
+
+    const merged: TenantWithConfig[] = (tenantsData ?? []).map((t) => ({
+      ...t,
+      lodge_config: configMap.get(t.id) ?? null,
+    }));
+
+    setTenants(merged);
     setLoading(false);
   }, []);
 
@@ -41,16 +58,31 @@ export default function AdminLojas() {
 
   const openCreate = () => { setEditing(null); setForm(emptyForm); setDialogOpen(true); };
 
-  const openEdit = (t: Tenant) => {
+  const openEdit = (t: TenantWithConfig) => {
     setEditing(t);
+    const c = t.lodge_config;
     setForm({
-      name: t.name, slug: t.slug, is_active: t.is_active,
-      cnpj: (t as any).cnpj ?? "", endereco: (t as any).endereco ?? "",
-      email: (t as any).email ?? "", telefone: (t as any).telefone ?? "",
-      potencia: (t as any).potencia ?? "", rito: (t as any).rito ?? "",
-      orient: (t as any).orient ?? "", lodge_number: (t as any).lodge_number ?? "",
+      name: t.name,
+      slug: t.slug,
+      is_active: t.is_active,
+      cnpj: (t as any).cnpj || "",
+      endereco: (t as any).endereco || c?.endereco || "",
+      email: (t as any).email || c?.email_institucional || "",
+      telefone: (t as any).telefone || c?.telefone || "",
+      potencia: (t as any).potencia || c?.potencia || "",
+      rito: (t as any).rito || "",
+      orient: (t as any).orient || c?.orient || "",
+      lodge_number: (t as any).lodge_number || c?.lodge_number || "",
     });
     setDialogOpen(true);
+  };
+
+  /** Resolve displayed value: tenant field first, fallback to lodge_config */
+  const resolve = (t: TenantWithConfig, field: string, configField?: string) => {
+    const val = (t as any)[field];
+    if (val) return val;
+    if (t.lodge_config) return (t.lodge_config as any)[configField ?? field] ?? "";
+    return "";
   };
 
   const handleSave = async () => {
@@ -115,9 +147,10 @@ export default function AdminLojas() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
-                  <TableHead>Slug</TableHead>
+                  <TableHead>Nº</TableHead>
                   <TableHead>CNPJ</TableHead>
                   <TableHead>Potência</TableHead>
+                  <TableHead>Oriente</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Criada em</TableHead>
                   <TableHead className="w-[80px]">Ações</TableHead>
@@ -127,9 +160,10 @@ export default function AdminLojas() {
                 {filtered.map((t) => (
                   <TableRow key={t.id}>
                     <TableCell className="font-medium">{t.name}</TableCell>
-                    <TableCell className="text-muted-foreground text-xs font-mono">{t.slug}</TableCell>
-                    <TableCell className="text-muted-foreground text-xs">{(t as any).cnpj || "—"}</TableCell>
-                    <TableCell className="text-muted-foreground text-xs">{(t as any).potencia || "—"}</TableCell>
+                    <TableCell className="text-muted-foreground text-xs font-mono">{resolve(t, "lodge_number") || "—"}</TableCell>
+                    <TableCell className="text-muted-foreground text-xs">{resolve(t, "cnpj") || "—"}</TableCell>
+                    <TableCell className="text-muted-foreground text-xs">{resolve(t, "potencia") || "—"}</TableCell>
+                    <TableCell className="text-muted-foreground text-xs">{resolve(t, "orient") || "—"}</TableCell>
                     <TableCell>
                       <Badge variant={t.is_active ? "default" : "secondary"} className="text-[10px]">{t.is_active ? "Ativa" : "Inativa"}</Badge>
                     </TableCell>
@@ -145,7 +179,6 @@ export default function AdminLojas() {
         </CardContent>
       </Card>
 
-      {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
