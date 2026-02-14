@@ -132,7 +132,7 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       } else {
-        // ── GLOBAL: all platform users (superadmin only) ──
+        // ── GLOBAL: only SuperAdmin-level users (not tenant users) ──
         if (!isSuperadmin) {
           return new Response(JSON.stringify({ error: "Forbidden: apenas SuperAdmin pode listar todos os usuários" }), {
             status: 403,
@@ -140,40 +140,31 @@ Deno.serve(async (req) => {
           });
         }
 
+        // Only get users that have a superadmin role
+        const { data: superadminRoles } = await adminClient
+          .from("user_roles")
+          .select("user_id, role")
+          .eq("role", "superadmin");
+
+        if (!superadminRoles || superadminRoles.length === 0) {
+          return new Response(JSON.stringify([]), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        const superadminIds = superadminRoles.map((r: { user_id: string }) => r.user_id);
+
         const { data: profiles } = await adminClient
           .from("profiles")
           .select("id, full_name, avatar_url, is_active, created_at")
+          .in("id", superadminIds)
           .order("full_name");
-
-        // Get tenant associations
-        const { data: tenantAssocs } = await adminClient
-          .from("tenant_users")
-          .select("user_id, tenant_id, role");
-
-        const { data: tenants } = await adminClient
-          .from("tenants")
-          .select("id, name");
-
-        const tenantNameMap: Record<string, string> = {};
-        tenants?.forEach((t: { id: string; name: string }) => {
-          tenantNameMap[t.id] = t.name;
-        });
-
-        const userTenantsMap: Record<string, { tenant_id: string; tenant_name: string; tenant_role: string }[]> = {};
-        tenantAssocs?.forEach((ta: { user_id: string; tenant_id: string; role: string }) => {
-          if (!userTenantsMap[ta.user_id]) userTenantsMap[ta.user_id] = [];
-          userTenantsMap[ta.user_id].push({
-            tenant_id: ta.tenant_id,
-            tenant_name: tenantNameMap[ta.tenant_id] || "—",
-            tenant_role: ta.role,
-          });
-        });
 
         const users = (profiles ?? []).map((p: { id: string; full_name: string; avatar_url: string | null; is_active: boolean; created_at: string }) => ({
           ...p,
           email: emailMap[p.id] || "",
-          role: roleMap[p.id] || null,
-          tenants: userTenantsMap[p.id] || [],
+          role: "superadmin",
+          tenants: [],
         }));
 
         return new Response(JSON.stringify(users), {

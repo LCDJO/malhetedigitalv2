@@ -9,21 +9,12 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
-import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
 import {
-  UserPlus, Pencil, ShieldCheck, ShieldOff, Search, Users, Shield, Building2,
+  UserPlus, Pencil, ShieldCheck, ShieldOff, Search, Users, Shield,
 } from "lucide-react";
-
-interface TenantAssoc {
-  tenant_id: string;
-  tenant_name: string;
-  tenant_role: string;
-}
 
 interface UserRow {
   id: string;
@@ -32,13 +23,7 @@ interface UserRow {
   role: AppRole | null;
   is_active: boolean;
   created_at: string;
-  tenants: TenantAssoc[];
 }
-
-const allRoles: AppRole[] = [
-  "superadmin", "administrador", "veneravel", "secretario",
-  "tesoureiro", "orador", "chanceler", "consulta", "portal_irmao",
-];
 
 export default function AdminUsuarios() {
   const { session } = useAuth();
@@ -51,7 +36,6 @@ export default function AdminUsuarios() {
   const [formName, setFormName] = useState("");
   const [formEmail, setFormEmail] = useState("");
   const [formPassword, setFormPassword] = useState("");
-  const [formRole, setFormRole] = useState<AppRole>("consulta");
   const [editUserId, setEditUserId] = useState<string | null>(null);
 
   const apiCall = useCallback(
@@ -74,7 +58,6 @@ export default function AdminUsuarios() {
   const fetchUsers = useCallback(async () => {
     if (!session?.access_token) return;
     setLoading(true);
-    // No tenant_id → global listing (superadmin)
     const { ok, data } = await apiCall("list", "GET");
     if (ok) setUsers(data);
     else toast.error(data.error || "Erro ao carregar usuários");
@@ -86,14 +69,14 @@ export default function AdminUsuarios() {
   const openCreate = () => {
     setDialogMode("create");
     setFormName(""); setFormEmail(""); setFormPassword("");
-    setFormRole("consulta"); setEditUserId(null);
+    setEditUserId(null);
     setDialogOpen(true);
   };
 
   const openEdit = (user: UserRow) => {
     setDialogMode("edit");
     setFormName(user.full_name); setFormEmail(user.email);
-    setFormPassword(""); setFormRole(user.role ?? "consulta");
+    setFormPassword("");
     setEditUserId(user.id); setDialogOpen(true);
   };
 
@@ -110,13 +93,13 @@ export default function AdminUsuarios() {
         }
         const { ok, data } = await apiCall("create", "POST", {
           email: formEmail.trim(), full_name: formName.trim(),
-          password: formPassword, role: formRole,
+          password: formPassword, role: "superadmin",
         });
         if (!ok) { toast.error(data.error || "Erro ao criar"); setSaving(false); return; }
-        toast.success("Usuário criado com sucesso");
+        toast.success("SuperAdmin criado com sucesso");
       } else {
         const { ok, data } = await apiCall("update", "PUT", {
-          user_id: editUserId, full_name: formName.trim(), role: formRole,
+          user_id: editUserId, full_name: formName.trim(), role: "superadmin",
         });
         if (!ok) { toast.error(data.error || "Erro ao atualizar"); setSaving(false); return; }
         toast.success("Usuário atualizado");
@@ -135,25 +118,20 @@ export default function AdminUsuarios() {
   const filtered = users.filter(
     (u) =>
       u.full_name.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase()) ||
-      (u.tenants || []).some((t) => t.tenant_name.toLowerCase().includes(search.toLowerCase()))
+      u.email.toLowerCase().includes(search.toLowerCase())
   );
-
-  const tenantRoleLabels: Record<string, string> = {
-    owner: "Dono", admin: "Admin", member: "Membro",
-  };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-serif font-bold text-foreground">Usuários da Plataforma</h1>
+          <h1 className="text-2xl font-serif font-bold text-foreground">Usuários SuperAdmin</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Visão global de todos os usuários e suas associações a Lojas.
+            Gerencie os administradores da plataforma.
           </p>
         </div>
         <Button onClick={openCreate} className="gap-2">
-          <UserPlus className="h-4 w-4" /> Novo Usuário
+          <UserPlus className="h-4 w-4" /> Novo SuperAdmin
         </Button>
       </div>
 
@@ -162,11 +140,11 @@ export default function AdminUsuarios() {
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-base font-semibold">
               <Users className="h-4 w-4 text-muted-foreground" />
-              Usuários ({filtered.length})
+              SuperAdmins ({filtered.length})
             </CardTitle>
             <div className="relative w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Buscar por nome, email ou loja..." value={search}
+              <Input placeholder="Buscar por nome ou email..." value={search}
                 onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9" />
             </div>
           </div>
@@ -177,22 +155,21 @@ export default function AdminUsuarios() {
               <TableRow className="bg-muted/40">
                 <TableHead>Nome</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Perfil Global</TableHead>
-                <TableHead>Lojas Associadas</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Criado em</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-10">
+                  <TableCell colSpan={5} className="text-center py-10">
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto" />
                   </TableCell>
                 </TableRow>
               ) : filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                  <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
                     Nenhum usuário encontrado.
                   </TableCell>
                 </TableRow>
@@ -201,39 +178,18 @@ export default function AdminUsuarios() {
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
-                        {user.role === "superadmin" && <Shield className="h-3.5 w-3.5 text-accent" />}
+                        <Shield className="h-3.5 w-3.5 text-accent" />
                         {user.full_name}
                       </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm">{user.email}</TableCell>
                     <TableCell>
-                      {user.role ? (
-                        <Badge variant={user.role === "superadmin" ? "default" : "outline"} className="text-xs">
-                          {roleLabels[user.role] ?? user.role}
-                        </Badge>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">Sem perfil</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {(user.tenants || []).length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {user.tenants.map((t) => (
-                            <Badge key={t.tenant_id} variant="secondary" className="text-[10px] gap-1">
-                              <Building2 className="h-3 w-3" />
-                              {t.tenant_name}
-                              <span className="text-muted-foreground">({tenantRoleLabels[t.tenant_role] || t.tenant_role})</span>
-                            </Badge>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">Nenhuma</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
                       <Badge variant={user.is_active ? "default" : "destructive"} className="text-xs">
                         {user.is_active ? "Ativo" : "Inativo"}
                       </Badge>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-xs">
+                      {new Date(user.created_at).toLocaleDateString("pt-BR")}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
@@ -258,7 +214,7 @@ export default function AdminUsuarios() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="font-serif">
-              {dialogMode === "create" ? "Novo Usuário (Global)" : "Editar Usuário"}
+              {dialogMode === "create" ? "Novo SuperAdmin" : "Editar SuperAdmin"}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
@@ -281,27 +237,17 @@ export default function AdminUsuarios() {
                 </div>
               </>
             )}
-            <div className="space-y-1.5">
-              <Label>Perfil Global</Label>
-              <Select value={formRole} onValueChange={(v) => setFormRole(v as AppRole)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {allRoles.map((r) => (
-                    <SelectItem key={r} value={r}>
-                      <div className="flex items-center gap-2">
-                        {r === "superadmin" && <Shield className="h-3 w-3 text-accent" />}
-                        {roleLabels[r]}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="flex items-center gap-2 p-3 rounded-md bg-muted/50 border border-border/60">
+              <Shield className="h-4 w-4 text-accent" />
+              <span className="text-sm text-muted-foreground">
+                Este usuário será criado com perfil <strong className="text-foreground">SuperAdmin</strong>.
+              </span>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>Cancelar</Button>
             <Button onClick={handleSave} disabled={saving}>
-              {saving ? "Salvando..." : dialogMode === "create" ? "Criar Usuário" : "Salvar"}
+              {saving ? "Salvando..." : dialogMode === "create" ? "Criar SuperAdmin" : "Salvar"}
             </Button>
           </DialogFooter>
         </DialogContent>
