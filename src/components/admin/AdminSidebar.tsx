@@ -5,6 +5,7 @@ import {
   CreditCard,
   Settings,
   ArrowLeft,
+  Monitor,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
@@ -29,6 +30,7 @@ const menuItems = [
   { title: "Lojas", url: "/admin/lojas", icon: Building2 },
   { title: "Usuários", url: "/admin/usuarios", icon: Users },
   { title: "Planos", url: "/admin/planos", icon: CreditCard },
+  { title: "Banner Login", url: "/admin/banner-login", icon: Monitor },
   { title: "Configurações", url: "/admin/configuracoes", icon: Settings },
 ];
 

@@ -6,14 +6,13 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, Loader2, Building2, Wallet, ScrollText, Tags, SlidersHorizontal, BookOpen, Monitor } from "lucide-react";
+import { Save, Loader2, Building2, Wallet, ScrollText, Tags, SlidersHorizontal, BookOpen } from "lucide-react";
 import { TabDadosLoja, type DadosLojaConfig } from "@/components/configuracoes/TabDadosLoja";
 import { TabParametrosFinanceiros } from "@/components/configuracoes/TabParametrosFinanceiros";
 import { TabRegrasMaconicas } from "@/components/configuracoes/TabRegrasMaconicas";
 import { TabCategoriasFinanceiras, type CategoriaFinanceira } from "@/components/configuracoes/TabCategoriasFinanceiras";
 import { TabPreferencias } from "@/components/configuracoes/TabPreferencias";
 import { TabPlanoContas } from "@/components/configuracoes/TabPlanoContas";
-import { TabBannerLogin } from "@/components/configuracoes/TabBannerLogin";
 
 interface LodgeConfig extends DadosLojaConfig {
   id: string;
@@ -202,9 +201,6 @@ export default function Configuracoes() {
           <TabsTrigger value="plano_contas" className="gap-1.5 text-xs sm:text-sm">
             <BookOpen className="h-3.5 w-3.5" /> Plano de Contas
           </TabsTrigger>
-          <TabsTrigger value="banner_login" className="gap-1.5 text-xs sm:text-sm">
-            <Monitor className="h-3.5 w-3.5" /> Banner Login
-          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="dados" className="mt-6">
@@ -233,10 +229,6 @@ export default function Configuracoes() {
 
         <TabsContent value="plano_contas" className="mt-6">
           <TabPlanoContas />
-        </TabsContent>
-
-        <TabsContent value="banner_login" className="mt-6">
-          <TabBannerLogin />
         </TabsContent>
       </Tabs>
 
