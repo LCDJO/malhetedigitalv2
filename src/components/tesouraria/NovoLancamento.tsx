@@ -59,7 +59,7 @@ export function NovoLancamento({ memberId, memberName, onLancamentoSaved }: Novo
     const { data } = await supabase
       .from("plano_contas")
       .select("id, codigo, nome, tipo")
-      .eq("status", "ativo")
+      .eq("ativo", true)
       .order("codigo", { ascending: true });
     setContas(data ?? []);
     setLoadingContas(false);
