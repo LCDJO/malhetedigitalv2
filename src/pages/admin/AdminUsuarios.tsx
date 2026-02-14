@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
@@ -14,7 +15,7 @@ import {
 } from "@/components/ui/table";
 import { toast } from "sonner";
 import {
-  UserPlus, Pencil, ShieldCheck, ShieldOff, Search, Users, Shield, Trash2, User, MapPin,
+  UserPlus, Pencil, ShieldCheck, ShieldOff, Search, Users, Shield, Trash2, User, MapPin, KeyRound, Lock,
 } from "lucide-react";
 import { ConfirmSensitiveAction } from "@/components/ConfirmSensitiveAction";
 
@@ -48,9 +49,17 @@ export default function AdminUsuarios() {
   const [editUserId, setEditUserId] = useState<string | null>(null);
   const [deleteUser, setDeleteUser] = useState<UserRow | null>(null);
 
+  // Password reset
+  const [newPassword, setNewPassword] = useState("");
+  const [savingPassword, setSavingPassword] = useState(false);
+
+  // 2FA status map
+  const [twoFAMap, setTwoFAMap] = useState<Record<string, boolean>>({});
+  const [disabling2FA, setDisabling2FA] = useState(false);
+
   const apiCall = useCallback(
-    async (action: string, method: string, body?: Record<string, unknown>) => {
-      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-users?action=${action}`;
+    async (action: string, method: string, body?: Record<string, unknown>, extraParams?: string) => {
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-users?action=${action}${extraParams || ""}`;
       const resp = await fetch(url, {
         method,
         headers: {
@@ -74,12 +83,22 @@ export default function AdminUsuarios() {
     setLoading(false);
   }, [session?.access_token, apiCall]);
 
-  useEffect(() => { fetchUsers(); }, [fetchUsers]);
+  const fetch2FAStatus = useCallback(async () => {
+    if (!session?.access_token) return;
+    const { ok, data } = await apiCall("2fa_status", "GET");
+    if (ok) setTwoFAMap(data);
+  }, [session?.access_token, apiCall]);
+
+  useEffect(() => {
+    fetchUsers();
+    fetch2FAStatus();
+  }, [fetchUsers, fetch2FAStatus]);
 
   const openCreate = () => {
     setDialogMode("create");
     setForm(emptyForm);
     setEditUserId(null);
+    setNewPassword("");
     setDialogOpen(true);
   };
 
@@ -95,6 +114,7 @@ export default function AdminUsuarios() {
       birth_date: user.birth_date || "",
     });
     setEditUserId(user.id);
+    setNewPassword("");
     setDialogOpen(true);
   };
 
@@ -138,6 +158,38 @@ export default function AdminUsuarios() {
     } catch { toast.error("Erro inesperado"); } finally { setSaving(false); }
   };
 
+  const handleResetPassword = async () => {
+    if (!editUserId) return;
+    if (newPassword.length < 6) {
+      toast.error("Senha deve ter no mínimo 6 caracteres"); return;
+    }
+    setSavingPassword(true);
+    try {
+      const { ok, data } = await apiCall("reset_password", "PUT", {
+        user_id: editUserId,
+        new_password: newPassword,
+      });
+      if (!ok) { toast.error(data.error || "Erro ao redefinir senha"); return; }
+      toast.success("Senha redefinida com sucesso");
+      setNewPassword("");
+    } catch { toast.error("Erro inesperado"); } finally { setSavingPassword(false); }
+  };
+
+  const handleDisable2FA = async () => {
+    if (!editUserId) return;
+    setDisabling2FA(true);
+    try {
+      const { ok, data } = await apiCall("disable_2fa", "PUT", { user_id: editUserId });
+      if (!ok) { toast.error(data.error || "Erro ao desativar 2FA"); return; }
+      toast.success("2FA desativado para este usuário");
+      setTwoFAMap((prev) => {
+        const copy = { ...prev };
+        delete copy[editUserId!];
+        return copy;
+      });
+    } catch { toast.error("Erro inesperado"); } finally { setDisabling2FA(false); }
+  };
+
   const toggleActive = async (user: UserRow) => {
     const { ok, data } = await apiCall("update", "PUT", { user_id: user.id, is_active: !user.is_active });
     if (!ok) { toast.error(data.error || "Erro"); return; }
@@ -163,6 +215,8 @@ export default function AdminUsuarios() {
 
   const set = (field: keyof typeof emptyForm, value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }));
+
+  const is2FAActive = (userId: string) => !!twoFAMap[userId];
 
   return (
     <div className="space-y-6">
@@ -241,6 +295,9 @@ export default function AdminUsuarios() {
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(user)} title="Editar">
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" title={is2FAActive(user.id) ? "2FA Ativo" : "2FA Inativo"} onClick={() => openEdit(user)}>
+                          <KeyRound className={`h-3.5 w-3.5 ${is2FAActive(user.id) ? "text-primary" : "text-muted-foreground/40"}`} />
+                        </Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toggleActive(user)}
                           title={user.is_active ? "Desativar" : "Ativar"}>
                           {user.is_active ? <ShieldOff className="h-3.5 w-3.5 text-destructive" /> : <ShieldCheck className="h-3.5 w-3.5 text-primary" />}
@@ -267,82 +324,213 @@ export default function AdminUsuarios() {
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-6 py-2">
-            {/* Dados de Acesso */}
-            {dialogMode === "create" && (
-              <>
+          {dialogMode === "create" ? (
+            /* ─── CREATE MODE ─── */
+            <div className="space-y-6 py-2">
+              <div className="space-y-4">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  <Shield className="h-3.5 w-3.5" /> Dados de Acesso
+                </p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label>Email *</Label>
+                    <Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="usuario@email.com" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Senha *</Label>
+                    <Input type="password" value={form.password} onChange={(e) => set("password", e.target.value)} placeholder="Mínimo 6 caracteres" />
+                  </div>
+                </div>
+              </div>
+              <Separator />
+              <div className="space-y-4">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  <User className="h-3.5 w-3.5" /> Dados Pessoais
+                </p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label>Nome Completo *</Label>
+                    <Input value={form.full_name} onChange={(e) => set("full_name", e.target.value)} placeholder="Ex: João da Silva" maxLength={100} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>CPF</Label>
+                    <Input value={form.cpf} onChange={(e) => set("cpf", e.target.value)} placeholder="000.000.000-00" maxLength={14} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Data de Nascimento</Label>
+                    <Input type="date" value={form.birth_date} onChange={(e) => set("birth_date", e.target.value)} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Telefone</Label>
+                    <Input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="(00) 00000-0000" maxLength={15} />
+                  </div>
+                </div>
+              </div>
+              <Separator />
+              <div className="space-y-4">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5" /> Endereço
+                </p>
+                <div className="space-y-1.5">
+                  <Label>Endereço Completo</Label>
+                  <Input value={form.address} onChange={(e) => set("address", e.target.value)} placeholder="Rua, número, bairro, cidade – UF, CEP" />
+                </div>
+              </div>
+              <div className="flex items-center gap-2 p-3 rounded-md bg-muted/50 border border-border/60">
+                <Shield className="h-4 w-4 text-accent" />
+                <span className="text-sm text-muted-foreground">
+                  Este usuário será criado com perfil <strong className="text-foreground">SuperAdmin</strong>.
+                </span>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>Cancelar</Button>
+                <Button onClick={handleSave} disabled={saving}>
+                  {saving ? "Salvando..." : "Criar SuperAdmin"}
+                </Button>
+              </DialogFooter>
+            </div>
+          ) : (
+            /* ─── EDIT MODE WITH TABS ─── */
+            <Tabs defaultValue="dados" className="py-2">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="dados">Dados Pessoais</TabsTrigger>
+                <TabsTrigger value="senha">
+                  <Lock className="h-3.5 w-3.5 mr-1.5" /> Senha
+                </TabsTrigger>
+                <TabsTrigger value="2fa">
+                  <KeyRound className="h-3.5 w-3.5 mr-1.5" />
+                  2FA
+                  {editUserId && is2FAActive(editUserId) && (
+                    <span className="ml-1.5 h-2 w-2 rounded-full bg-primary inline-block" />
+                  )}
+                </TabsTrigger>
+              </TabsList>
+
+              {/* ─── Tab: Dados Pessoais ─── */}
+              <TabsContent value="dados" className="space-y-6 mt-4">
                 <div className="space-y-4">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                    <Shield className="h-3.5 w-3.5" /> Dados de Acesso
+                    <User className="h-3.5 w-3.5" /> Dados Pessoais
                   </p>
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-1.5">
-                      <Label>Email *</Label>
-                      <Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="usuario@email.com" />
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <Label>Nome Completo *</Label>
+                      <Input value={form.full_name} onChange={(e) => set("full_name", e.target.value)} placeholder="Ex: João da Silva" maxLength={100} />
                     </div>
                     <div className="space-y-1.5">
-                      <Label>Senha *</Label>
-                      <Input type="password" value={form.password} onChange={(e) => set("password", e.target.value)} placeholder="Mínimo 6 caracteres" />
+                      <Label>CPF</Label>
+                      <Input value={form.cpf} onChange={(e) => set("cpf", e.target.value)} placeholder="000.000.000-00" maxLength={14} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Data de Nascimento</Label>
+                      <Input type="date" value={form.birth_date} onChange={(e) => set("birth_date", e.target.value)} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Telefone</Label>
+                      <Input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="(00) 00000-0000" maxLength={15} />
                     </div>
                   </div>
                 </div>
                 <Separator />
-              </>
-            )}
-
-            {/* Dados Pessoais */}
-            <div className="space-y-4">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                <User className="h-3.5 w-3.5" /> Dados Pessoais
-              </p>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1.5 sm:col-span-2">
-                  <Label>Nome Completo *</Label>
-                  <Input value={form.full_name} onChange={(e) => set("full_name", e.target.value)} placeholder="Ex: João da Silva" maxLength={100} />
+                <div className="space-y-4">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <MapPin className="h-3.5 w-3.5" /> Endereço
+                  </p>
+                  <div className="space-y-1.5">
+                    <Label>Endereço Completo</Label>
+                    <Input value={form.address} onChange={(e) => set("address", e.target.value)} placeholder="Rua, número, bairro, cidade – UF, CEP" />
+                  </div>
                 </div>
-                <div className="space-y-1.5">
-                  <Label>CPF</Label>
-                  <Input value={form.cpf} onChange={(e) => set("cpf", e.target.value)} placeholder="000.000.000-00" maxLength={14} />
+                <div className="flex items-center gap-2 p-3 rounded-md bg-muted/50 border border-border/60">
+                  <Shield className="h-4 w-4 text-accent" />
+                  <span className="text-sm text-muted-foreground">
+                    Perfil: <strong className="text-foreground">SuperAdmin</strong>
+                  </span>
                 </div>
-                <div className="space-y-1.5">
-                  <Label>Data de Nascimento</Label>
-                  <Input type="date" value={form.birth_date} onChange={(e) => set("birth_date", e.target.value)} />
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>Cancelar</Button>
+                  <Button onClick={handleSave} disabled={saving}>
+                    {saving ? "Salvando..." : "Salvar"}
+                  </Button>
+                </DialogFooter>
+              </TabsContent>
+
+              {/* ─── Tab: Senha ─── */}
+              <TabsContent value="senha" className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <Lock className="h-3.5 w-3.5" /> Redefinir Senha
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Defina uma nova senha para este usuário. Ele poderá alterá-la após o próximo login.
+                  </p>
                 </div>
-                <div className="space-y-1.5">
-                  <Label>Telefone</Label>
-                  <Input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="(00) 00000-0000" maxLength={15} />
+                <div className="space-y-1.5 max-w-sm">
+                  <Label>Nova Senha *</Label>
+                  <Input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Mínimo 6 caracteres"
+                  />
                 </div>
-              </div>
-            </div>
+                <Button onClick={handleResetPassword} disabled={savingPassword || newPassword.length < 6} className="gap-2">
+                  <Lock className="h-4 w-4" />
+                  {savingPassword ? "Redefinindo..." : "Redefinir Senha"}
+                </Button>
+              </TabsContent>
 
-            <Separator />
+              {/* ─── Tab: 2FA ─── */}
+              <TabsContent value="2fa" className="space-y-4 mt-4">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                  <div className="flex items-center gap-3">
+                    {editUserId && is2FAActive(editUserId) ? (
+                      <ShieldCheck className="h-5 w-5 text-primary" />
+                    ) : (
+                      <ShieldOff className="h-5 w-5 text-muted-foreground" />
+                    )}
+                    <div>
+                      <p className="text-sm font-medium">
+                        {editUserId && is2FAActive(editUserId) ? "2FA está ativado" : "2FA não está ativado"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {editUserId && is2FAActive(editUserId)
+                          ? "Este usuário configurou autenticação TOTP."
+                          : "O usuário ainda não ativou a autenticação em dois fatores."}
+                      </p>
+                    </div>
+                  </div>
+                  <Badge variant={editUserId && is2FAActive(editUserId) ? "default" : "secondary"}>
+                    {editUserId && is2FAActive(editUserId) ? "Ativo" : "Inativo"}
+                  </Badge>
+                </div>
 
-            {/* Endereço */}
-            <div className="space-y-4">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                <MapPin className="h-3.5 w-3.5" /> Endereço
-              </p>
-              <div className="space-y-1.5">
-                <Label>Endereço Completo</Label>
-                <Input value={form.address} onChange={(e) => set("address", e.target.value)} placeholder="Rua, número, bairro, cidade – UF, CEP" />
-              </div>
-            </div>
+                {editUserId && is2FAActive(editUserId) && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground">
+                      Como administrador, você pode desativar o 2FA deste usuário em caso de perda do autenticador.
+                    </p>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleDisable2FA}
+                      disabled={disabling2FA}
+                      className="gap-2"
+                    >
+                      <ShieldOff className="h-4 w-4" />
+                      {disabling2FA ? "Desativando..." : "Desativar 2FA"}
+                    </Button>
+                  </div>
+                )}
 
-            {/* Role badge */}
-            <div className="flex items-center gap-2 p-3 rounded-md bg-muted/50 border border-border/60">
-              <Shield className="h-4 w-4 text-accent" />
-              <span className="text-sm text-muted-foreground">
-                Este usuário será criado com perfil <strong className="text-foreground">SuperAdmin</strong>.
-              </span>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>Cancelar</Button>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? "Salvando..." : dialogMode === "create" ? "Criar SuperAdmin" : "Salvar"}
-            </Button>
-          </DialogFooter>
+                {editUserId && !is2FAActive(editUserId) && (
+                  <p className="text-xs text-muted-foreground italic">
+                    O próprio usuário deve ativar o 2FA nas configurações da sua conta.
+                  </p>
+                )}
+              </TabsContent>
+            </Tabs>
+          )}
         </DialogContent>
       </Dialog>
 

@@ -331,6 +331,97 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ─── RESET PASSWORD ─────────────────────────────────────
+    if (req.method === "PUT" && action === "reset_password") {
+      const body = await req.json();
+      const { user_id, new_password } = body;
+
+      if (!user_id || !new_password) {
+        return new Response(
+          JSON.stringify({ error: "user_id e new_password são obrigatórios" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      if (new_password.length < 6) {
+        return new Response(
+          JSON.stringify({ error: "Senha deve ter no mínimo 6 caracteres" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const { error: pwErr } = await adminClient.auth.admin.updateUserById(user_id, {
+        password: new_password,
+      });
+
+      if (pwErr) {
+        return new Response(JSON.stringify({ error: pwErr.message }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ─── 2FA STATUS (for admin to check another user's 2FA) ──
+    if (req.method === "GET" && action === "2fa_status") {
+      const targetUserId = url.searchParams.get("user_id");
+
+      if (targetUserId) {
+        // Single user
+        const { data } = await adminClient
+          .from("user_2fa")
+          .select("is_enabled")
+          .eq("user_id", targetUserId)
+          .maybeSingle();
+
+        return new Response(
+          JSON.stringify({ enabled: data?.is_enabled ?? false }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } else {
+        // All users' 2FA status
+        const { data } = await adminClient
+          .from("user_2fa")
+          .select("user_id, is_enabled")
+          .eq("is_enabled", true);
+
+        const enabledMap: Record<string, boolean> = {};
+        data?.forEach((r: { user_id: string; is_enabled: boolean }) => {
+          enabledMap[r.user_id] = r.is_enabled;
+        });
+
+        return new Response(JSON.stringify(enabledMap), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    // ─── ADMIN DISABLE 2FA ──────────────────────────────────
+    if (req.method === "PUT" && action === "disable_2fa") {
+      const body = await req.json();
+      const { user_id } = body;
+
+      if (!user_id) {
+        return new Response(
+          JSON.stringify({ error: "user_id é obrigatório" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      await adminClient
+        .from("user_2fa")
+        .update({ is_enabled: false, totp_secret: "", backup_codes: [] })
+        .eq("user_id", user_id);
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // ─── DELETE ────────────────────────────────────────────
     if (req.method === "DELETE" && action === "delete") {
       const body = await req.json();
