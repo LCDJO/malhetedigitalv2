@@ -253,7 +253,7 @@ export function TabBannerLogin() {
             <div>
               <CardTitle className="flex items-center gap-2 text-base font-semibold">
                 <ImageIcon className="h-4 w-4 text-muted-foreground" />
-                Banners da Tela de Login
+                Banners
               </CardTitle>
               <CardDescription className="mt-1">
                 Gerencie as mídias exibidas no painel lateral da tela de autenticação.
@@ -272,6 +272,7 @@ export function TabBannerLogin() {
                 <TableHead>Tipo</TableHead>
                 <TableHead>Página</TableHead>
                 <TableHead>Período</TableHead>
+                <TableHead>Duração</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -279,13 +280,13 @@ export function TabBannerLogin() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-10">
+                  <TableCell colSpan={7} className="text-center py-10">
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto" />
                   </TableCell>
                 </TableRow>
               ) : banners.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
                     Nenhum banner cadastrado.
                   </TableCell>
                 </TableRow>
@@ -322,6 +323,9 @@ export function TabBannerLogin() {
                         {formatDate(b.data_inicio)}
                         {b.data_fim && <> — {formatDate(b.data_fim)}</>}
                       </div>
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                      {b.duracao_segundos}s
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
