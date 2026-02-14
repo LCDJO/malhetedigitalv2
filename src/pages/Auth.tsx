@@ -165,188 +165,220 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md space-y-6">
-        {/* Branding */}
-        <div className="text-center space-y-2">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-primary text-primary-foreground font-serif font-bold text-2xl shadow-lg">
+    <div className="min-h-screen flex bg-background">
+      {/* Left side - Auth Card */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-12">
+        <div className="w-full max-w-md space-y-6">
+          {/* Branding */}
+          <div className="text-center space-y-2">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-primary text-primary-foreground font-serif font-bold text-2xl shadow-lg">
+              M
+            </div>
+            <h1 className="text-2xl font-serif font-bold tracking-tight">Malhete Digital</h1>
+            <p className="text-sm text-muted-foreground">Sistema de Gestão Maçônica</p>
+          </div>
+
+          <Card>
+            {/* Forgot Password View */}
+            {view === "forgot" && (
+              <>
+                <CardHeader className="pb-3">
+                  <button
+                    onClick={() => setView("login")}
+                    className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-2 w-fit"
+                  >
+                    <ArrowLeft className="h-3.5 w-3.5" />
+                    Voltar ao login
+                  </button>
+                  <div className="flex items-center gap-2">
+                    <KeyRound className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="font-semibold text-sm">Redefinir Senha</p>
+                      <p className="text-xs text-muted-foreground">Informe seu email para receber o link</p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleForgotPassword} className="space-y-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="forgot-email">Email</Label>
+                      <Input
+                        id="forgot-email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="seu@email.com"
+                        autoComplete="email"
+                      />
+                    </div>
+                    <Button type="submit" className="w-full" disabled={loading}>
+                      {loading ? "Enviando..." : "Enviar Link de Redefinição"}
+                    </Button>
+                  </form>
+                </CardContent>
+              </>
+            )}
+
+            {/* Reset Password View */}
+            {view === "reset" && (
+              <>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-2">
+                    <KeyRound className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="font-semibold text-sm">Nova Senha</p>
+                      <p className="text-xs text-muted-foreground">Defina sua nova senha de acesso</p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleResetPassword} className="space-y-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="reset-password">Nova Senha</Label>
+                      <div className="relative">
+                        <Input
+                          id="reset-password"
+                          type={showPw ? "text" : "password"}
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder="Mínimo 6 caracteres"
+                          autoComplete="new-password"
+                        />
+                        <PwToggle />
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="reset-confirm">Confirmar Nova Senha</Label>
+                      <div className="relative">
+                        <Input
+                          id="reset-confirm"
+                          type={showPw ? "text" : "password"}
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          placeholder="Repita a nova senha"
+                          autoComplete="new-password"
+                        />
+                      </div>
+                    </div>
+                    <Button type="submit" className="w-full" disabled={loading}>
+                      {loading ? "Salvando..." : "Redefinir Senha"}
+                    </Button>
+                  </form>
+                </CardContent>
+              </>
+            )}
+
+            {/* Login / Signup Tabs */}
+            {(view === "login" || view === "signup") && (
+              <Tabs value={view} onValueChange={(v) => setView(v as AuthView)}>
+                <CardHeader className="pb-3">
+                  <TabsList className="w-full bg-muted/60">
+                    <TabsTrigger value="login" className="flex-1 gap-1.5 data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                      <LogIn className="h-3.5 w-3.5" />
+                      Entrar
+                    </TabsTrigger>
+                    <TabsTrigger value="signup" className="flex-1 gap-1.5 data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                      <UserPlus className="h-3.5 w-3.5" />
+                      Criar Conta
+                    </TabsTrigger>
+                  </TabsList>
+                </CardHeader>
+
+                <CardContent>
+                  <TabsContent value="login" className="mt-0">
+                    <form onSubmit={handleLogin} className="space-y-4">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="login-email">Email</Label>
+                        <Input id="login-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" autoComplete="email" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="login-password">Senha</Label>
+                        <div className="relative">
+                          <Input id="login-password" type={showPw ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••" autoComplete="current-password" />
+                          <PwToggle />
+                        </div>
+                      </div>
+                      <Button type="submit" className="w-full" disabled={loading}>
+                        {loading ? "Entrando..." : "Entrar"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => navigate("/portal/auth")}
+                      >
+                        Portal do Irmão
+                      </Button>
+                      <button
+                        type="button"
+                        onClick={() => setView("forgot")}
+                        className="w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        Esqueceu sua senha?
+                      </button>
+                    </form>
+                  </TabsContent>
+
+                  <TabsContent value="signup" className="mt-0">
+                    <form onSubmit={handleSignup} className="space-y-4">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="signup-name">Nome Completo</Label>
+                        <Input id="signup-name" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Ex: João da Silva" maxLength={100} autoComplete="name" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="signup-email">Email</Label>
+                        <Input id="signup-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" autoComplete="email" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="signup-password">Senha</Label>
+                        <div className="relative">
+                          <Input id="signup-password" type={showPw ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Mínimo 6 caracteres" autoComplete="new-password" />
+                          <PwToggle />
+                        </div>
+                      </div>
+                      <Button type="submit" className="w-full" disabled={loading}>
+                        {loading ? "Criando conta..." : "Criar Conta"}
+                      </Button>
+                      <p className="text-[10px] text-muted-foreground text-center">
+                        Após o cadastro, um administrador precisará atribuir seu cargo.
+                      </p>
+                    </form>
+                  </TabsContent>
+                </CardContent>
+              </Tabs>
+            )}
+          </Card>
+        </div>
+      </div>
+
+      {/* Right side - Banner */}
+      <div className="hidden lg:flex lg:w-1/2 bg-primary/5 items-center justify-center relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-accent/10" />
+        <div className="relative z-10 text-center space-y-6 p-12 max-w-lg">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/15 text-primary font-serif font-bold text-4xl">
             M
           </div>
-          <h1 className="text-2xl font-serif font-bold tracking-tight">Malhete Digital</h1>
-          <p className="text-sm text-muted-foreground">Sistema de Gestão Maçônica</p>
+          <h2 className="text-3xl font-serif font-bold text-foreground/90">
+            Gestão Maçônica Moderna
+          </h2>
+          <p className="text-muted-foreground text-base leading-relaxed">
+            Gerencie sua Loja com eficiência, transparência e segurança. Controle financeiro, secretaria, tesouraria e muito mais em um só lugar.
+          </p>
+          <div className="flex justify-center gap-8 pt-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-primary">100%</div>
+              <div className="text-xs text-muted-foreground">Digital</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-primary">LGPD</div>
+              <div className="text-xs text-muted-foreground">Compatível</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-primary">24/7</div>
+              <div className="text-xs text-muted-foreground">Disponível</div>
+            </div>
+          </div>
         </div>
-
-        <Card>
-          {/* Forgot Password View */}
-          {view === "forgot" && (
-            <>
-              <CardHeader className="pb-3">
-                <button
-                  onClick={() => setView("login")}
-                  className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-2 w-fit"
-                >
-                  <ArrowLeft className="h-3.5 w-3.5" />
-                  Voltar ao login
-                </button>
-                <div className="flex items-center gap-2">
-                  <KeyRound className="h-5 w-5 text-primary" />
-                  <div>
-                    <p className="font-semibold text-sm">Redefinir Senha</p>
-                    <p className="text-xs text-muted-foreground">Informe seu email para receber o link</p>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleForgotPassword} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="forgot-email">Email</Label>
-                    <Input
-                      id="forgot-email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="seu@email.com"
-                      autoComplete="email"
-                    />
-                  </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Enviando..." : "Enviar Link de Redefinição"}
-                  </Button>
-                </form>
-              </CardContent>
-            </>
-          )}
-
-          {/* Reset Password View (after clicking email link) */}
-          {view === "reset" && (
-            <>
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-2">
-                  <KeyRound className="h-5 w-5 text-primary" />
-                  <div>
-                    <p className="font-semibold text-sm">Nova Senha</p>
-                    <p className="text-xs text-muted-foreground">Defina sua nova senha de acesso</p>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleResetPassword} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="reset-password">Nova Senha</Label>
-                    <div className="relative">
-                      <Input
-                        id="reset-password"
-                        type={showPw ? "text" : "password"}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Mínimo 6 caracteres"
-                        autoComplete="new-password"
-                      />
-                      <PwToggle />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="reset-confirm">Confirmar Nova Senha</Label>
-                    <div className="relative">
-                      <Input
-                        id="reset-confirm"
-                        type={showPw ? "text" : "password"}
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="Repita a nova senha"
-                        autoComplete="new-password"
-                      />
-                    </div>
-                  </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Salvando..." : "Redefinir Senha"}
-                  </Button>
-                </form>
-              </CardContent>
-            </>
-          )}
-
-          {/* Login / Signup Tabs */}
-          {(view === "login" || view === "signup") && (
-            <Tabs value={view} onValueChange={(v) => setView(v as AuthView)}>
-              <CardHeader className="pb-3">
-                <TabsList className="w-full bg-muted/60">
-                  <TabsTrigger value="login" className="flex-1 gap-1.5 data-[state=active]:bg-card data-[state=active]:shadow-sm">
-                    <LogIn className="h-3.5 w-3.5" />
-                    Entrar
-                  </TabsTrigger>
-                  <TabsTrigger value="signup" className="flex-1 gap-1.5 data-[state=active]:bg-card data-[state=active]:shadow-sm">
-                    <UserPlus className="h-3.5 w-3.5" />
-                    Criar Conta
-                  </TabsTrigger>
-                </TabsList>
-              </CardHeader>
-
-              <CardContent>
-                <TabsContent value="login" className="mt-0">
-                  <form onSubmit={handleLogin} className="space-y-4">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="login-email">Email</Label>
-                      <Input id="login-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" autoComplete="email" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="login-password">Senha</Label>
-                      <div className="relative">
-                        <Input id="login-password" type={showPw ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••" autoComplete="current-password" />
-                        <PwToggle />
-                      </div>
-                    </div>
-                    <Button type="submit" className="w-full" disabled={loading}>
-                      {loading ? "Entrando..." : "Entrar"}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => navigate("/portal/auth")}
-                    >
-                      Portal do Irmão
-                    </Button>
-                    <button
-                      type="button"
-                      onClick={() => setView("forgot")}
-                      className="w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      Esqueceu sua senha?
-                    </button>
-                  </form>
-                </TabsContent>
-
-                <TabsContent value="signup" className="mt-0">
-                  <form onSubmit={handleSignup} className="space-y-4">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="signup-name">Nome Completo</Label>
-                      <Input id="signup-name" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Ex: João da Silva" maxLength={100} autoComplete="name" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="signup-email">Email</Label>
-                      <Input id="signup-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" autoComplete="email" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="signup-password">Senha</Label>
-                      <div className="relative">
-                        <Input id="signup-password" type={showPw ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Mínimo 6 caracteres" autoComplete="new-password" />
-                        <PwToggle />
-                      </div>
-                    </div>
-                    <Button type="submit" className="w-full" disabled={loading}>
-                      {loading ? "Criando conta..." : "Criar Conta"}
-                    </Button>
-                    <p className="text-[10px] text-muted-foreground text-center">
-                      Após o cadastro, um administrador precisará atribuir seu cargo.
-                    </p>
-                  </form>
-                </TabsContent>
-              </CardContent>
-            </Tabs>
-          )}
-        </Card>
-
       </div>
     </div>
   );
