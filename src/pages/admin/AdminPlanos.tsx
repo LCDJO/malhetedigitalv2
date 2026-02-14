@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Plus, Pencil, Search, CreditCard, Trash2, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { ConfirmSensitiveAction } from "@/components/ConfirmSensitiveAction";
+import { useAuditLog } from "@/hooks/useAuditLog";
 
 const ALL_MODULES = [
   { id: "dashboard", label: "Dashboard" },
@@ -48,6 +49,7 @@ const emptyForm = {
 };
 
 export default function AdminPlanos() {
+  const { logAction } = useAuditLog();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -135,6 +137,7 @@ export default function AdminPlanos() {
         toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" });
       } else {
         toast({ title: "Plano atualizado com sucesso" });
+        logAction({ action: "UPDATE_PLAN", targetTable: "plans", targetId: editing.id, details: { name: form.name } });
       }
     } else {
       const { error } = await supabase.from("plans").insert(payload);
@@ -142,6 +145,7 @@ export default function AdminPlanos() {
         toast({ title: "Erro ao criar plano", description: error.message, variant: "destructive" });
       } else {
         toast({ title: "Plano criado com sucesso" });
+        logAction({ action: "CREATE_PLAN", targetTable: "plans", details: { name: form.name, price: form.price } });
       }
     }
 
@@ -157,6 +161,7 @@ export default function AdminPlanos() {
       toast({ title: "Erro ao excluir", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Plano excluído com sucesso" });
+      logAction({ action: "DELETE_PLAN", targetTable: "plans", targetId: deleteTarget.id, details: { name: deleteTarget.name } });
     }
     setDeleteTarget(null);
     setShowDeleteConfirm(false);

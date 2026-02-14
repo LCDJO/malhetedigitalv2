@@ -20,6 +20,7 @@ import { Search, Plus, Pencil, Eye, X, User, Users, CalendarIcon, Loader2, Chevr
 import { toast } from "sonner";
 import { PermissionGate } from "@/components/PermissionGate";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAuditLog } from "@/hooks/useAuditLog";
 import { ImportarCSV } from "./ImportarCSV";
 import { ConfirmSensitiveAction } from "@/components/ConfirmSensitiveAction";
 
@@ -123,6 +124,7 @@ const PAGE_SIZE_OPTIONS = [10, 25, 50, 0] as const; // 0 = todos
 
 export function CadastroIrmaos() {
   const { hasPermission } = useAuth();
+  const { logAction } = useAuditLog();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -230,15 +232,17 @@ export function CadastroIrmaos() {
         toast.error(error.message.includes("unique") ? "CPF ou CIM já cadastrado para outro irmão." : "Erro ao atualizar cadastro.");
       } else {
         toast.success("Cadastro atualizado com sucesso.");
+        logAction({ action: "UPDATE_MEMBER", targetTable: "members", targetId: editingId, details: { full_name: payload.full_name } });
         closeDialog();
         fetchMembers();
       }
     } else {
-      const { error } = await supabase.from("members").insert(payload);
+      const { data: inserted, error } = await supabase.from("members").insert(payload).select("id").single();
       if (error) {
         toast.error(error.message.includes("unique") ? "CPF ou CIM já cadastrado." : "Erro ao cadastrar irmão.");
       } else {
         toast.success("Irmão cadastrado com sucesso no quadro de obreiros.");
+        logAction({ action: "CREATE_MEMBER", targetTable: "members", targetId: inserted?.id, details: { full_name: payload.full_name } });
         closeDialog();
         fetchMembers();
       }
@@ -762,6 +766,7 @@ export function CadastroIrmaos() {
             toast.error("Erro ao excluir: " + error.message);
           } else {
             toast.success("Cadastro excluído com sucesso.");
+            logAction({ action: "DELETE_MEMBER", targetTable: "members", targetId: deletingMember.id, details: { full_name: deletingMember.full_name } });
             fetchMembers();
           }
           setDeletingMember(null);

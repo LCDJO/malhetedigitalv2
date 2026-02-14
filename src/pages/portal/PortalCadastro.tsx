@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { Mail, Phone, MapPin, Calendar, Award, Upload, Loader2 } from "lucide-react";
 import { format } from "date-fns";
+import { useAuditLog } from "@/hooks/useAuditLog";
 
 const degreeLabels: Record<string, string> = {
   aprendiz: "Aprendiz",
@@ -30,6 +31,7 @@ const fmtDate = (d: string | null) => (d ? format(new Date(d), "dd/MM/yyyy") : "
 export default function PortalCadastro() {
   const member = usePortalMemberContext();
   const { user } = useAuth();
+  const { logAction } = useAuditLog();
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState({
@@ -126,6 +128,7 @@ export default function PortalCadastro() {
     }
 
     toast.success("Dados atualizados com sucesso.");
+    logAction({ action: "UPDATE_OWN_PROFILE", targetTable: "members", targetId: member.id, details: { email: payload.email, phone: payload.phone } });
     setSaving(false);
   };
 

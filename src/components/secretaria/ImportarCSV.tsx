@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Upload, FileSpreadsheet, AlertTriangle, CheckCircle2, Loader2, Download, X } from "lucide-react";
 import { toast } from "sonner";
+import { useAuditLog } from "@/hooks/useAuditLog";
 
 interface ImportarCSVProps {
   open: boolean;
@@ -113,6 +114,7 @@ function formatCpfForStorage(cpf: string): string {
 }
 
 export function ImportarCSV({ open, onOpenChange, onSuccess }: ImportarCSVProps) {
+  const { logAction } = useAuditLog();
   const fileRef = useRef<HTMLInputElement>(null);
   const [rows, setRows] = useState<RowValidation[]>([]);
   const [importing, setImporting] = useState(false);
@@ -211,6 +213,7 @@ export function ImportarCSV({ open, onOpenChange, onSuccess }: ImportarCSVProps)
       }
     } else {
       toast.success(`${data.length} irmão(s) importado(s) com sucesso.`);
+      logAction({ action: "IMPORT_MEMBERS_CSV", targetTable: "members", details: { count: data.length } });
       reset();
       onOpenChange(false);
       onSuccess();

@@ -16,6 +16,7 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { CalendarIcon, Plus, Loader2, AlertTriangle, Eye, Search } from "lucide-react";
 import { toast } from "sonner";
+import { useAuditLog } from "@/hooks/useAuditLog";
 
 interface Incidente {
   id: string;
@@ -28,6 +29,7 @@ interface Incidente {
 
 const Incidentes = () => {
   const { user } = useAuth();
+  const { logAction } = useAuditLog();
   const [incidentes, setIncidentes] = useState<Incidente[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -62,18 +64,19 @@ const Incidentes = () => {
   const handleSave = async () => {
     if (!descricao.trim()) { toast.error("A descrição é obrigatória."); return; }
     setSaving(true);
-    const { error } = await supabase.from("incidentes").insert({
+    const { data: inserted, error } = await supabase.from("incidentes").insert({
       data_incidente: dataIncidente.toISOString(),
       descricao: descricao.trim(),
       dados_afetados: dadosAfetados.trim() || null,
       acoes_tomadas: acoesTomadas.trim() || null,
       registrado_por: user?.id,
-    });
+    }).select("id").single();
     setSaving(false);
     if (error) {
       toast.error("Erro ao registrar incidente.");
     } else {
       toast.success("Incidente registrado com sucesso.");
+      logAction({ action: "CREATE_INCIDENTE_LGPD", targetTable: "incidentes", targetId: inserted?.id, details: { descricao: descricao.trim().substring(0, 100) } });
       resetForm();
       setDialogOpen(false);
       fetchIncidentes();
