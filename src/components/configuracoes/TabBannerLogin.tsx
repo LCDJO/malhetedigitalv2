@@ -373,113 +373,124 @@ export function TabBannerLogin() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-serif">
+            <DialogTitle className="font-serif text-lg">
               {editBanner ? "Editar Banner" : "Novo Banner"}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-1.5">
-              <Label>Título *</Label>
-              <Input
-                value={titulo}
-                onChange={(e) => setTitulo(e.target.value)}
-                placeholder="Ex: Campanha Dezembro"
-                maxLength={100}
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label>Tipo de Mídia *</Label>
-              <Select value={tipo} onValueChange={(v) => { setTipo(v as "imagem" | "video"); setFile(null); setFilePreview(editBanner?.media_url || null); }}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="imagem">
-                    <div className="flex items-center gap-2">
-                      <ImageIcon className="h-4 w-4" /> Imagem
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="video">
-                    <div className="flex items-center gap-2">
-                      <Video className="h-4 w-4" /> Vídeo
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label>{editBanner ? "Substituir Arquivo" : "Arquivo *"}</Label>
-              <div className="border border-dashed border-border rounded-lg p-4 text-center">
-                <input
-                  type="file"
-                  accept={tipo === "imagem" ? "image/*" : "video/*"}
-                  onChange={handleFileChange}
-                  className="hidden"
-                  id="banner-file-input"
-                />
-                <label
-                  htmlFor="banner-file-input"
-                  className="cursor-pointer flex flex-col items-center gap-2"
-                >
-                  <Upload className="h-8 w-8 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">
-                    {file ? file.name : "Clique para selecionar"}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground">
-                    {tipo === "imagem" ? "JPG, PNG, WebP" : "MP4, WebM"} • Máx 20MB
-                  </span>
-                  <span className="text-[10px] text-muted-foreground">
-                    Tamanho ideal: 1920 × 1080 px (16:9)
-                  </span>
-                </label>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 py-2">
+            {/* Left column — Media upload & preview */}
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label>Tipo de Mídia *</Label>
+                <Select value={tipo} onValueChange={(v) => { setTipo(v as "imagem" | "video"); setFile(null); setFilePreview(editBanner?.media_url || null); }}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="imagem">
+                      <div className="flex items-center gap-2">
+                        <ImageIcon className="h-4 w-4" /> Imagem
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="video">
+                      <div className="flex items-center gap-2">
+                        <Video className="h-4 w-4" /> Vídeo
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              {filePreview && tipo === "imagem" && (
-                <div className="mt-3 rounded-lg overflow-hidden border border-border bg-muted/30">
-                  <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
-                    <img src={filePreview} alt="Preview" className="absolute inset-0 w-full h-full object-cover" />
-                  </div>
-                  <p className="text-[10px] text-muted-foreground text-center py-1.5">Pré-visualização (16:9)</p>
-                </div>
-              )}
-              {filePreview && tipo === "video" && (
-                <div className="mt-3 rounded-lg overflow-hidden border border-border bg-muted/30">
-                  <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
-                    <video src={filePreview} className="absolute inset-0 w-full h-full object-cover" muted autoPlay loop playsInline />
-                  </div>
-                  <p className="text-[10px] text-muted-foreground text-center py-1.5">Pré-visualização (16:9)</p>
-                </div>
-              )}
-            </div>
 
-            <div className="space-y-2">
-              <Label>Exibir em *</Label>
-              <div className="flex flex-wrap gap-4">
-                {PAGINA_CHECKBOXES.map((p) => (
-                  <label key={p.value} className="flex items-center gap-2 cursor-pointer">
-                    <Checkbox
-                      checked={paginasSelecionadas.includes(p.value)}
-                      onCheckedChange={(checked) => {
-                        setPaginasSelecionadas((prev) =>
-                          checked
-                            ? [...prev, p.value]
-                            : prev.filter((v) => v !== p.value)
-                        );
-                      }}
-                    />
-                    <span className="text-sm">{p.label}</span>
+              <div className="space-y-1.5">
+                <Label>{editBanner ? "Substituir Arquivo" : "Arquivo *"}</Label>
+                <div className="border border-dashed border-border rounded-lg p-4 text-center">
+                  <input
+                    type="file"
+                    accept={tipo === "imagem" ? "image/*" : "video/*"}
+                    onChange={handleFileChange}
+                    className="hidden"
+                    id="banner-file-input"
+                  />
+                  <label
+                    htmlFor="banner-file-input"
+                    className="cursor-pointer flex flex-col items-center gap-2"
+                  >
+                    <Upload className="h-8 w-8 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      {file ? file.name : "Clique para selecionar"}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {tipo === "imagem" ? "JPG, PNG, WebP" : "MP4, WebM"} • Máx 20MB
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">
+                      Tamanho ideal: 1920 × 1080 px (16:9)
+                    </span>
                   </label>
-                ))}
+                </div>
               </div>
-              {paginasSelecionadas.length === 3 && (
-                <p className="text-[10px] text-muted-foreground">Todos os portais selecionados</p>
+
+              {/* Preview area */}
+              {filePreview && (
+                <div className="rounded-lg overflow-hidden border border-border bg-muted/30">
+                  <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+                    {tipo === "imagem" ? (
+                      <img src={filePreview} alt="Preview" className="absolute inset-0 w-full h-full object-cover" />
+                    ) : (
+                      <video src={filePreview} className="absolute inset-0 w-full h-full object-cover" muted autoPlay loop playsInline />
+                    )}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground text-center py-1.5">Pré-visualização (16:9)</p>
+                </div>
+              )}
+
+              {!filePreview && (
+                <div className="rounded-lg border border-dashed border-border bg-muted/20 flex items-center justify-center" style={{ aspectRatio: "16/9" }}>
+                  <div className="text-center text-muted-foreground/50">
+                    <ImageIcon className="h-10 w-10 mx-auto mb-2 opacity-40" />
+                    <p className="text-xs">Nenhuma mídia selecionada</p>
+                  </div>
+                </div>
               )}
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            {/* Right column — Form fields */}
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label>Título *</Label>
+                <Input
+                  value={titulo}
+                  onChange={(e) => setTitulo(e.target.value)}
+                  placeholder="Ex: Campanha Dezembro"
+                  maxLength={100}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Exibir em *</Label>
+                <div className="flex flex-wrap gap-4">
+                  {PAGINA_CHECKBOXES.map((p) => (
+                    <label key={p.value} className="flex items-center gap-2 cursor-pointer">
+                      <Checkbox
+                        checked={paginasSelecionadas.includes(p.value)}
+                        onCheckedChange={(checked) => {
+                          setPaginasSelecionadas((prev) =>
+                            checked
+                              ? [...prev, p.value]
+                              : prev.filter((v) => v !== p.value)
+                          );
+                        }}
+                      />
+                      <span className="text-sm">{p.label}</span>
+                    </label>
+                  ))}
+                </div>
+                {paginasSelecionadas.length === 3 && (
+                  <p className="text-[10px] text-muted-foreground">Todos os portais selecionados</p>
+                )}
+              </div>
+
               <div className="space-y-1.5">
                 <Label>Data de Início *</Label>
                 <Input
@@ -488,6 +499,7 @@ export function TabBannerLogin() {
                   onChange={(e) => setDataInicio(e.target.value)}
                 />
               </div>
+
               <div className="space-y-1.5">
                 <Label>Data de Fim</Label>
                 <Input
@@ -495,10 +507,11 @@ export function TabBannerLogin() {
                   value={dataFim}
                   onChange={(e) => setDataFim(e.target.value)}
                 />
-                <p className="text-[10px] text-muted-foreground">Vazio = contínuo</p>
+                <p className="text-[10px] text-muted-foreground">Deixe vazio para exibição contínua</p>
               </div>
+
               <div className="space-y-1.5">
-                <Label>Duração (seg)</Label>
+                <Label>Duração (segundos)</Label>
                 <Input
                   type="number"
                   min={3}
@@ -506,7 +519,7 @@ export function TabBannerLogin() {
                   value={duracaoSegundos}
                   onChange={(e) => setDuracaoSegundos(Math.max(3, Number(e.target.value)))}
                 />
-                <p className="text-[10px] text-muted-foreground">Tempo de exibição na rotação</p>
+                <p className="text-[10px] text-muted-foreground">Tempo de exibição na rotação entre banners</p>
               </div>
             </div>
           </div>
