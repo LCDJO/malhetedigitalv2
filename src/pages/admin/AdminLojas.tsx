@@ -7,14 +7,16 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Pencil, Search, Building2 } from "lucide-react";
+import { Plus, Pencil, Search, Building2, CreditCard } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Tenant = Tables<"tenants">;
 type LodgeConfig = Tables<"lodge_config">;
+type Plan = Tables<"plans">;
 
 interface TenantWithConfig extends Tenant {
   lodge_config?: LodgeConfig | null;
@@ -24,10 +26,13 @@ const emptyForm = {
   name: "", slug: "", is_active: true,
   cnpj: "", endereco: "", email: "", telefone: "",
   potencia: "", rito: "", orient: "", lodge_number: "",
+  plan_id: "",
 };
 
 export default function AdminLojas() {
   const [tenants, setTenants] = useState<TenantWithConfig[]>([]);
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [subscriptions, setSubscriptions] = useState<Record<string, { plan_id: string; id: string }>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -35,12 +40,20 @@ export default function AdminLojas() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
 
-  const fetchTenants = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
-    const [{ data: tenantsData }, { data: configsData }] = await Promise.all([
+    const [{ data: tenantsData }, { data: configsData }, { data: plansData }, { data: subsData }] = await Promise.all([
       supabase.from("tenants").select("*").order("created_at", { ascending: false }),
       supabase.from("lodge_config").select("*"),
+      supabase.from("plans").select("*").eq("is_active", true).order("price"),
+      supabase.from("subscriptions").select("id, tenant_id, plan_id, status").eq("status", "active"),
     ]);
+
+    setPlans(plansData ?? []);
+
+    const subsMap: Record<string, { plan_id: string; id: string }> = {};
+    (subsData ?? []).forEach((s) => { subsMap[s.tenant_id] = { plan_id: s.plan_id, id: s.id }; });
+    setSubscriptions(subsMap);
 
     const configMap = new Map<string, LodgeConfig>();
     (configsData ?? []).forEach((c) => { if (c.tenant_id) configMap.set(c.tenant_id, c); });
@@ -54,7 +67,7 @@ export default function AdminLojas() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchTenants(); }, [fetchTenants]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const openCreate = () => { setEditing(null); setForm(emptyForm); setDialogOpen(true); };
 
@@ -73,16 +86,23 @@ export default function AdminLojas() {
       rito: (t as any).rito || "",
       orient: (t as any).orient || c?.orient || "",
       lodge_number: (t as any).lodge_number || c?.lodge_number || "",
+      plan_id: subscriptions[t.id]?.plan_id || "",
     });
     setDialogOpen(true);
   };
 
-  /** Resolve displayed value: tenant field first, fallback to lodge_config */
   const resolve = (t: TenantWithConfig, field: string, configField?: string) => {
     const val = (t as any)[field];
     if (val) return val;
     if (t.lodge_config) return (t.lodge_config as any)[configField ?? field] ?? "";
     return "";
+  };
+
+  const getPlanName = (tenantId: string) => {
+    const sub = subscriptions[tenantId];
+    if (!sub) return null;
+    const plan = plans.find((p) => p.id === sub.plan_id);
+    return plan?.name || null;
   };
 
   const handleSave = async () => {
@@ -97,18 +117,58 @@ export default function AdminLojas() {
       potencia: form.potencia, rito: form.rito, orient: form.orient, lodge_number: form.lodge_number,
     };
 
-    const { error } = editing
-      ? await supabase.from("tenants").update(payload).eq("id", editing.id)
-      : await supabase.from("tenants").insert(payload);
+    let tenantId = editing?.id;
 
-    if (error) {
-      toast({ title: editing ? "Erro ao atualizar" : "Erro ao criar Loja", description: error.message, variant: "destructive" });
+    if (editing) {
+      const { error } = await supabase.from("tenants").update(payload).eq("id", editing.id);
+      if (error) {
+        toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" });
+        setSaving(false); return;
+      }
     } else {
-      toast({ title: editing ? "Loja atualizada com sucesso" : "Loja criada com sucesso" });
+      const { data, error } = await supabase.from("tenants").insert(payload).select("id").single();
+      if (error) {
+        toast({ title: "Erro ao criar Loja", description: error.message, variant: "destructive" });
+        setSaving(false); return;
+      }
+      tenantId = data.id;
     }
+
+    // Handle plan/subscription
+    if (tenantId && form.plan_id) {
+      const existingSub = subscriptions[tenantId];
+      if (existingSub) {
+        if (existingSub.plan_id !== form.plan_id) {
+          await supabase.from("subscriptions").update({ plan_id: form.plan_id }).eq("id", existingSub.id);
+        }
+      } else {
+        // Get first owner of tenant for user_id, or use a placeholder
+        const { data: ownerData } = await supabase
+          .from("tenant_users")
+          .select("user_id")
+          .eq("tenant_id", tenantId)
+          .eq("role", "owner")
+          .limit(1)
+          .maybeSingle();
+
+        const userId = ownerData?.user_id || tenantId; // fallback
+
+        await supabase.from("subscriptions").insert({
+          tenant_id: tenantId,
+          plan_id: form.plan_id,
+          user_id: userId,
+          status: "active",
+        });
+      }
+    } else if (tenantId && !form.plan_id && subscriptions[tenantId]) {
+      // Remove subscription if plan was cleared
+      await supabase.from("subscriptions").update({ status: "canceled" }).eq("id", subscriptions[tenantId].id);
+    }
+
+    toast({ title: editing ? "Loja atualizada com sucesso" : "Loja criada com sucesso" });
     setSaving(false);
     setDialogOpen(false);
-    fetchTenants();
+    fetchData();
   };
 
   const filtered = tenants.filter(
@@ -148,7 +208,7 @@ export default function AdminLojas() {
                 <TableRow>
                   <TableHead>Nome</TableHead>
                   <TableHead>Nº</TableHead>
-                  <TableHead>CNPJ</TableHead>
+                  <TableHead>Plano</TableHead>
                   <TableHead>Potência</TableHead>
                   <TableHead>Oriente</TableHead>
                   <TableHead>Status</TableHead>
@@ -161,7 +221,16 @@ export default function AdminLojas() {
                   <TableRow key={t.id}>
                     <TableCell className="font-medium">{t.name}</TableCell>
                     <TableCell className="text-muted-foreground text-xs font-mono">{resolve(t, "lodge_number") || "—"}</TableCell>
-                    <TableCell className="text-muted-foreground text-xs">{resolve(t, "cnpj") || "—"}</TableCell>
+                    <TableCell>
+                      {getPlanName(t.id) ? (
+                        <Badge variant="outline" className="text-[10px] gap-1">
+                          <CreditCard className="h-3 w-3" />
+                          {getPlanName(t.id)}
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-muted-foreground text-xs">{resolve(t, "potencia") || "—"}</TableCell>
                     <TableCell className="text-muted-foreground text-xs">{resolve(t, "orient") || "—"}</TableCell>
                     <TableCell>
@@ -209,6 +278,38 @@ export default function AdminLojas() {
                   <Label htmlFor="active">Loja ativa</Label>
                   <Switch id="active" checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} />
                 </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Plano */}
+            <div className="space-y-4">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <CreditCard className="h-3.5 w-3.5" /> Plano de Assinatura
+              </p>
+              <div className="space-y-2">
+                <Label>Plano *</Label>
+                <Select value={form.plan_id} onValueChange={(v) => setForm({ ...form, plan_id: v })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um plano..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {plans.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        <div className="flex items-center gap-2">
+                          <span>{p.name}</span>
+                          <span className="text-muted-foreground text-xs">
+                            — R$ {p.price.toFixed(2)}/mês • até {p.max_members} membros
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {plans.length === 0 && (
+                  <p className="text-xs text-muted-foreground italic">Nenhum plano ativo cadastrado. Crie planos em "Planos".</p>
+                )}
               </div>
             </div>
 
