@@ -58,6 +58,10 @@ const integracaoComunicacao = [
   { title: "Telegram", url: "/admin/integracoes/telegram", icon: Send },
 ];
 
+const integracaoPagamentos = [
+  { title: "Stripe", url: "/admin/integracoes/stripe", icon: CreditCard },
+];
+
 const adsItems = [
   { title: "Anunciantes", url: "/admin/anunciantes", icon: Megaphone },
   { title: "Banner", url: "/admin/banner-login", icon: Monitor },
@@ -69,7 +73,8 @@ export function AdminSidebar() {
   const collapsed = state === "collapsed";
   const { profile } = useAuth();
   const location = useLocation();
-  const integracoesOpen = location.pathname.startsWith("/admin/integracoes");
+  const comunicacaoOpen = location.pathname.startsWith("/admin/integracoes/email") || location.pathname.startsWith("/admin/integracoes/whatsapp") || location.pathname.startsWith("/admin/integracoes/telegram");
+  const pagamentosOpen = location.pathname.startsWith("/admin/integracoes/stripe");
 
   const initials = profile?.full_name
     ? profile.full_name.split(" ").filter(Boolean).map((w) => w[0]).slice(0, 2).join("").toUpperCase()
@@ -149,24 +154,62 @@ export function AdminSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              <Collapsible open={integracoesOpen} defaultOpen={integracoesOpen}>
+              {/* Submenu: Comunicação */}
+              <Collapsible open={comunicacaoOpen} defaultOpen={comunicacaoOpen}>
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
                     <SidebarMenuButton
                       tooltip="Comunicação"
                       className={cn(
                         "text-sidebar-foreground/65 hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground transition-all duration-150 rounded-md",
-                        integracoesOpen && "bg-sidebar-accent/50 text-sidebar-accent-foreground"
+                        comunicacaoOpen && "bg-sidebar-accent/50 text-sidebar-accent-foreground"
                       )}
                     >
                       <MessageCircle className="h-4 w-4" />
                       <span>Comunicação</span>
-                      <ChevronDown className={cn("ml-auto h-3.5 w-3.5 transition-transform duration-200", !integracoesOpen && "-rotate-90")} />
+                      <ChevronDown className={cn("ml-auto h-3.5 w-3.5 transition-transform duration-200", !comunicacaoOpen && "-rotate-90")} />
                     </SidebarMenuButton>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <SidebarMenu className="ml-4 mt-0.5 border-l border-sidebar-border pl-2">
                       {integracaoComunicacao.map((item) => (
+                        <SidebarMenuItem key={item.title}>
+                          <SidebarMenuButton asChild tooltip={item.title}>
+                            <NavLink
+                              to={item.url}
+                              className="text-sidebar-foreground/65 hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground transition-all duration-150 rounded-md text-[13px]"
+                              activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold shadow-sm"
+                            >
+                              <item.icon className="h-3.5 w-3.5" />
+                              <span>{item.title}</span>
+                            </NavLink>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))}
+                    </SidebarMenu>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
+
+              {/* Submenu: Pagamentos */}
+              <Collapsible open={pagamentosOpen} defaultOpen={pagamentosOpen}>
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton
+                      tooltip="Pagamentos"
+                      className={cn(
+                        "text-sidebar-foreground/65 hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground transition-all duration-150 rounded-md",
+                        pagamentosOpen && "bg-sidebar-accent/50 text-sidebar-accent-foreground"
+                      )}
+                    >
+                      <CreditCard className="h-4 w-4" />
+                      <span>Pagamentos</span>
+                      <ChevronDown className={cn("ml-auto h-3.5 w-3.5 transition-transform duration-200", !pagamentosOpen && "-rotate-90")} />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenu className="ml-4 mt-0.5 border-l border-sidebar-border pl-2">
+                      {integracaoPagamentos.map((item) => (
                         <SidebarMenuItem key={item.title}>
                           <SidebarMenuButton asChild tooltip={item.title}>
                             <NavLink
