@@ -391,6 +391,9 @@ export function TabBannerLogin() {
                   <span className="text-[10px] text-muted-foreground">
                     {tipo === "imagem" ? "JPG, PNG, WebP" : "MP4, WebM"} • Máx 20MB
                   </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    Tamanho ideal: 1920 × 1080 px (16:9)
+                  </span>
                 </label>
               </div>
               {filePreview && tipo === "imagem" && (
