@@ -1,6 +1,7 @@
 import { usePortalMemberContext } from "@/components/portal/PortalLayout";
 import { Award, Lock, CheckCircle2, Circle, Star } from "lucide-react";
 import { format } from "date-fns";
+import degreeSheet from "@/assets/degree-icons-sheet.png";
 
 const fmtDate = (d: string | null) => (d ? format(new Date(d), "dd/MM/yyyy") : null);
 
@@ -9,10 +10,38 @@ interface JourneyStep {
   description: string;
   date: string | null;
   done: boolean;
-  number?: number;
 }
 
-const philosophicalDegrees: { number: number; label: string }[] = [
+// Sprite sheet: 5 columns, 7 rows (last row only 3 icons)
+// Icon order left-to-right, top-to-bottom = degrees 1–33
+const COLS = 5;
+const ROWS = 7;
+
+function DegreeIcon({ index, size = 48, className = "" }: { index: number; size?: number; className?: string }) {
+  const col = index % COLS;
+  const row = Math.floor(index / COLS);
+  const xPct = COLS > 1 ? (col / (COLS - 1)) * 100 : 0;
+  const yPct = ROWS > 1 ? (row / (ROWS - 1)) * 100 : 0;
+
+  return (
+    <div
+      className={`shrink-0 rounded-lg overflow-hidden ${className}`}
+      style={{
+        width: size,
+        height: size,
+        backgroundImage: `url(${degreeSheet})`,
+        backgroundSize: `${COLS * 100}% ${ROWS * 100}%`,
+        backgroundPosition: `${xPct}% ${yPct}%`,
+        backgroundRepeat: "no-repeat",
+      }}
+    />
+  );
+}
+
+const allDegrees: { number: number; label: string }[] = [
+  { number: 1, label: "Aprendiz" },
+  { number: 2, label: "Companheiro" },
+  { number: 3, label: "Mestre" },
   { number: 4, label: "Mestre Secreto" },
   { number: 5, label: "Mestre Perfeito" },
   { number: 6, label: "Secretário Íntimo" },
@@ -44,6 +73,9 @@ const philosophicalDegrees: { number: number; label: string }[] = [
   { number: 32, label: "Sublime Príncipe do Real Segredo" },
   { number: 33, label: "Soberano Grande Inspetor Geral" },
 ];
+
+const symbolicDegrees = allDegrees.slice(0, 3);
+const philosophicalDegrees = allDegrees.slice(3);
 
 export default function PortalJornada() {
   const member = usePortalMemberContext();
@@ -77,8 +109,6 @@ export default function PortalJornada() {
       done: true,
     });
   }
-
-  const symbolicStepCount = steps.length;
 
   const symbolicCompleted = steps.filter((s) => s.done).length;
 
@@ -117,18 +147,28 @@ export default function PortalJornada() {
         <div className="space-y-0">
           {steps.map((step, i) => {
             const isLast = i === steps.length - 1;
+            // Map step index to degree icon index (0,1,2 for symbolic; master_installed doesn't have a specific icon)
+            const iconIndex = i < 3 ? i : undefined;
             return (
               <div key={step.label} className="flex gap-4">
                 <div className="flex flex-col items-center">
-                  <div
-                    className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${
-                      step.done
-                        ? "bg-primary text-primary-foreground shadow-[0_0_12px_hsl(42_65%_50%/0.3)]"
-                        : "bg-muted border border-border text-muted-foreground"
-                    }`}
-                  >
-                    {step.done ? <CheckCircle2 className="h-5 w-5" /> : <Lock className="h-4 w-4" />}
-                  </div>
+                  {iconIndex !== undefined ? (
+                    <DegreeIcon
+                      index={iconIndex}
+                      size={44}
+                      className={`${!step.done ? "opacity-40 grayscale" : "shadow-[0_0_12px_hsl(42_65%_50%/0.3)]"}`}
+                    />
+                  ) : (
+                    <div
+                      className={`h-11 w-11 rounded-full flex items-center justify-center shrink-0 ${
+                        step.done
+                          ? "bg-primary text-primary-foreground shadow-[0_0_12px_hsl(42_65%_50%/0.3)]"
+                          : "bg-muted border border-border text-muted-foreground"
+                      }`}
+                    >
+                      {step.done ? <CheckCircle2 className="h-5 w-5" /> : <Lock className="h-4 w-4" />}
+                    </div>
+                  )}
                   {!isLast && (
                     <div className={`w-0.5 flex-1 min-h-[40px] ${step.done ? "bg-primary/40" : "bg-border"}`} />
                   )}
@@ -179,19 +219,22 @@ export default function PortalJornada() {
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
           {philosophicalDegrees.map((deg) => (
             <div
               key={deg.number}
-              className="flex items-center gap-3 portal-card rounded-lg p-3 opacity-60"
+              className="flex flex-col items-center gap-2 portal-card rounded-xl p-3 opacity-60"
             >
-              <div className="h-8 w-8 rounded-full bg-muted border border-border text-muted-foreground flex items-center justify-center shrink-0">
-                <span className="text-[11px] font-bold">{deg.number}º</span>
+              <DegreeIcon
+                index={deg.number - 1}
+                size={52}
+                className="grayscale"
+              />
+              <div className="text-center">
+                <p className="text-[10px] font-bold text-muted-foreground">{deg.number}º Grau</p>
+                <p className="text-[9px] text-muted-foreground leading-tight mt-0.5">{deg.label}</p>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-muted-foreground truncate">{deg.label}</p>
-              </div>
-              <Lock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              <Lock className="h-3 w-3 text-muted-foreground" />
             </div>
           ))}
         </div>
