@@ -193,8 +193,13 @@ export function PortalLayout({ children }: { children: React.ReactNode }) {
           </Avatar>
           <div className="min-w-0">
             <p className="text-sm font-semibold text-[hsl(40_20%_90%)] truncate">
-              Ir∴ {member.full_name.split(" ")[0]}
+              Ir∴ {member.full_name}
             </p>
+            {member.cim && (
+              <p className="text-[10px] text-[hsl(220_10%_50%)] truncate">
+                CIM: {member.cim}
+              </p>
+            )}
             <p className="text-[11px] text-[hsl(42_50%_55%)] truncate">
               {degreeName}
             </p>
