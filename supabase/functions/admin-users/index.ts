@@ -109,7 +109,7 @@ Deno.serve(async (req) => {
 
         const { data: profiles } = await adminClient
           .from("profiles")
-          .select("id, full_name, avatar_url, is_active, created_at")
+          .select("id, full_name, avatar_url, is_active, created_at, cpf, phone, address, birth_date")
           .in("id", userIds);
 
         const profileMap: Record<string, { full_name: string; avatar_url: string | null; is_active: boolean; created_at: string }> = {};
@@ -156,7 +156,7 @@ Deno.serve(async (req) => {
 
         const { data: profiles } = await adminClient
           .from("profiles")
-          .select("id, full_name, avatar_url, is_active, created_at")
+          .select("id, full_name, avatar_url, is_active, created_at, cpf, phone, address, birth_date")
           .in("id", superadminIds)
           .order("full_name");
 
@@ -176,7 +176,7 @@ Deno.serve(async (req) => {
     // ─── CREATE ──────────────────────────────────────────────
     if (req.method === "POST" && action === "create") {
       const body = await req.json();
-      const { email, full_name, password, role, tenant_id: bodyTenantId, tenant_role } = body;
+      const { email, full_name, password, role, tenant_id: bodyTenantId, tenant_role, cpf, phone, address, birth_date } = body;
 
       if (!email || !full_name || !password || !role) {
         return new Response(
@@ -216,8 +216,18 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Assign global role
+      // Assign global role & update profile with PF data
       if (newUser?.user) {
+        // Update profile with extra fields
+        const profileUpdates: Record<string, unknown> = {};
+        if (cpf) profileUpdates.cpf = cpf;
+        if (phone) profileUpdates.phone = phone;
+        if (address) profileUpdates.address = address;
+        if (birth_date) profileUpdates.birth_date = birth_date;
+        if (Object.keys(profileUpdates).length > 0) {
+          await adminClient.from("profiles").update(profileUpdates).eq("id", newUser.user.id);
+        }
+
         await adminClient.from("user_roles").insert({
           user_id: newUser.user.id,
           role,
@@ -243,7 +253,7 @@ Deno.serve(async (req) => {
     // ─── UPDATE ──────────────────────────────────────────────
     if (req.method === "PUT" && action === "update") {
       const body = await req.json();
-      const { user_id, full_name, role, is_active, tenant_id: bodyTenantId, tenant_role } = body;
+      const { user_id, full_name, role, is_active, tenant_id: bodyTenantId, tenant_role, cpf, phone, address, birth_date } = body;
 
       if (!user_id) {
         return new Response(
@@ -264,6 +274,10 @@ Deno.serve(async (req) => {
       const updates: Record<string, unknown> = {};
       if (full_name !== undefined) updates.full_name = full_name;
       if (is_active !== undefined) updates.is_active = is_active;
+      if (cpf !== undefined) updates.cpf = cpf;
+      if (phone !== undefined) updates.phone = phone;
+      if (address !== undefined) updates.address = address;
+      if (birth_date !== undefined) updates.birth_date = birth_date || null;
 
       if (Object.keys(updates).length > 0) {
         await adminClient.from("profiles").update(updates).eq("id", user_id);
