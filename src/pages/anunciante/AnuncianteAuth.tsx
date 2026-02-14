@@ -15,10 +15,12 @@ import {
   Megaphone,
   Building2,
   FileText,
+  ShieldCheck,
+  RefreshCw,
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-type AuthView = "login" | "register" | "forgot";
+type AuthView = "login" | "register" | "forgot" | "verify";
 
 function validateCNPJ(cnpj: string): boolean {
   const clean = cnpj.replace(/\D/g, "");
@@ -71,6 +73,12 @@ export default function AnuncianteAuth() {
   const [regWebsite, setRegWebsite] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [regConfirmPw, setRegConfirmPw] = useState("");
+
+  // Verification
+  const [verifyEmail, setVerifyEmail] = useState("");
+  const [verifyUserId, setVerifyUserId] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   // Check if user is already an approved advertiser
   useEffect(() => {
@@ -217,9 +225,68 @@ export default function AnuncianteAuth() {
       return;
     }
 
-    toast.success("Cadastro realizado! Verifique seu e-mail e aguarde a aprovação.");
-    setView("login");
+    // 3. Send verification code via email
+    const trimmedEmail = regEmail.trim().toLowerCase();
+    const { data: codeData, error: codeError } = await supabase.functions.invoke("send-verification-code", {
+      body: { user_id: userId, email: trimmedEmail },
+    });
+
+    if (codeError || codeData?.error) {
+      console.error("Erro ao enviar código:", codeData?.error || codeError?.message);
+      toast.warning("Cadastro criado, mas houve erro ao enviar o código de verificação. Tente reenviar.");
+    } else {
+      toast.success("Código de verificação enviado para " + trimmedEmail);
+    }
+
+    setVerifyEmail(trimmedEmail);
+    setVerifyUserId(userId);
+    setResendCooldown(60);
+    setView("verify");
     setLoading(false);
+  };
+
+  // Cooldown timer for resend
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setTimeout(() => setResendCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
+
+  const handleResendCode = async () => {
+    if (resendCooldown > 0) return;
+    setLoading(true);
+    const { data, error } = await supabase.functions.invoke("send-verification-code", {
+      body: { user_id: verifyUserId, email: verifyEmail },
+    });
+    setLoading(false);
+    if (error || data?.error) {
+      toast.error("Erro ao reenviar código: " + (data?.error || error?.message));
+    } else {
+      toast.success("Novo código enviado!");
+      setResendCooldown(60);
+      setOtpCode("");
+    }
+  };
+
+  const handleVerifyCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (otpCode.length !== 6) {
+      toast.error("Digite o código de 6 dígitos.");
+      return;
+    }
+    setLoading(true);
+    const { data, error } = await supabase.functions.invoke("verify-email-code", {
+      body: { email: verifyEmail, code: otpCode.trim() },
+    });
+    setLoading(false);
+
+    if (error || data?.error) {
+      toast.error(data?.error || error?.message || "Código inválido ou expirado.");
+      return;
+    }
+
+    toast.success("E-mail verificado com sucesso! Aguarde a aprovação do seu cadastro.");
+    setView("login");
   };
 
   const handleForgot = async (e: React.FormEvent) => {
@@ -289,6 +356,7 @@ export default function AnuncianteAuth() {
               {view === "login" && "Acesse sua conta de anunciante"}
               {view === "register" && "Cadastre-se como anunciante"}
               {view === "forgot" && "Recupere sua senha"}
+              {view === "verify" && "Verifique seu e-mail"}
             </p>
           </div>
 
@@ -463,6 +531,70 @@ export default function AnuncianteAuth() {
                     <Button type="submit" className="w-full" disabled={loading}>
                       {loading ? "Enviando..." : "Enviar Link de Redefinição"}
                     </Button>
+                  </form>
+                </CardContent>
+              </>
+            )}
+
+            {/* VERIFY EMAIL */}
+            {view === "verify" && (
+              <>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="h-5 w-5 text-accent" />
+                    <div>
+                      <p className="font-semibold text-sm">Verificação de E-mail</p>
+                      <p className="text-xs text-muted-foreground">
+                        Enviamos um código de 6 dígitos para <strong>{verifyEmail}</strong>
+                      </p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleVerifyCode} className="space-y-4">
+                    <div className="space-y-1.5">
+                      <Label>Código de Verificação</Label>
+                      <Input
+                        value={otpCode}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, "").slice(0, 6);
+                          setOtpCode(val);
+                        }}
+                        placeholder="000000"
+                        className="text-center text-2xl tracking-[0.5em] font-bold"
+                        maxLength={6}
+                        autoFocus
+                      />
+                      <p className="text-[11px] text-muted-foreground text-center">
+                        O código expira em 10 minutos.
+                      </p>
+                    </div>
+                    <Button type="submit" className="w-full" disabled={loading || otpCode.length !== 6}>
+                      {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <ShieldCheck className="h-4 w-4 mr-2" />}
+                      Verificar Código
+                    </Button>
+                    <div className="flex items-center justify-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleResendCode}
+                        disabled={resendCooldown > 0 || loading}
+                        className="flex items-center gap-1.5 text-xs text-accent hover:text-accent/80 disabled:text-muted-foreground disabled:cursor-not-allowed transition-colors"
+                      >
+                        <RefreshCw className="h-3 w-3" />
+                        {resendCooldown > 0
+                          ? `Reenviar em ${resendCooldown}s`
+                          : "Reenviar código"}
+                      </button>
+                    </div>
+                    <div className="text-center">
+                      <button
+                        type="button"
+                        onClick={() => setView("login")}
+                        className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        Voltar ao login
+                      </button>
+                    </div>
                   </form>
                 </CardContent>
               </>
