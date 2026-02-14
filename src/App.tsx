@@ -27,6 +27,11 @@ import PortalFinanceiro from "./pages/portal/PortalFinanceiro";
 import PortalPrestacaoContas from "./pages/portal/PortalPrestacaoContas";
 import PortalPerfil from "./pages/portal/PortalPerfil";
 
+import { AdminLayout } from "@/components/admin/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminLojas from "./pages/admin/AdminLojas";
+import AdminPlaceholder from "./pages/admin/AdminPlaceholder";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -39,6 +44,25 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/portal/auth" element={<PortalAuth />} />
+
+            {/* Painel SuperAdmin */}
+            <Route
+              path="/admin/*"
+              element={
+                <ProtectedRoute requiredRole="superadmin">
+                  <AdminLayout>
+                    <Routes>
+                      <Route path="/" element={<AdminDashboard />} />
+                      <Route path="/lojas" element={<AdminLojas />} />
+                      <Route path="/usuarios" element={<AdminPlaceholder title="Gestão de Usuários" />} />
+                      <Route path="/planos" element={<AdminPlaceholder title="Planos e Assinaturas" />} />
+                      <Route path="/configuracoes" element={<AdminPlaceholder title="Configurações Globais" />} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
 
             {/* Portal do Irmão */}
             <Route

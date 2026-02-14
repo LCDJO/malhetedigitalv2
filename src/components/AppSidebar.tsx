@@ -10,6 +10,7 @@ import {
   ShieldAlert,
   Scale,
   ClipboardCheck,
+  Shield,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth, roleLabels } from "@/contexts/AuthContext";
@@ -100,6 +101,30 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {role === "superadmin" && (
+          <SidebarGroup className="mt-2">
+            <SidebarGroupLabel className="admin-section-title text-sidebar-foreground/40 px-3 mb-1">
+              Super Admin
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Painel SuperAdmin">
+                    <NavLink
+                      to="/admin"
+                      className="text-accent/80 hover:bg-sidebar-accent/80 hover:text-accent transition-all duration-150 rounded-md"
+                      activeClassName="bg-sidebar-accent text-accent font-semibold shadow-sm"
+                    >
+                      <Shield className="h-4 w-4" />
+                      <span>Painel SuperAdmin</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="p-4">
