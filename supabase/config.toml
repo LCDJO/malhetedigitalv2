@@ -3,6 +3,9 @@ project_id = "pticjnptiyhpworwfsxf"
 [functions.admin-users]
 verify_jwt = false
 
+[functions.admin-2fa]
+verify_jwt = false
+
 [functions.audit-log]
 verify_jwt = false
 
