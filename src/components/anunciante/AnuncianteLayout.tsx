@@ -39,6 +39,10 @@ interface Advertiser {
   representative_email: string | null;
   representative_phone: string | null;
   representative_address: string | null;
+  instagram: string | null;
+  facebook: string | null;
+  tiktok: string | null;
+  linkedin: string | null;
 }
 
 const AdvertiserContext = createContext<Advertiser | null>(null);

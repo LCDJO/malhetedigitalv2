@@ -1,0 +1,6 @@
+
+ALTER TABLE public.advertisers
+  ADD COLUMN IF NOT EXISTS instagram TEXT,
+  ADD COLUMN IF NOT EXISTS facebook TEXT,
+  ADD COLUMN IF NOT EXISTS tiktok TEXT,
+  ADD COLUMN IF NOT EXISTS linkedin TEXT;
