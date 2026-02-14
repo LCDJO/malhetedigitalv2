@@ -1722,15 +1722,7 @@ export type Database = {
         | "suspenso"
         | "aguardando_exclusao"
         | "banido"
-      app_role:
-        | "veneravel"
-        | "secretario"
-        | "tesoureiro"
-        | "orador"
-        | "chanceler"
-        | "administrador"
-        | "consulta"
-        | "superadmin"
+      app_role: "superadmin" | "administrador"
       campaign_status: "rascunho" | "ativa" | "pausada" | "encerrada"
       status_solicitacao:
         | "pendente"
@@ -1876,16 +1868,7 @@ export const Constants = {
         "aguardando_exclusao",
         "banido",
       ],
-      app_role: [
-        "veneravel",
-        "secretario",
-        "tesoureiro",
-        "orador",
-        "chanceler",
-        "administrador",
-        "consulta",
-        "superadmin",
-      ],
+      app_role: ["superadmin", "administrador"],
       campaign_status: ["rascunho", "ativa", "pausada", "encerrada"],
       status_solicitacao: [
         "pendente",

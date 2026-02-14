@@ -38,13 +38,8 @@ interface TermoRow {
 }
 
 const roleLabelsMap: Record<string, string> = {
+  superadmin: "SuperAdmin",
   administrador: "Administrador",
-  veneravel: "Venerável Mestre",
-  secretario: "Secretário",
-  tesoureiro: "Tesoureiro",
-  orador: "Orador",
-  chanceler: "Chanceler",
-  consulta: "Consulta",
 };
 
 const ControleAceites = () => {

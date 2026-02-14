@@ -7,8 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { type AppRole, roleLabels } from "@/contexts/AuthContext";
 
 const availableRoles: AppRole[] = [
-  "administrador", "veneravel", "secretario", "tesoureiro",
-  "orador", "chanceler", "consulta", "portal_irmao",
+  "administrador",
 ];
 
 interface UserFormData {
@@ -33,7 +32,7 @@ interface Props {
 
 export function UserFormDialog({ open, onOpenChange, mode, initialData, saving, onSave }: Props) {
   const [form, setForm] = useState<UserFormData>({
-    full_name: "", email: "", password: "", role: "consulta",
+    full_name: "", email: "", password: "", role: "administrador",
     cpf: "", phone: "", address: "", birth_date: "",
   });
 
@@ -43,14 +42,14 @@ export function UserFormDialog({ open, onOpenChange, mode, initialData, saving, 
         full_name: initialData.full_name ?? "",
         email: initialData.email ?? "",
         password: "",
-        role: initialData.role ?? "consulta",
+        role: initialData.role ?? "administrador",
         cpf: initialData.cpf ?? "",
         phone: initialData.phone ?? "",
         address: initialData.address ?? "",
         birth_date: initialData.birth_date ?? "",
       });
     } else if (open) {
-      setForm({ full_name: "", email: "", password: "", role: "consulta", cpf: "", phone: "", address: "", birth_date: "" });
+      setForm({ full_name: "", email: "", password: "", role: "administrador", cpf: "", phone: "", address: "", birth_date: "" });
     }
   }, [open, initialData]);
 

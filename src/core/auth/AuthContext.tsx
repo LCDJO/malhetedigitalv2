@@ -111,7 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [fetchProfileAndRole, checkTermsAcceptance]);
 
   // ─── Single-session enforcement for admin roles ───
-  const ADMIN_ROLES: AppRole[] = ["administrador", "veneravel", "secretario", "tesoureiro", "superadmin"];
+  const ADMIN_ROLES: AppRole[] = ["administrador", "superadmin"];
 
   const registerSession = useCallback(async (userId: string) => {
     const token = crypto.randomUUID();
@@ -165,7 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user, role, registerSession]);
 
-  const isAdmin = role === "superadmin" || role === "administrador" || role === "veneravel" || role === "secretario";
+  const isAdmin = role === "superadmin" || role === "administrador";
 
   const hasModuleAccess = useCallback(
     (module: string) => {

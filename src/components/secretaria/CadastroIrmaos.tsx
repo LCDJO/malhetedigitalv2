@@ -26,8 +26,7 @@ import { ImportarCSV } from "./ImportarCSV";
 import { ConfirmSensitiveAction } from "@/components/ConfirmSensitiveAction";
 
 const systemRoles: AppRole[] = [
-  "administrador", "veneravel", "secretario", "tesoureiro",
-  "orador", "chanceler", "consulta",
+  "administrador",
 ];
 
 interface Member {
@@ -125,7 +124,7 @@ const emptyForm = {
   exaltation_date: undefined as Date | undefined,
   notes: "", avatar_url: null as string | null,
   is_system_user: false,
-  system_role: "consulta" as AppRole,
+  system_role: "administrador" as AppRole,
   system_password: "",
 };
 
@@ -415,7 +414,7 @@ export function CadastroIrmaos() {
       notes: m.notes || "",
       avatar_url: m.avatar_url,
       is_system_user: !!(m.email && systemUserEmails.has(m.email.toLowerCase())),
-      system_role: "consulta",
+      system_role: "administrador",
       system_password: "",
     });
     setDialogOpen(true);

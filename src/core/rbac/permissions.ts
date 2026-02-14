@@ -16,55 +16,6 @@ export const permissionsMatrix: Record<AppRole, Record<string, PermissionAction[
     chancelaria: ["read", "write", "approve", "manage_users"],
     configuracoes: ["read", "write", "approve", "manage_users"],
   },
-  veneravel: {
-    dashboard: ["read"],
-    secretaria: ["read"],
-    tesouraria: ["read"],
-    chancelaria: ["read"],
-    configuracoes: ["read"],
-  },
-  secretario: {
-    dashboard: ["read"],
-    secretaria: ["read", "write"],
-    tesouraria: [],
-    chancelaria: [],
-    configuracoes: [],
-  },
-  tesoureiro: {
-    dashboard: ["read"],
-    secretaria: ["read"],
-    tesouraria: ["read", "write", "approve", "manage_users"],
-    chancelaria: [],
-    configuracoes: [],
-  },
-  orador: {
-    dashboard: ["read"],
-    secretaria: [],
-    tesouraria: [],
-    chancelaria: [],
-    configuracoes: [],
-  },
-  chanceler: {
-    dashboard: ["read"],
-    secretaria: [],
-    tesouraria: [],
-    chancelaria: ["read", "write"],
-    configuracoes: [],
-  },
-  consulta: {
-    dashboard: ["read"],
-    secretaria: [],
-    tesouraria: [],
-    chancelaria: [],
-    configuracoes: [],
-  },
-  portal_irmao: {
-    dashboard: [],
-    secretaria: [],
-    tesouraria: [],
-    chancelaria: [],
-    configuracoes: [],
-  },
 };
 
 /** Derived module access — roles that have at least one permission on a module */
