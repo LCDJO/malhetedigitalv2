@@ -19,6 +19,7 @@ import {
   Building2,
   Eye,
   Ban,
+  Trash2,
 } from "lucide-react";
 
 interface Advertiser {
@@ -46,6 +47,7 @@ export default function AdminAnunciantes() {
   const [rejectDialog, setRejectDialog] = useState<Advertiser | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [detailDialog, setDetailDialog] = useState<Advertiser | null>(null);
+  const [deleteDialog, setDeleteDialog] = useState<Advertiser | null>(null);
 
   const fetchAdvertisers = async () => {
     let query = supabase.from("advertisers").select("*").order("created_at", { ascending: false });
@@ -81,6 +83,18 @@ export default function AdminAnunciantes() {
     fetchAdvertisers();
   };
 
+  const scheduleDelete = async (adv: Advertiser) => {
+    const deletionDate = new Date();
+    deletionDate.setDate(deletionDate.getDate() + 30);
+    await supabase.from("advertisers").update({
+      status: "aguardando_exclusao" as any,
+      scheduled_deletion_at: deletionDate.toISOString(),
+    }).eq("id", adv.id);
+    await logAction({ action: "SCHEDULE_DELETE_ADVERTISER", targetTable: "advertisers", targetId: adv.id, details: { company: adv.company_name, scheduled_for: deletionDate.toISOString() } });
+    toast.success(`${adv.company_name} agendado para exclusão em 30 dias.`);
+    fetchAdvertisers();
+  };
+
   const filtered = advertisers.filter((a) =>
     a.company_name.toLowerCase().includes(search.toLowerCase()) ||
     a.document_number.includes(search) ||
@@ -93,6 +107,7 @@ export default function AdminAnunciantes() {
       aprovado: { variant: "default", label: "Aprovado" },
       rejeitado: { variant: "destructive", label: "Rejeitado" },
       suspenso: { variant: "destructive", label: "Suspenso" },
+      aguardando_exclusao: { variant: "destructive", label: "Aguardando Exclusão" },
     };
     const s = map[status] || map.pendente;
     return <Badge variant={s.variant}>{s.label}</Badge>;
@@ -111,7 +126,7 @@ export default function AdminAnunciantes() {
           <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por nome, documento ou e-mail..." className="pl-10" />
         </div>
         <div className="flex gap-1.5">
-          {["todos", "pendente", "aprovado", "rejeitado", "suspenso"].map((s) => (
+          {["todos", "pendente", "aprovado", "rejeitado", "suspenso", "aguardando_exclusao"].map((s) => (
             <Button
               key={s}
               variant={filter === s ? "default" : "outline"}
@@ -179,9 +194,14 @@ export default function AdminAnunciantes() {
                       </Button>
                     )}
                     {adv.status === "suspenso" && (
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-success" onClick={() => approve(adv)} title="Reativar">
-                        <CheckCircle className="h-4 w-4" />
-                      </Button>
+                      <>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-success" onClick={() => approve(adv)} title="Reativar">
+                          <CheckCircle className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeleteDialog(adv)} title="Excluir">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -208,6 +228,25 @@ export default function AdminAnunciantes() {
             <div className="flex justify-end gap-2">
               <Button variant="outline" size="sm" onClick={() => setRejectDialog(null)}>Cancelar</Button>
               <Button variant="destructive" size="sm" onClick={reject}>Rejeitar</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deleteDialog} onOpenChange={(o) => { if (!o) setDeleteDialog(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-destructive">Excluir Anunciante</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              O anunciante <span className="font-medium text-foreground">{deleteDialog?.company_name}</span> será movido para <Badge variant="destructive">Aguardando Exclusão</Badge> e removido permanentemente após <strong>30 dias</strong>.
+            </p>
+            <p className="text-xs text-muted-foreground">Esta ação só é possível para anunciantes com status <em>Suspenso</em>.</p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => setDeleteDialog(null)}>Cancelar</Button>
+              <Button variant="destructive" size="sm" onClick={() => { if (deleteDialog) { scheduleDelete(deleteDialog); setDeleteDialog(null); } }}>Confirmar Exclusão</Button>
             </div>
           </div>
         </DialogContent>
