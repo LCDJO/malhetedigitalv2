@@ -1694,6 +1694,7 @@ export type Database = {
         | "rejeitado"
         | "suspenso"
         | "aguardando_exclusao"
+        | "banido"
       app_role:
         | "veneravel"
         | "secretario"
@@ -1846,6 +1847,7 @@ export const Constants = {
         "rejeitado",
         "suspenso",
         "aguardando_exclusao",
+        "banido",
       ],
       app_role: [
         "veneravel",
