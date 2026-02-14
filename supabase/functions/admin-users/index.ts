@@ -472,6 +472,20 @@ Deno.serve(async (req) => {
         );
       }
 
+      // Prevent superadmins from being linked to tenants
+      const { data: targetRole } = await adminClient
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user_id)
+        .maybeSingle();
+
+      if (targetRole?.role === "superadmin") {
+        return new Response(
+          JSON.stringify({ error: "SuperAdmin não pode ser vinculado a uma Loja" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       const { error } = await adminClient.from("tenant_users").insert({
         user_id,
         tenant_id: targetTenantId,
