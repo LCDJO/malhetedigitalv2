@@ -20,6 +20,7 @@ import {
   Eye,
   Ban,
   Trash2,
+  ShieldOff,
 } from "lucide-react";
 
 interface Advertiser {
@@ -48,6 +49,8 @@ export default function AdminAnunciantes() {
   const [rejectReason, setRejectReason] = useState("");
   const [detailDialog, setDetailDialog] = useState<Advertiser | null>(null);
   const [deleteDialog, setDeleteDialog] = useState<Advertiser | null>(null);
+  const [banDialog, setBanDialog] = useState<Advertiser | null>(null);
+  const [banning, setBanning] = useState(false);
 
   const fetchAdvertisers = async () => {
     let query = supabase.from("advertisers").select("*").order("created_at", { ascending: false });
@@ -95,6 +98,26 @@ export default function AdminAnunciantes() {
     fetchAdvertisers();
   };
 
+  const banAdvertiser = async (adv: Advertiser) => {
+    setBanning(true);
+    try {
+      // 1. Desativar todos os criativos do anunciante
+      await supabase.from("ad_creatives").update({ is_active: false }).eq("advertiser_id", adv.id);
+      // 2. Pausar todas as campanhas ativas
+      await supabase.from("ad_campaigns").update({ status: "encerrada" as const }).eq("advertiser_id", adv.id).in("status", ["ativa", "rascunho", "pausada"]);
+      // 3. Marcar anunciante como banido
+      await supabase.from("advertisers").update({ status: "banido" as any, approved_by: user?.id }).eq("id", adv.id);
+      await logAction({ action: "BAN_ADVERTISER", targetTable: "advertisers", targetId: adv.id, details: { company: adv.company_name } });
+      toast.success(`${adv.company_name} foi banido. Todos os anúncios foram retirados do ar.`);
+      fetchAdvertisers();
+    } catch {
+      toast.error("Erro ao bannir anunciante.");
+    } finally {
+      setBanning(false);
+      setBanDialog(null);
+    }
+  };
+
   const filtered = advertisers.filter((a) =>
     a.company_name.toLowerCase().includes(search.toLowerCase()) ||
     a.document_number.includes(search) ||
@@ -108,6 +131,7 @@ export default function AdminAnunciantes() {
       rejeitado: { variant: "destructive", label: "Rejeitado" },
       suspenso: { variant: "destructive", label: "Suspenso" },
       aguardando_exclusao: { variant: "destructive", label: "Aguardando Exclusão" },
+      banido: { variant: "destructive", label: "Banido" },
     };
     const s = map[status] || map.pendente;
     return <Badge variant={s.variant}>{s.label}</Badge>;
@@ -126,7 +150,7 @@ export default function AdminAnunciantes() {
           <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por nome, documento ou e-mail..." className="pl-10" />
         </div>
         <div className="flex gap-1.5">
-          {["todos", "pendente", "aprovado", "rejeitado", "suspenso", "aguardando_exclusao"].map((s) => (
+          {["todos", "pendente", "aprovado", "rejeitado", "suspenso", "banido", "aguardando_exclusao"].map((s) => (
             <Button
               key={s}
               variant={filter === s ? "default" : "outline"}
@@ -189,9 +213,14 @@ export default function AdminAnunciantes() {
                       </>
                     )}
                     {adv.status === "aprovado" && (
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => suspend(adv)} title="Suspender">
-                        <Ban className="h-4 w-4" />
-                      </Button>
+                      <>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => suspend(adv)} title="Suspender">
+                          <Ban className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setBanDialog(adv)} title="Bannir">
+                          <ShieldOff className="h-4 w-4" />
+                        </Button>
+                      </>
                     )}
                     {adv.status === "suspenso" && (
                       <>
@@ -200,6 +229,9 @@ export default function AdminAnunciantes() {
                         </Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeleteDialog(adv)} title="Excluir">
                           <Trash2 className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setBanDialog(adv)} title="Bannir">
+                          <ShieldOff className="h-4 w-4" />
                         </Button>
                       </>
                     )}
@@ -228,6 +260,36 @@ export default function AdminAnunciantes() {
             <div className="flex justify-end gap-2">
               <Button variant="outline" size="sm" onClick={() => setRejectDialog(null)}>Cancelar</Button>
               <Button variant="destructive" size="sm" onClick={reject}>Rejeitar</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Ban Confirmation Dialog */}
+      <Dialog open={!!banDialog} onOpenChange={(o) => { if (!o && !banning) setBanDialog(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-destructive flex items-center gap-2">
+              <ShieldOff className="h-5 w-5" /> Bannir Anunciante
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-3 bg-destructive/5 rounded-md border border-destructive/20">
+              <p className="text-sm font-medium text-destructive">⚠️ Ação imediata e irreversível</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Todos os anúncios e campanhas de <span className="font-semibold text-foreground">{banDialog?.company_name}</span> serão imediatamente retirados do ar.
+              </p>
+            </div>
+            <ul className="text-xs text-muted-foreground space-y-1 list-disc pl-4">
+              <li>Todos os criativos serão desativados</li>
+              <li>Todas as campanhas serão encerradas</li>
+              <li>O anunciante não poderá criar novos anúncios</li>
+            </ul>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => setBanDialog(null)} disabled={banning}>Cancelar</Button>
+              <Button variant="destructive" size="sm" onClick={() => { if (banDialog) banAdvertiser(banDialog); }} disabled={banning}>
+                {banning ? "Processando..." : "Confirmar Banimento"}
+              </Button>
             </div>
           </div>
         </DialogContent>
