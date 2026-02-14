@@ -2,11 +2,12 @@ import { createContext, useContext, useEffect, useState, useCallback, type React
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 
-export type AppRole = "administrador" | "veneravel" | "secretario" | "tesoureiro" | "orador" | "chanceler" | "consulta" | "portal_irmao";
+export type AppRole = "administrador" | "veneravel" | "secretario" | "tesoureiro" | "orador" | "chanceler" | "consulta" | "portal_irmao" | "superadmin";
 
 export type PermissionAction = "read" | "write" | "approve" | "manage_users";
 
 export const roleLabels: Record<AppRole, string> = {
+  superadmin: "SuperAdmin",
   administrador: "Administrador",
   veneravel: "Venerável Mestre",
   secretario: "Secretário",
@@ -19,6 +20,13 @@ export const roleLabels: Record<AppRole, string> = {
 
 // Granular permissions matrix: role → module → allowed actions
 export const permissionsMatrix: Record<AppRole, Record<string, PermissionAction[]>> = {
+  superadmin: {
+    dashboard: ["read", "write", "approve", "manage_users"],
+    secretaria: ["read", "write", "approve", "manage_users"],
+    tesouraria: ["read", "write", "approve", "manage_users"],
+    chancelaria: ["read", "write", "approve", "manage_users"],
+    configuracoes: ["read", "write", "approve", "manage_users"],
+  },
   administrador: {
     dashboard: ["read", "write", "approve", "manage_users"],
     secretaria: ["read", "write", "approve", "manage_users"],
@@ -205,7 +213,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, [fetchProfileAndRole, checkTermsAcceptance]);
 
-  const isAdmin = role === "administrador" || role === "veneravel" || role === "secretario";
+  const isAdmin = role === "superadmin" || role === "administrador" || role === "veneravel" || role === "secretario";
 
   const hasModuleAccess = useCallback(
     (module: string) => {

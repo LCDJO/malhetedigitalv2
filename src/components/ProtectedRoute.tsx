@@ -10,9 +10,10 @@ interface Props {
   children: React.ReactNode;
   module?: string;
   portalRedirect?: string;
+  requiredRole?: string;
 }
 
-export function ProtectedRoute({ children, module, portalRedirect }: Props) {
+export function ProtectedRoute({ children, module, portalRedirect, requiredRole }: Props) {
   const { user, role, loading, hasModuleAccess, termsAccepted } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -53,6 +54,27 @@ export function ProtectedRoute({ children, module, portalRedirect }: Props) {
     return (
       <div className="flex items-center justify-center h-full py-20">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  // Check required role (e.g. superadmin)
+  if (requiredRole && role !== requiredRole) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full py-20 gap-4 text-center">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
+          <ShieldAlert className="h-7 w-7 text-destructive" />
+        </div>
+        <div className="space-y-1">
+          <h2 className="text-lg font-serif font-bold text-foreground">Acesso Restrito</h2>
+          <p className="text-sm text-muted-foreground max-w-sm">
+            Esta área requer permissão de <span className="font-semibold text-foreground">SuperAdmin</span>.
+          </p>
+        </div>
+        <Button variant="outline" size="sm" className="gap-1.5 mt-2" onClick={() => navigate("/")}>
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Voltar ao Dashboard
+        </Button>
       </div>
     );
   }
