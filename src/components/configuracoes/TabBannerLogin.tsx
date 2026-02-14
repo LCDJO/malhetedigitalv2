@@ -29,6 +29,7 @@ interface Banner {
   data_inicio: string;
   data_fim: string | null;
   ativo: boolean;
+  duracao_segundos: number;
   created_at: string;
 }
 
@@ -46,6 +47,7 @@ export function TabBannerLogin() {
   const [tipo, setTipo] = useState<"imagem" | "video">("imagem");
   const [dataInicio, setDataInicio] = useState("");
   const [dataFim, setDataFim] = useState("");
+  const [duracaoSegundos, setDuracaoSegundos] = useState(8);
   const [file, setFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
 
@@ -67,6 +69,7 @@ export function TabBannerLogin() {
     setTipo("imagem");
     setDataInicio(new Date().toISOString().slice(0, 16));
     setDataFim("");
+    setDuracaoSegundos(8);
     setFile(null);
     setFilePreview(null);
     setEditBanner(null);
@@ -84,6 +87,7 @@ export function TabBannerLogin() {
     setTipo(b.tipo);
     setDataInicio(b.data_inicio.slice(0, 16));
     setDataFim(b.data_fim ? b.data_fim.slice(0, 16) : "");
+    setDuracaoSegundos(b.duracao_segundos ?? 8);
     setFile(null);
     setFilePreview(b.media_url);
     setDialogOpen(true);
@@ -148,6 +152,7 @@ export function TabBannerLogin() {
         media_url: mediaUrl,
         data_inicio: new Date(dataInicio).toISOString(),
         data_fim: dataFim ? new Date(dataFim).toISOString() : null,
+        duracao_segundos: duracaoSegundos,
       };
 
       if (editBanner) {
@@ -400,7 +405,7 @@ export function TabBannerLogin() {
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <div className="space-y-1.5">
                 <Label>Data de Início *</Label>
                 <Input
@@ -416,7 +421,18 @@ export function TabBannerLogin() {
                   value={dataFim}
                   onChange={(e) => setDataFim(e.target.value)}
                 />
-                <p className="text-[10px] text-muted-foreground">Deixe vazio para exibição contínua</p>
+                <p className="text-[10px] text-muted-foreground">Vazio = contínuo</p>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Duração (seg)</Label>
+                <Input
+                  type="number"
+                  min={3}
+                  max={120}
+                  value={duracaoSegundos}
+                  onChange={(e) => setDuracaoSegundos(Math.max(3, Number(e.target.value)))}
+                />
+                <p className="text-[10px] text-muted-foreground">Tempo de exibição na rotação</p>
               </div>
             </div>
           </div>

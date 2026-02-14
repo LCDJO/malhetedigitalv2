@@ -25,29 +25,49 @@ export default function Auth() {
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [needsBootstrap, setNeedsBootstrap] = useState<boolean | null>(null);
-  const [banner, setBanner] = useState<{ tipo: string; media_url: string } | null>(null);
+  const [banners, setBanners] = useState<{ tipo: string; media_url: string; duracao_segundos: number }[]>([]);
+  const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
+  const [bannerFading, setBannerFading] = useState(false);
 
-  // Check if bootstrap is needed
+  // Check if bootstrap is needed + fetch banners
   useEffect(() => {
     supabase.functions.invoke("bootstrap", { method: "GET" }).then(({ data }) => {
       setNeedsBootstrap(data?.needs_bootstrap ?? false);
     }).catch(() => setNeedsBootstrap(false));
 
-    // Fetch active banner
+    // Fetch all active banners
     supabase
       .from("login_banners")
-      .select("tipo, media_url")
+      .select("tipo, media_url, duracao_segundos")
       .eq("ativo", true)
       .lte("data_inicio", new Date().toISOString())
       .order("created_at", { ascending: false })
-      .limit(1)
       .then(({ data }) => {
         if (data && data.length > 0) {
-          const b = data[0];
-          setBanner(b as { tipo: string; media_url: string });
+          // Filter out expired banners
+          const now = new Date();
+          const active = (data as any[]).filter((b) => !b.data_fim || new Date(b.data_fim) > now);
+          setBanners(active);
         }
       });
   }, []);
+
+  // Rotate banners
+  useEffect(() => {
+    if (banners.length <= 1) return;
+    const current = banners[currentBannerIndex];
+    const duration = (current?.duracao_segundos || 8) * 1000;
+
+    const timer = setTimeout(() => {
+      setBannerFading(true);
+      setTimeout(() => {
+        setCurrentBannerIndex((prev) => (prev + 1) % banners.length);
+        setBannerFading(false);
+      }, 500);
+    }, duration);
+
+    return () => clearTimeout(timer);
+  }, [banners, currentBannerIndex]);
 
   // Detect password recovery event from URL
   useEffect(() => {
@@ -389,23 +409,50 @@ export default function Auth() {
       {/* Right side - Banner */}
       <div className="hidden lg:flex lg:w-1/2 p-4">
         <div className="relative flex h-full w-full items-center justify-center rounded-2xl bg-muted/60 overflow-hidden">
-          {banner ? (
-            banner.tipo === "video" ? (
-              <video
-                src={banner.media_url}
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="absolute inset-0 w-full h-full object-cover rounded-2xl"
-              />
-            ) : (
-              <img
-                src={banner.media_url}
-                alt="Banner"
-                className="absolute inset-0 w-full h-full object-cover rounded-2xl"
-              />
-            )
+          {banners.length > 0 ? (
+            <>
+              {banners.map((b, i) => (
+                <div
+                  key={i}
+                  className={`absolute inset-0 transition-opacity duration-500 ${
+                    i === currentBannerIndex && !bannerFading ? "opacity-100" : "opacity-0"
+                  }`}
+                >
+                  {b.tipo === "video" ? (
+                    <video
+                      src={b.media_url}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      className="w-full h-full object-cover rounded-2xl"
+                    />
+                  ) : (
+                    <img
+                      src={b.media_url}
+                      alt="Banner"
+                      className="w-full h-full object-cover rounded-2xl"
+                    />
+                  )}
+                </div>
+              ))}
+              {/* Dots indicator */}
+              {banners.length > 1 && (
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+                  {banners.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => { setBannerFading(true); setTimeout(() => { setCurrentBannerIndex(i); setBannerFading(false); }, 300); }}
+                      className={`rounded-full transition-all duration-300 ${
+                        i === currentBannerIndex
+                          ? "w-6 h-2 bg-primary-foreground"
+                          : "w-2 h-2 bg-primary-foreground/40"
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
           ) : (
             <>
               <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-accent/10 rounded-2xl" />
