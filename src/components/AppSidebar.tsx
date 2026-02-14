@@ -11,6 +11,7 @@ import {
   Shield,
   Scale,
   ClipboardCheck,
+  LogOut,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth, roleLabels } from "@/contexts/AuthContext";
@@ -51,7 +52,7 @@ const complianceItems = [
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const { profile, role, hasModuleAccess } = useAuth();
+  const { profile, role, hasModuleAccess, signOut } = useAuth();
   const [profileOpen, setProfileOpen] = useState(false);
 
   const initials = profile?.full_name
@@ -183,6 +184,14 @@ export function AppSidebar() {
               )}
             </div>
           )}
+        </button>
+        <button
+          onClick={signOut}
+          className="flex items-center gap-3 px-1 w-full text-left rounded-md hover:bg-destructive/10 transition-colors py-1.5 mt-1 text-sidebar-foreground/50 hover:text-destructive"
+          title="Sair"
+        >
+          <LogOut className="h-4 w-4 ml-2" />
+          {!collapsed && <span className="text-[12px] font-medium">Sair</span>}
         </button>
       </SidebarFooter>
 
