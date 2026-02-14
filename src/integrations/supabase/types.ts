@@ -344,6 +344,7 @@ export type Database = {
           logo_url: string | null
           phone: string | null
           rejection_reason: string | null
+          scheduled_deletion_at: string | null
           status: Database["public"]["Enums"]["advertiser_status"]
           trading_name: string | null
           updated_at: string
@@ -363,6 +364,7 @@ export type Database = {
           logo_url?: string | null
           phone?: string | null
           rejection_reason?: string | null
+          scheduled_deletion_at?: string | null
           status?: Database["public"]["Enums"]["advertiser_status"]
           trading_name?: string | null
           updated_at?: string
@@ -382,6 +384,7 @@ export type Database = {
           logo_url?: string | null
           phone?: string | null
           rejection_reason?: string | null
+          scheduled_deletion_at?: string | null
           status?: Database["public"]["Enums"]["advertiser_status"]
           trading_name?: string | null
           updated_at?: string
@@ -1685,7 +1688,12 @@ export type Database = {
       lookup_email_by_cpf: { Args: { _cpf: string }; Returns: string }
     }
     Enums: {
-      advertiser_status: "pendente" | "aprovado" | "rejeitado" | "suspenso"
+      advertiser_status:
+        | "pendente"
+        | "aprovado"
+        | "rejeitado"
+        | "suspenso"
+        | "aguardando_exclusao"
       app_role:
         | "veneravel"
         | "secretario"
@@ -1832,7 +1840,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      advertiser_status: ["pendente", "aprovado", "rejeitado", "suspenso"],
+      advertiser_status: [
+        "pendente",
+        "aprovado",
+        "rejeitado",
+        "suspenso",
+        "aguardando_exclusao",
+      ],
       app_role: [
         "veneravel",
         "secretario",
