@@ -66,9 +66,17 @@ export default function AdminAuth() {
 
   useEffect(() => {
     if (authLoading || !user) return;
-    if (role === "superadmin") {
-      navigate("/admin", { replace: true });
-    }
+
+    // Block advertisers — redirect to their portal
+    supabase.rpc("is_advertiser", { _user_id: user.id }).then(({ data: isAdv }) => {
+      if (isAdv) {
+        navigate("/anunciante/auth", { replace: true });
+        return;
+      }
+      if (role === "superadmin") {
+        navigate("/admin", { replace: true });
+      }
+    });
   }, [user, role, authLoading, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -79,14 +87,29 @@ export default function AdminAuth() {
     }
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
     if (error) {
+      setLoading(false);
       toast.error(
         error.message === "Invalid login credentials"
           ? "Email ou senha incorretos."
           : error.message
       );
+      return;
     }
+
+    // Block advertisers from accessing SuperAdmin panel
+    const currentUser = (await supabase.auth.getUser()).data.user;
+    if (currentUser) {
+      const { data: isAdv } = await supabase.rpc("is_advertiser", { _user_id: currentUser.id });
+      if (isAdv) {
+        await supabase.auth.signOut();
+        setLoading(false);
+        toast.error("Esta conta é de anunciante. Acesse pelo Portal do Anunciante.");
+        return;
+      }
+    }
+
+    setLoading(false);
   };
 
   return (
