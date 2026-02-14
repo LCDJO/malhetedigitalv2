@@ -13,8 +13,9 @@ import {
 } from "@/components/ui/table";
 import { toast } from "sonner";
 import {
-  UserPlus, Pencil, ShieldCheck, ShieldOff, Search, Users, Shield,
+  UserPlus, Pencil, ShieldCheck, ShieldOff, Search, Users, Shield, Trash2,
 } from "lucide-react";
+import { ConfirmSensitiveAction } from "@/components/ConfirmSensitiveAction";
 
 interface UserRow {
   id: string;
@@ -37,6 +38,7 @@ export default function AdminUsuarios() {
   const [formEmail, setFormEmail] = useState("");
   const [formPassword, setFormPassword] = useState("");
   const [editUserId, setEditUserId] = useState<string | null>(null);
+  const [deleteUser, setDeleteUser] = useState<UserRow | null>(null);
 
   const apiCall = useCallback(
     async (action: string, method: string, body?: Record<string, unknown>) => {
@@ -112,6 +114,15 @@ export default function AdminUsuarios() {
     const { ok, data } = await apiCall("update", "PUT", { user_id: user.id, is_active: !user.is_active });
     if (!ok) { toast.error(data.error || "Erro"); return; }
     toast.success(user.is_active ? "Usuário desativado" : "Usuário ativado");
+    fetchUsers();
+  };
+
+  const handleDelete = async () => {
+    if (!deleteUser) return;
+    const { ok, data } = await apiCall("delete", "DELETE", { user_id: deleteUser.id });
+    if (!ok) { toast.error(data.error || "Erro ao excluir"); return; }
+    toast.success("Usuário excluído com sucesso");
+    setDeleteUser(null);
     fetchUsers();
   };
 
@@ -200,6 +211,10 @@ export default function AdminUsuarios() {
                           title={user.is_active ? "Desativar" : "Ativar"}>
                           {user.is_active ? <ShieldOff className="h-3.5 w-3.5 text-destructive" /> : <ShieldCheck className="h-3.5 w-3.5 text-primary" />}
                         </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeleteUser(user)}
+                          title="Excluir">
+                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -252,6 +267,17 @@ export default function AdminUsuarios() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmSensitiveAction
+        open={!!deleteUser}
+        onOpenChange={(open) => { if (!open) setDeleteUser(null); }}
+        title="Excluir SuperAdmin"
+        description={`Tem certeza que deseja excluir permanentemente o usuário "${deleteUser?.full_name}"? Esta ação não pode ser desfeita.`}
+        confirmLabel="Excluir"
+        requireTypedConfirmation="EXCLUIR"
+        destructive
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }
