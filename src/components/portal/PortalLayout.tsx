@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PortalFooter } from "./PortalFooter";
+import { PortalNotifications } from "./PortalNotifications";
 
 // Context to share member data across portal pages
 const PortalMemberContext = createContext<PortalMember | null>(null);
@@ -269,19 +270,24 @@ export function PortalLayout({ children }: { children: React.ReactNode }) {
             <span className="ml-2 text-sm font-semibold text-[hsl(40_20%_90%)] truncate">
               Portal do Irmão
             </span>
-            <Avatar className="h-8 w-8 ml-auto ring-1 ring-[hsl(42_65%_50%/0.3)]">
-              {member.avatar_url ? (
-                <AvatarImage src={member.avatar_url} alt={member.full_name} />
-              ) : null}
-              <AvatarFallback className="bg-[hsl(42_65%_50%/0.2)] text-[hsl(42_60%_68%)] text-[10px] font-semibold">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
+            <div className="ml-auto flex items-center gap-2">
+              <PortalNotifications />
+              <Avatar className="h-8 w-8 ring-1 ring-[hsl(42_65%_50%/0.3)]">
+                {member.avatar_url ? (
+                  <AvatarImage src={member.avatar_url} alt={member.full_name} />
+                ) : null}
+                <AvatarFallback className="bg-[hsl(42_65%_50%/0.2)] text-[hsl(42_60%_68%)] text-[10px] font-semibold">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+            </div>
           </header>
 
           {/* Desktop top header with user info */}
           <header className="hidden md:flex h-16 portal-header-bar items-center px-7 shrink-0">
             <div className="flex items-center gap-3 ml-auto">
+              <PortalNotifications />
+              <div className="h-4 w-px bg-[hsl(42_40%_22%/0.3)]" />
               <div className="text-right">
                 <p className="text-sm font-medium text-[hsl(40_20%_90%)]">
                   Ir∴ {member.full_name}
