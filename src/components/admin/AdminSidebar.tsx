@@ -61,6 +61,7 @@ const integracaoComunicacao = [
 
 const integracaoPagamentos = [
   { title: "Stripe", url: "/admin/integracoes/stripe", icon: CreditCard },
+  { title: "Bancos", url: "/admin/integracoes/bancos", icon: Building2 },
 ];
 
 const adsItems = [
