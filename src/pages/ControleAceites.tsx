@@ -75,17 +75,22 @@ const ControleAceites = () => {
       termosQuery = termosQuery.or(`tenant_id.eq.${tenantId},tenant_id.is.null`);
     }
 
-    const [termosRes, aceitesRes, profilesRes, rolesRes] = await Promise.all([
+    const [termosRes, aceitesRes, profilesRes, rolesRes, advertisersRes] = await Promise.all([
       termosQuery,
       supabase.from("aceites_termos").select("*").order("data_hora_aceite", { ascending: false }),
       supabase.from("profiles").select("id, full_name"),
       supabase.from("user_roles").select("user_id, role"),
+      supabase.from("advertisers").select("user_id"),
     ]);
 
     const termosData = (termosRes.data ?? []) as TermoRow[];
     const aceites = aceitesRes.data ?? [];
     const profiles = (profilesRes.data ?? []) as ProfileRow[];
     const roles = (rolesRes.data ?? []) as RoleRow[];
+
+    const advertiserUserIds = new Set(
+      ((advertisersRes.data ?? []) as { user_id: string }[]).map((a) => a.user_id)
+    );
 
     setTermos(termosData);
 
@@ -94,15 +99,22 @@ const ControleAceites = () => {
     const termoMap = new Map(termosData.map((t) => [t.id, t.versao]));
 
     // Build accepted rows
-    const aceiteRows: AceiteRow[] = aceites.map((a) => ({
-      id: a.id,
-      usuario_id: a.usuario_id,
-      termo_id: a.termo_id,
-      data_hora_aceite: a.data_hora_aceite,
-      user_name: profileMap.get(a.usuario_id) ?? "Usuário desconhecido",
-      user_role: roleMap.get(a.usuario_id) ?? null,
-      termo_versao: termoMap.get(a.termo_id) ?? "—",
-    }));
+    const aceiteRows: AceiteRow[] = aceites
+      .filter((a) => {
+        // Exclude advertiser-only users
+        const hasRole = roleMap.has(a.usuario_id);
+        const isAdvertiser = advertiserUserIds.has(a.usuario_id);
+        return hasRole || !isAdvertiser;
+      })
+      .map((a) => ({
+        id: a.id,
+        usuario_id: a.usuario_id,
+        termo_id: a.termo_id,
+        data_hora_aceite: a.data_hora_aceite,
+        user_name: profileMap.get(a.usuario_id) ?? "Usuário desconhecido",
+        user_role: roleMap.get(a.usuario_id) ?? null,
+        termo_versao: termoMap.get(a.termo_id) ?? "—",
+      }));
 
     setRows(aceiteRows);
 
@@ -123,6 +135,12 @@ const ControleAceites = () => {
       );
       const pending = profiles
         .filter((p) => !acceptedUserIds.has(p.id))
+        .filter((p) => {
+          // Exclude advertiser-only users (no platform/lodge role)
+          const hasRole = roleMap.has(p.id);
+          const isAdvertiser = advertiserUserIds.has(p.id);
+          return hasRole || !isAdvertiser;
+        })
         .map((p) => ({
           id: p.id,
           name: p.full_name,
