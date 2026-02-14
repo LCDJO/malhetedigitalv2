@@ -14,6 +14,7 @@ import { Plus, Pencil, Search, Building2, CreditCard, Trash2, Undo2 } from "luci
 import { toast } from "@/hooks/use-toast";
 import { ConfirmSensitiveAction } from "@/components/ConfirmSensitiveAction";
 import type { Tables } from "@/integrations/supabase/types";
+import { useAuditLog } from "@/hooks/useAuditLog";
 
 type Tenant = Tables<"tenants"> & { deleted_at?: string | null; purge_at?: string | null };
 type LodgeConfig = Tables<"lodge_config">;
@@ -35,6 +36,7 @@ export default function AdminLojas() {
   const [tenants, setTenants] = useState<TenantWithConfig[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [subscriptions, setSubscriptions] = useState<Record<string, { plan_id: string; id: string }>>({});
+  const { logAction } = useAuditLog();
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -183,6 +185,7 @@ export default function AdminLojas() {
     }
 
     toast({ title: editing ? "Loja atualizada com sucesso" : "Loja criada com sucesso" });
+    logAction({ action: editing ? "UPDATE_TENANT" : "CREATE_TENANT", targetTable: "tenants", targetId: tenantId ?? undefined, details: { name: form.name } });
     setSaving(false);
     setDialogOpen(false);
     fetchData();
@@ -203,6 +206,7 @@ export default function AdminLojas() {
       toast({ title: "Erro ao excluir loja", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Loja marcada para exclusão", description: "Os dados serão removidos permanentemente em 30 dias." });
+      logAction({ action: "DELETE_TENANT", targetTable: "tenants", targetId: deleteTenant.id, details: { name: deleteTenant.name } });
     }
     setDeleteTenant(null);
     fetchData();
@@ -219,6 +223,7 @@ export default function AdminLojas() {
       toast({ title: "Erro ao restaurar", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Loja restaurada com sucesso" });
+      logAction({ action: "RESTORE_TENANT", targetTable: "tenants", targetId: t.id, details: { name: t.name } });
     }
     fetchData();
   };

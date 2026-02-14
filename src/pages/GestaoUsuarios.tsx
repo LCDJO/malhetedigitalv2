@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import {
   UserPlus, Pencil, ShieldCheck, ShieldOff, Search, Users,
 } from "lucide-react";
+import { useAuditLog } from "@/hooks/useAuditLog";
 
 interface UserRow {
   id: string;
@@ -38,6 +39,7 @@ const availableRoles: AppRole[] = [
 
 export default function GestaoUsuarios() {
   const { session } = useAuth();
+  const { logAction } = useAuditLog();
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -128,12 +130,14 @@ export default function GestaoUsuarios() {
         });
         if (!ok) { toast.error(data.error || "Erro ao criar"); setSaving(false); return; }
         toast.success("Usuário criado e associado à Loja");
+        logAction({ action: "CREATE_USER", targetTable: "profiles", details: { email: formEmail.trim(), role: formRole } });
       } else {
         const { ok, data } = await apiCall("update", "PUT", {
           user_id: editUserId, full_name: formName.trim(), role: formRole,
         });
         if (!ok) { toast.error(data.error || "Erro ao atualizar"); setSaving(false); return; }
         toast.success("Usuário atualizado");
+        logAction({ action: "UPDATE_USER", targetTable: "profiles", targetId: editUserId ?? undefined, details: { full_name: formName.trim(), role: formRole } });
       }
       setDialogOpen(false); fetchUsers();
     } catch { toast.error("Erro inesperado"); } finally { setSaving(false); }
@@ -143,6 +147,7 @@ export default function GestaoUsuarios() {
     const { ok, data } = await apiCall("update", "PUT", { user_id: user.id, is_active: !user.is_active });
     if (!ok) { toast.error(data.error || "Erro"); return; }
     toast.success(user.is_active ? "Usuário desativado" : "Usuário ativado");
+    logAction({ action: user.is_active ? "DEACTIVATE_USER" : "ACTIVATE_USER", targetTable: "profiles", targetId: user.id, details: { email: user.email } });
     fetchUsers();
   };
 
