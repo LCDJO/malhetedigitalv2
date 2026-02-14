@@ -9,6 +9,7 @@ import { useAuth, roleLabels } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useLodgeConfig } from "@/core/tenant/useLodgeConfig";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -16,6 +17,7 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { profile, role, signOut } = useAuth();
+  const { config: lodgeConfig } = useLodgeConfig();
   const [docDialog, setDocDialog] = useState<{ title: string; content: string; version: string } | null>(null);
 
   const openDocument = async (table: "termos_uso" | "politicas_privacidade", title: string) => {
@@ -45,7 +47,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="flex items-center gap-3">
               <SidebarTrigger className="text-muted-foreground hover:text-foreground transition-colors" />
               <div className="h-4 w-px bg-border" />
-              <span className="text-[13px] font-semibold text-foreground tracking-tight">Loja Estrela do Oriente nº 123</span>
+              <span className="text-[13px] font-semibold text-foreground tracking-tight">
+                {lodgeConfig.lodge_name ? `${lodgeConfig.lodge_name} nº ${lodgeConfig.lodge_number}` : "Carregando..."}
+              </span>
             </div>
             <div className="flex items-center gap-4">
               <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground relative">
