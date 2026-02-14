@@ -32,7 +32,7 @@ export function useTenant() {
 export function TenantProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [tenants, setTenants] = useState<Tenant[]>([]);
-  const [tenantId, setTenantId] = useState<string | null>(() => localStorage.getItem("gamify_tenant_id"));
+  const [tenantId, setTenantId] = useState<string | null>(() => localStorage.getItem("malhete_tenant_id"));
   const [tenantRole, setTenantRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -70,7 +70,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 
   const setCurrentTenant = useCallback((id: string) => {
     setTenantId(id);
-    localStorage.setItem("gamify_tenant_id", id);
+    localStorage.setItem("malhete_tenant_id", id);
   }, []);
 
   const tenant = tenants.find((t) => t.id === tenantId) ?? null;

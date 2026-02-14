@@ -94,9 +94,9 @@ export default function Auth() {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-12">
         <div className="w-full max-w-md space-y-6">
           <div className="text-center space-y-2">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-primary text-primary-foreground font-serif font-bold text-2xl shadow-lg">G</div>
-            <h1 className="text-2xl font-serif font-bold tracking-tight">Gamify Recorrência</h1>
-            <p className="text-sm text-muted-foreground">SaaS de gamificação para recorrência</p>
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-primary text-primary-foreground font-serif font-bold text-2xl shadow-lg">M</div>
+            <h1 className="text-2xl font-serif font-bold tracking-tight">Malhete Digital</h1>
+            <p className="text-sm text-muted-foreground">Sistema de Gestão Inteligente</p>
           </div>
 
           <Card>
@@ -173,14 +173,14 @@ export default function Auth() {
       <div className="hidden lg:flex lg:w-1/2 bg-primary/5 items-center justify-center relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-accent/10" />
         <div className="relative z-10 text-center space-y-6 p-12 max-w-lg">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/15 text-primary font-serif font-bold text-4xl">G</div>
-          <h2 className="text-3xl font-serif font-bold text-foreground/90">Gamifique sua Recorrência</h2>
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/15 text-primary font-serif font-bold text-4xl">M</div>
+          <h2 className="text-3xl font-serif font-bold text-foreground/90">Gestão Inteligente</h2>
           <p className="text-muted-foreground text-base leading-relaxed">
             XP, rankings, carteiras digitais e afiliados. Tudo multi-tenant, pronto para escalar.
           </p>
           <div className="flex justify-center gap-8 pt-4">
             <div className="text-center"><div className="text-2xl font-bold text-primary">Multi</div><div className="text-xs text-muted-foreground">Tenant</div></div>
-            <div className="text-center"><div className="text-2xl font-bold text-primary">XP</div><div className="text-xs text-muted-foreground">Gamificação</div></div>
+            <div className="text-center"><div className="text-2xl font-bold text-primary">SaaS</div><div className="text-xs text-muted-foreground">Escalável</div></div>
             <div className="text-center"><div className="text-2xl font-bold text-primary">API</div><div className="text-xs text-muted-foreground">REST</div></div>
           </div>
         </div>

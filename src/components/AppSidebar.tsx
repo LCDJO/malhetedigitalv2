@@ -54,13 +54,13 @@ export function AppSidebar() {
       <SidebarHeader className="p-5 pb-4">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground font-serif font-bold text-lg shadow-sm">
-            G
+            M
           </div>
           {!collapsed && (
             <div className="flex flex-col">
-              <span className="text-[13px] font-bold text-sidebar-accent-foreground tracking-tight">Gamify</span>
+              <span className="text-[13px] font-bold text-sidebar-accent-foreground tracking-tight">Malhete Digital</span>
               <span className="text-[11px] text-sidebar-foreground/50 font-medium truncate max-w-[140px]">
-                {tenant?.name || "Recorrência"}
+                {tenant?.name || "Gestão Inteligente"}
               </span>
             </div>
           )}
