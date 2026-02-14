@@ -94,7 +94,7 @@ const App = () => (
             <Route
               path="/admin/*"
               element={
-                <ProtectedRoute requiredRole="superadmin">
+                <ProtectedRoute requiredRole="superadmin" portalRedirect="/admin/auth">
                   <AdminLayout>
                     <Routes>
                       <Route path="/" element={<AdminDashboard />} />
