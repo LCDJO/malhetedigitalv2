@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   BookOpen,
   Stamp,
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth, roleLabels } from "@/contexts/AuthContext";
+import { MeuPerfilDialog } from "@/components/MeuPerfilDialog";
 import {
   Sidebar,
   SidebarContent,
@@ -50,6 +52,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { profile, role, hasModuleAccess } = useAuth();
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const initials = profile?.full_name
     ? profile.full_name.split(" ").filter(Boolean).map((w) => w[0]).slice(0, 2).join("").toUpperCase()
@@ -157,7 +160,11 @@ export function AppSidebar() {
 
       <SidebarFooter className="p-4">
         <Separator className="bg-sidebar-border mb-3 opacity-50" />
-        <div className="flex items-center gap-3 px-1">
+        <button
+          onClick={() => setProfileOpen(true)}
+          className="flex items-center gap-3 px-1 w-full text-left rounded-md hover:bg-sidebar-accent/60 transition-colors py-1.5 -my-1.5"
+          title="Meu Perfil"
+        >
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sidebar-accent text-sidebar-accent-foreground text-[11px] font-semibold">
             {initials}
           </div>
@@ -176,8 +183,10 @@ export function AppSidebar() {
               )}
             </div>
           )}
-        </div>
+        </button>
       </SidebarFooter>
+
+      <MeuPerfilDialog open={profileOpen} onOpenChange={setProfileOpen} />
     </Sidebar>
   );
 }
