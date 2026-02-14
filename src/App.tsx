@@ -31,6 +31,7 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminLojas from "./pages/admin/AdminLojas";
 import AdminPlaceholder from "./pages/admin/AdminPlaceholder";
+import AdminAuth from "./pages/admin/AdminAuth";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +44,7 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/admin/auth" element={<AdminAuth />} />
             <Route path="/portal/auth" element={<PortalAuth />} />
 
             {/* Painel SuperAdmin */}
