@@ -43,6 +43,7 @@ import AdminBannerAnalytics from "./pages/admin/AdminBannerAnalytics";
 import AdminIntegracoes from "./pages/admin/AdminIntegracoes";
 import AdminIntegracoesWhatsapp from "./pages/admin/AdminIntegracoesWhatsapp";
 import AdminIntegracoesTelegram from "./pages/admin/AdminIntegracoesTelegram";
+import AdminIntegracoesSicredi from "./pages/admin/AdminIntegracoesSicredi";
 import AdminAnunciantes from "./pages/admin/AdminAnunciantes";
 
 import { AnuncianteLayout } from "@/components/anunciante/AnuncianteLayout";
@@ -105,6 +106,7 @@ const App = () => (
                       <Route path="/integracoes/email" element={<AdminIntegracoes />} />
                       <Route path="/integracoes/whatsapp" element={<AdminIntegracoesWhatsapp />} />
                       <Route path="/integracoes/telegram" element={<AdminIntegracoesTelegram />} />
+                      <Route path="/integracoes/bancos/sicredi" element={<AdminIntegracoesSicredi />} />
                       <Route path="/anunciantes" element={<AdminAnunciantes />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
