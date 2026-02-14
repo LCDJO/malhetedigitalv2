@@ -21,6 +21,9 @@ import {
   Ban,
   Trash2,
   ShieldOff,
+  MessageCircle,
+  Mail,
+  User,
 } from "lucide-react";
 
 interface Advertiser {
@@ -36,6 +39,9 @@ interface Advertiser {
   status: string;
   rejection_reason: string | null;
   created_at: string;
+  representative_name: string | null;
+  representative_phone: string | null;
+  representative_email: string | null;
 }
 
 export default function AdminAnunciantes() {
@@ -198,6 +204,62 @@ export default function AdminAnunciantes() {
                       <p className="text-xs text-muted-foreground">
                         {adv.document_type.toUpperCase()}: {adv.document_number} · {adv.email}
                       </p>
+                      {/* Representante Legal */}
+                      {adv.representative_name && (
+                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                          <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                            <User className="h-3 w-3" />
+                            {adv.representative_name}
+                          </span>
+                          {(adv.representative_phone || adv.phone) && (
+                            <a
+                              href={`https://wa.me/${(adv.representative_phone || adv.phone || "").replace(/\D/g, "")}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-[11px] font-medium text-success hover:text-success/80 transition-colors bg-success/10 px-1.5 py-0.5 rounded-md"
+                              title="Abrir WhatsApp"
+                            >
+                              <MessageCircle className="h-3 w-3" />
+                              WhatsApp
+                            </a>
+                          )}
+                          {(adv.representative_email || adv.email) && (
+                            <a
+                              href={`mailto:${adv.representative_email || adv.email}`}
+                              className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:text-primary/80 transition-colors bg-primary/10 px-1.5 py-0.5 rounded-md"
+                              title="Enviar e-mail"
+                            >
+                              <Mail className="h-3 w-3" />
+                              E-mail
+                            </a>
+                          )}
+                        </div>
+                      )}
+                      {!adv.representative_name && (adv.phone || adv.email) && (
+                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                          <span className="text-[11px] text-muted-foreground/60 italic">Sem representante</span>
+                          {adv.phone && (
+                            <a
+                              href={`https://wa.me/${adv.phone.replace(/\D/g, "")}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-[11px] font-medium text-success hover:text-success/80 transition-colors bg-success/10 px-1.5 py-0.5 rounded-md"
+                              title="Abrir WhatsApp"
+                            >
+                              <MessageCircle className="h-3 w-3" />
+                              WhatsApp
+                            </a>
+                          )}
+                          <a
+                            href={`mailto:${adv.email}`}
+                            className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:text-primary/80 transition-colors bg-primary/10 px-1.5 py-0.5 rounded-md"
+                            title="Enviar e-mail"
+                          >
+                            <Mail className="h-3 w-3" />
+                            E-mail
+                          </a>
+                        </div>
+                      )}
                       <p className="text-[11px] text-muted-foreground">
                         Cadastro: {new Date(adv.created_at).toLocaleDateString("pt-BR")}
                       </p>
