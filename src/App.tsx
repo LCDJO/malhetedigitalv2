@@ -2,26 +2,17 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { TenantProvider } from "@/contexts/TenantContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { PortalLayout } from "@/components/portal/PortalLayout";
 import Auth from "./pages/Auth";
-import Index from "./pages/Index";
-import Secretaria from "./pages/Secretaria";
-
-import GestaoUsuarios from "./pages/GestaoUsuarios";
-import LogAuditoria from "./pages/LogAuditoria";
-import Configuracoes from "./pages/Configuracoes";
-import Incidentes from "./pages/Incidentes";
-import GestaoTermos from "./pages/GestaoTermos";
-import ControleAceites from "./pages/ControleAceites";
+import TenantSelect from "./pages/TenantSelect";
+import GamifyDashboard from "./pages/GamifyDashboard";
+import GamifyPlans from "./pages/GamifyPlans";
+import GamifyRanking from "./pages/GamifyRanking";
 import NotFound from "./pages/NotFound";
-
-import PortalAuth from "./pages/portal/PortalAuth";
-import PortalCadastro from "./pages/portal/PortalCadastro";
-import PortalPerfil from "./pages/portal/PortalPerfil";
 
 const queryClient = new QueryClient();
 
@@ -32,97 +23,41 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/portal/auth" element={<PortalAuth />} />
+          <TenantProvider>
+            <Routes>
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/" element={<Navigate to="/tenants" replace />} />
 
-            {/* Portal do Irmão */}
-            <Route
-              path="/portal/*"
-              element={
-                <ProtectedRoute portalRedirect="/portal/auth">
-                  <PortalLayout>
-                    <Routes>
-                      <Route path="/" element={<PortalCadastro />} />
-                      <Route path="/perfil" element={<PortalPerfil />} />
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </PortalLayout>
-                </ProtectedRoute>
-              }
-            />
+              {/* Tenant selection */}
+              <Route
+                path="/tenants"
+                element={
+                  <ProtectedRoute>
+                    <TenantSelect />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Painel Administrativo */}
-            <Route
-              path="/*"
-              element={
-                <ProtectedRoute>
-                  <DashboardLayout>
-                    <Routes>
-                      <Route path="/" element={<Index />} />
-                      <Route
-                        path="/secretaria"
-                        element={
-                          <ProtectedRoute module="secretaria">
-                            <Secretaria />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/configuracoes"
-                        element={
-                          <ProtectedRoute module="configuracoes">
-                            <Configuracoes />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/gestao-usuarios"
-                        element={
-                          <ProtectedRoute module="configuracoes">
-                            <GestaoUsuarios />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/log-auditoria"
-                        element={
-                          <ProtectedRoute module="configuracoes">
-                            <LogAuditoria />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/incidentes"
-                        element={
-                          <ProtectedRoute module="configuracoes">
-                            <Incidentes />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/gestao-termos"
-                        element={
-                          <ProtectedRoute module="configuracoes">
-                            <GestaoTermos />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/controle-aceites"
-                        element={
-                          <ProtectedRoute module="configuracoes">
-                            <ControleAceites />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </DashboardLayout>
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
+              {/* App routes (tenant-scoped) */}
+              <Route
+                path="/app/*"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <Routes>
+                        <Route path="/" element={<GamifyDashboard />} />
+                        <Route path="/plans" element={<GamifyPlans />} />
+                        <Route path="/ranking" element={<GamifyRanking />} />
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </TenantProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

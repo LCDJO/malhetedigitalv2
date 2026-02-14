@@ -8,3 +8,9 @@ verify_jwt = false
 
 [functions.manage-portal-user]
 verify_jwt = false
+
+[functions.bootstrap]
+verify_jwt = false
+
+[functions.gamify-api]
+verify_jwt = false
