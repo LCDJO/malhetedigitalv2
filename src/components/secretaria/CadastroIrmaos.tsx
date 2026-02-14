@@ -269,8 +269,9 @@ export function CadastroIrmaos() {
     if (!form.full_name.trim()) { toast.error("O campo Nome completo é obrigatório."); return; }
     if (form.cpf && !validateCpf(form.cpf)) { toast.error("CPF inválido. Verifique os dígitos informados."); return; }
 
-    // Validate system user fields
-    if (form.is_system_user && !editingId) {
+    // Validate system user fields (new member or editing member that doesn't have system access yet)
+    const isNewSystemUser = form.is_system_user && !(form.email && systemUserEmails.has(form.email.toLowerCase()));
+    if (isNewSystemUser) {
       if (!form.email?.trim()) { toast.error("Email é obrigatório para criar acesso ao sistema."); return; }
       if (!form.system_password || form.system_password.length < 6) { toast.error("Senha do sistema deve ter no mínimo 6 caracteres."); return; }
       if (!tenantId) { toast.error("Loja não identificada. Contate o administrador."); return; }
@@ -302,6 +303,44 @@ export function CadastroIrmaos() {
       } else {
         toast.success("Cadastro atualizado com sucesso.");
         logAction({ action: "UPDATE_MEMBER", targetTable: "members", targetId: editingId, details: { full_name: payload.full_name } });
+
+        // Create system user if flag is newly checked during edit
+        if (isNewSystemUser && form.email?.trim() && tenantId && session?.access_token) {
+          try {
+            const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-users?action=create`;
+            const resp = await fetch(url, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${session.access_token}`,
+                apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                email: form.email.trim(),
+                full_name: form.full_name.trim(),
+                password: form.system_password,
+                role: form.system_role,
+                tenant_id: tenantId,
+                tenant_role: "member",
+                cpf: form.cpf?.trim() || undefined,
+                phone: form.phone?.trim() || undefined,
+                address: form.address?.trim() || undefined,
+                birth_date: form.birth_date ? format(form.birth_date, "yyyy-MM-dd") : undefined,
+              }),
+            });
+            const result = await resp.json();
+            if (resp.ok) {
+              toast.success(`Acesso ao sistema criado! Cargo: ${roleLabels[form.system_role]}`);
+              logAction({ action: "CREATE_SYSTEM_USER", targetTable: "profiles", details: { email: form.email.trim(), role: form.system_role } });
+              fetchSystemUserEmails();
+            } else {
+              toast.error(`Erro ao criar acesso ao sistema: ${result.error || "Erro desconhecido"}`);
+            }
+          } catch {
+            toast.error("Cadastro atualizado, mas erro de conexão ao criar acesso ao sistema.");
+          }
+        }
+
         closeDialog();
         fetchMembers();
       }
@@ -375,7 +414,7 @@ export function CadastroIrmaos() {
       exaltation_date: m.exaltation_date ? new Date(m.exaltation_date + "T12:00:00") : undefined,
       notes: m.notes || "",
       avatar_url: m.avatar_url,
-      is_system_user: false,
+      is_system_user: !!(m.email && systemUserEmails.has(m.email.toLowerCase())),
       system_role: "consulta",
       system_password: "",
     });
@@ -747,28 +786,33 @@ export function CadastroIrmaos() {
               <DateField label="Exaltação" value={form.exaltation_date} onChange={(d) => setForm({ ...form, exaltation_date: d })} />
             </div>
 
-            {/* Acesso ao Sistema (apenas no cadastro novo) */}
-            {!editingId && (
-              <>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-2">Acesso ao Sistema</p>
-                <div className="rounded-lg border border-border p-4 space-y-4 bg-muted/30">
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="is_system_user"
-                      checked={form.is_system_user}
-                      onCheckedChange={(checked) => setForm({ ...form, is_system_user: !!checked })}
-                    />
-                    <Label htmlFor="is_system_user" className="text-sm font-normal cursor-pointer flex items-center gap-1.5">
-                      <ShieldCheck className="h-4 w-4 text-primary" />
-                      Criar como usuário do sistema (Gestão da Loja)
-                    </Label>
-                  </div>
-                  {form.is_system_user && (
-                    <>
-                      <p className="text-xs text-muted-foreground">
-                        Este membro terá acesso ao painel administrativo da Loja com o cargo selecionado abaixo.
-                        O email informado será usado como login.
-                      </p>
+            {/* Acesso ao Sistema */}
+            <>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-2">Acesso ao Sistema</p>
+              <div className="rounded-lg border border-border p-4 space-y-4 bg-muted/30">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="is_system_user"
+                    checked={form.is_system_user}
+                    onCheckedChange={(checked) => setForm({ ...form, is_system_user: !!checked })}
+                    disabled={editingId && form.is_system_user && !!(form.email && systemUserEmails.has(form.email.toLowerCase()))}
+                  />
+                  <Label htmlFor="is_system_user" className="text-sm font-normal cursor-pointer flex items-center gap-1.5">
+                    <ShieldCheck className="h-4 w-4 text-primary" />
+                    {editingId ? "Administrador do Sistema (Gestão da Loja)" : "Criar como usuário do sistema (Gestão da Loja)"}
+                  </Label>
+                  {editingId && form.email && systemUserEmails.has(form.email.toLowerCase()) && (
+                    <Badge variant="outline" className="text-[10px] border-primary/30 bg-primary/10 text-primary">Já possui acesso</Badge>
+                  )}
+                </div>
+                {form.is_system_user && (
+                  <>
+                    <p className="text-xs text-muted-foreground">
+                      {editingId && form.email && systemUserEmails.has(form.email.toLowerCase())
+                        ? "Este membro já possui acesso ao painel administrativo da Loja."
+                        : "Este membro terá acesso ao painel administrativo da Loja com o cargo selecionado abaixo. O email informado será usado como login."}
+                    </p>
+                    {!(editingId && form.email && systemUserEmails.has(form.email.toLowerCase())) && (
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1.5">
                           <Label>Cargo no Sistema *</Label>
@@ -792,16 +836,16 @@ export function CadastroIrmaos() {
                           />
                         </div>
                       </div>
-                      {!form.email?.trim() && (
-                        <p className="text-xs text-destructive flex items-center gap-1">
-                          ⚠ Informe o email do membro acima para criar o acesso ao sistema.
-                        </p>
-                      )}
-                    </>
-                  )}
-                </div>
-              </>
-            )}
+                    )}
+                    {!form.email?.trim() && (
+                      <p className="text-xs text-destructive flex items-center gap-1">
+                        ⚠ Informe o email do membro acima para criar o acesso ao sistema.
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            </>
 
             {/* Acesso ao Portal */}
             {editingId && (
