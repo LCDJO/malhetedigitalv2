@@ -94,13 +94,7 @@ export function AdSlot({
       })
       .then(() => {});
 
-    // Also increment counter on creative
-    supabase
-      .from("ad_creatives")
-      .update({ impressions_count: undefined }) // we use raw SQL RPC instead
-      .eq("id", creative.id);
-
-    // Use rpc or just let the impression table be the source of truth
+    // Impression table is the source of truth for counts
   }, [currentIndex, creatives, page]);
 
   // Auto-rotate
