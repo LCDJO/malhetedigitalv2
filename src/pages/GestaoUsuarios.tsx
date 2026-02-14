@@ -282,19 +282,20 @@ export default function GestaoUsuarios() {
                 <TableHead>Email</TableHead>
                 <TableHead>Cargo</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Admin</TableHead>
                 <TableHead className="text-right w-56">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-12">
+                   <TableCell colSpan={6} className="text-center py-12">
                     <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
                   </TableCell>
                 </TableRow>
               ) : filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
                     {tenantId ? "Nenhum usuário encontrado." : "Loja não identificada. Contate o administrador."}
                   </TableCell>
                 </TableRow>
@@ -316,6 +317,15 @@ export default function GestaoUsuarios() {
                       <Badge variant={user.is_active ? "default" : "destructive"} className="text-[10px]">
                         {user.is_active ? "Ativo" : "Inativo"}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {user.role === "administrador" ? (
+                        <Badge variant="outline" className="text-[10px] border-primary/50 text-primary">
+                          <Crown className="h-3 w-3 mr-1" /> Admin
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <TooltipProvider delayDuration={300}>
