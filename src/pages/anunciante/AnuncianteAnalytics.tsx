@@ -2,98 +2,106 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdvertiser } from "@/components/anunciante/AnuncianteLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Eye, MousePointerClick, TrendingUp, BarChart3 } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2, Eye, MousePointerClick, TrendingUp, BarChart3, Calendar } from "lucide-react";
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+  AreaChart, Area, PieChart, Pie, Cell,
+} from "recharts";
 
-interface DailyMetric {
-  date: string;
-  impressions: number;
-  clicks: number;
-}
+interface CampaignOption { id: string; name: string; }
 
 export default function AnuncianteAnalytics() {
   const advertiser = useAdvertiser();
   const [loading, setLoading] = useState(true);
-  const [dailyData, setDailyData] = useState<DailyMetric[]>([]);
+  const [campaigns, setCampaigns] = useState<CampaignOption[]>([]);
+  const [selectedCampaign, setSelectedCampaign] = useState("todos");
+  const [period, setPeriod] = useState("30");
+
+  const [dailyData, setDailyData] = useState<any[]>([]);
   const [campaignStats, setCampaignStats] = useState<any[]>([]);
+  const [pageStats, setPageStats] = useState<any[]>([]);
   const [totals, setTotals] = useState({ impressions: 0, clicks: 0 });
 
   useEffect(() => {
+    supabase
+      .from("ad_campaigns")
+      .select("id, name")
+      .eq("advertiser_id", advertiser.id)
+      .order("name")
+      .then(({ data }) => setCampaigns((data as CampaignOption[]) ?? []));
+  }, [advertiser.id]);
+
+  useEffect(() => {
     const fetchAnalytics = async () => {
-      // Fetch impressions
-      const { data: impressions } = await supabase
-        .from("ad_impressions")
-        .select("created_at")
-        .eq("advertiser_id", advertiser.id);
+      setLoading(true);
+      const days = parseInt(period);
+      const since = new Date(Date.now() - days * 86400000).toISOString();
 
-      const { data: clicks } = await supabase
-        .from("ad_clicks")
-        .select("created_at")
-        .eq("advertiser_id", advertiser.id);
+      let impQuery = supabase.from("ad_impressions").select("created_at, campaign_id, page").eq("advertiser_id", advertiser.id).gte("created_at", since);
+      let clkQuery = supabase.from("ad_clicks").select("created_at, campaign_id, page").eq("advertiser_id", advertiser.id).gte("created_at", since);
 
-      const impCount = impressions?.length ?? 0;
-      const clickCount = clicks?.length ?? 0;
-      setTotals({ impressions: impCount, clicks: clickCount });
+      if (selectedCampaign !== "todos") {
+        impQuery = impQuery.eq("campaign_id", selectedCampaign);
+        clkQuery = clkQuery.eq("campaign_id", selectedCampaign);
+      }
 
-      // Group by day
-      const dayMap = new Map<string, { impressions: number; clicks: number }>();
+      const [{ data: impressions }, { data: clicks }] = await Promise.all([impQuery, clkQuery]);
 
-      impressions?.forEach((i) => {
-        const day = i.created_at.slice(0, 10);
-        const existing = dayMap.get(day) || { impressions: 0, clicks: 0 };
-        existing.impressions++;
-        dayMap.set(day, existing);
+      const impList = impressions ?? [];
+      const clkList = clicks ?? [];
+      setTotals({ impressions: impList.length, clicks: clkList.length });
+
+      // Daily aggregation
+      const dayMap = new Map<string, { date: string; impressions: number; clicks: number }>();
+      for (let i = days - 1; i >= 0; i--) {
+        const d = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10);
+        dayMap.set(d, { date: d, impressions: 0, clicks: 0 });
+      }
+      impList.forEach((r) => { const p = dayMap.get(r.created_at.slice(0, 10)); if (p) p.impressions++; });
+      clkList.forEach((r) => { const p = dayMap.get(r.created_at.slice(0, 10)); if (p) p.clicks++; });
+      setDailyData(Array.from(dayMap.values()));
+
+      // Page aggregation
+      const pageMap = new Map<string, { page: string; impressions: number; clicks: number }>();
+      impList.forEach((r) => {
+        const p = pageMap.get(r.page) ?? { page: r.page, impressions: 0, clicks: 0 };
+        p.impressions++;
+        pageMap.set(r.page, p);
       });
-
-      clicks?.forEach((c) => {
-        const day = c.created_at.slice(0, 10);
-        const existing = dayMap.get(day) || { impressions: 0, clicks: 0 };
-        existing.clicks++;
-        dayMap.set(day, existing);
+      clkList.forEach((r) => {
+        const p = pageMap.get(r.page) ?? { page: r.page, impressions: 0, clicks: 0 };
+        p.clicks++;
+        pageMap.set(r.page, p);
       });
+      setPageStats(Array.from(pageMap.values()).sort((a, b) => b.impressions - a.impressions));
 
-      const sorted = Array.from(dayMap.entries())
-        .map(([date, data]) => ({ date, ...data }))
-        .sort((a, b) => a.date.localeCompare(b.date))
-        .slice(-30);
-
-      setDailyData(sorted);
-
-      // Per-campaign stats
-      const { data: campaignsData } = await supabase
-        .from("ad_campaigns")
-        .select("id, name")
-        .eq("advertiser_id", advertiser.id);
-
-      if (campaignsData) {
-        const stats = await Promise.all(
-          campaignsData.map(async (c) => {
-            const [impRes, clickRes] = await Promise.all([
-              supabase.from("ad_impressions").select("id", { count: "exact", head: true }).eq("campaign_id", c.id),
-              supabase.from("ad_clicks").select("id", { count: "exact", head: true }).eq("campaign_id", c.id),
-            ]);
-            const imp = impRes.count ?? 0;
-            const clk = clickRes.count ?? 0;
-            return {
-              name: c.name,
-              impressions: imp,
-              clicks: clk,
-              ctr: imp > 0 ? ((clk / imp) * 100).toFixed(2) : "0.00",
-            };
-          })
+      // Per-campaign stats (only when "todos")
+      if (selectedCampaign === "todos" && campaigns.length > 0) {
+        const campMap = new Map<string, { name: string; impressions: number; clicks: number }>();
+        campaigns.forEach((c) => campMap.set(c.id, { name: c.name, impressions: 0, clicks: 0 }));
+        impList.forEach((r) => { const c = campMap.get(r.campaign_id); if (c) c.impressions++; });
+        clkList.forEach((r) => { const c = campMap.get(r.campaign_id); if (c) c.clicks++; });
+        setCampaignStats(
+          Array.from(campMap.values())
+            .map((c) => ({ ...c, ctr: c.impressions > 0 ? ((c.clicks / c.impressions) * 100).toFixed(2) : "0.00" }))
+            .sort((a, b) => b.impressions - a.impressions)
         );
-        setCampaignStats(stats);
       }
 
       setLoading(false);
     };
 
     fetchAnalytics();
-  }, [advertiser.id]);
+  }, [advertiser.id, selectedCampaign, period, campaigns]);
 
   const ctr = totals.impressions > 0 ? ((totals.clicks / totals.impressions) * 100).toFixed(2) : "0.00";
+  const PIE_COLORS = ["hsl(var(--primary))", "hsl(var(--accent))", "hsl(var(--destructive))", "hsl(var(--muted-foreground))"];
 
-  if (loading) {
+  if (loading && dailyData.length === 0) {
     return (
       <div className="flex justify-center py-20">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -103,111 +111,190 @@ export default function AnuncianteAnalytics() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-serif font-bold text-foreground">Analytics</h1>
-        <p className="text-sm text-muted-foreground mt-1">Métricas de desempenho das suas campanhas</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-serif font-bold text-foreground">Analytics</h1>
+          <p className="text-sm text-muted-foreground mt-1">Métricas de desempenho das suas campanhas</p>
+        </div>
+        <div className="flex gap-2">
+          <Select value={period} onValueChange={setPeriod}>
+            <SelectTrigger className="w-[130px] h-9 text-xs">
+              <Calendar className="h-3.5 w-3.5 mr-1.5" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="7">Últimos 7 dias</SelectItem>
+              <SelectItem value="14">Últimos 14 dias</SelectItem>
+              <SelectItem value="30">Últimos 30 dias</SelectItem>
+              <SelectItem value="90">Últimos 90 dias</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={selectedCampaign} onValueChange={setSelectedCampaign}>
+            <SelectTrigger className="w-[180px] h-9 text-xs">
+              <SelectValue placeholder="Campanha" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todas as campanhas</SelectItem>
+              {campaigns.map((c) => (
+                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      {/* Totals */}
+      {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="pt-5 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Impressões</p>
+                <p className="text-xs text-muted-foreground">Impressões</p>
                 <p className="text-2xl font-bold">{totals.impressions.toLocaleString("pt-BR")}</p>
               </div>
-              <Eye className="h-5 w-5 text-primary" />
+              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Eye className="h-4 w-4 text-primary" />
+              </div>
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="pt-5 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Cliques</p>
+                <p className="text-xs text-muted-foreground">Cliques</p>
                 <p className="text-2xl font-bold">{totals.clicks.toLocaleString("pt-BR")}</p>
               </div>
-              <MousePointerClick className="h-5 w-5 text-success" />
+              <div className="h-9 w-9 rounded-lg bg-success/10 flex items-center justify-center">
+                <MousePointerClick className="h-4 w-4 text-success" />
+              </div>
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="pt-5 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">CTR Geral</p>
+                <p className="text-xs text-muted-foreground">CTR</p>
                 <p className="text-2xl font-bold">{ctr}%</p>
               </div>
-              <TrendingUp className="h-5 w-5 text-warning" />
+              <div className="h-9 w-9 rounded-lg bg-warning/10 flex items-center justify-center">
+                <TrendingUp className="h-4 w-4 text-warning" />
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Daily Chart */}
+      {/* Daily Area Chart */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base font-serif flex items-center gap-2">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-serif flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
-            Impressões e Cliques (últimos 30 dias)
+            Evolução Diária
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {dailyData.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">Sem dados para exibir.</p>
+          {dailyData.every((d) => d.impressions === 0 && d.clicks === 0) ? (
+            <p className="text-sm text-muted-foreground text-center py-10">Sem dados no período selecionado.</p>
           ) : (
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={dailyData}>
-                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={(v) => v.slice(5)} />
-                <YAxis tick={{ fontSize: 11 }} />
+            <ResponsiveContainer width="100%" height={280}>
+              <AreaChart data={dailyData}>
+                <defs>
+                  <linearGradient id="anaGradImp" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="anaGradClk" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" className="opacity-20" />
+                <XAxis dataKey="date" tick={{ fontSize: 10 }} tickFormatter={(v) => v.slice(5)} />
+                <YAxis tick={{ fontSize: 10 }} />
                 <Tooltip
                   labelFormatter={(v) => new Date(v).toLocaleDateString("pt-BR")}
-                  formatter={(value: number, name: string) => [value, name === "impressions" ? "Impressões" : "Cliques"]}
+                  formatter={(val: number, name: string) => [val, name === "impressions" ? "Impressões" : "Cliques"]}
                 />
-                <Bar dataKey="impressions" fill="hsl(215 28% 22%)" radius={[2, 2, 0, 0]} name="impressions" />
-                <Bar dataKey="clicks" fill="hsl(42 60% 50%)" radius={[2, 2, 0, 0]} name="clicks" />
-              </BarChart>
+                <Area type="monotone" dataKey="impressions" stroke="hsl(var(--primary))" fill="url(#anaGradImp)" strokeWidth={2} />
+                <Area type="monotone" dataKey="clicks" stroke="hsl(var(--accent))" fill="url(#anaGradClk)" strokeWidth={2} />
+              </AreaChart>
             </ResponsiveContainer>
           )}
         </CardContent>
       </Card>
 
-      {/* Per Campaign */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base font-serif">Desempenho por Campanha</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {campaignStats.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">Nenhuma campanha encontrada.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b text-left">
-                    <th className="pb-2 font-medium text-muted-foreground">Campanha</th>
-                    <th className="pb-2 font-medium text-muted-foreground text-right">Impressões</th>
-                    <th className="pb-2 font-medium text-muted-foreground text-right">Cliques</th>
-                    <th className="pb-2 font-medium text-muted-foreground text-right">CTR</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {campaignStats.map((s, i) => (
-                    <tr key={i} className="border-b last:border-0">
-                      <td className="py-2.5 font-medium">{s.name}</td>
-                      <td className="py-2.5 text-right text-muted-foreground">{s.impressions.toLocaleString("pt-BR")}</td>
-                      <td className="py-2.5 text-right text-muted-foreground">{s.clicks.toLocaleString("pt-BR")}</td>
-                      <td className="py-2.5 text-right font-medium">{s.ctr}%</td>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Reach by page */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-serif">Alcance por Página</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {pageStats.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">Sem dados.</p>
+            ) : (
+              <div className="space-y-3">
+                {pageStats.map((p) => {
+                  const maxImp = Math.max(...pageStats.map((x) => x.impressions), 1);
+                  return (
+                    <div key={p.page} className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-medium text-foreground">{p.page}</span>
+                        <span className="text-muted-foreground">{p.impressions} imp · {p.clicks} clk</span>
+                      </div>
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary rounded-full transition-all"
+                          style={{ width: `${(p.impressions / maxImp) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Per-campaign table */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-serif">Desempenho por Campanha</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {campaignStats.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">
+                {selectedCampaign !== "todos" ? "Filtrando campanha específica." : "Sem dados."}
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b text-left">
+                      <th className="pb-2 font-medium text-muted-foreground">Campanha</th>
+                      <th className="pb-2 font-medium text-muted-foreground text-right">Imp.</th>
+                      <th className="pb-2 font-medium text-muted-foreground text-right">Cliques</th>
+                      <th className="pb-2 font-medium text-muted-foreground text-right">CTR</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  </thead>
+                  <tbody>
+                    {campaignStats.map((s, i) => (
+                      <tr key={i} className="border-b last:border-0">
+                        <td className="py-2 font-medium truncate max-w-[120px]">{s.name}</td>
+                        <td className="py-2 text-right text-muted-foreground">{s.impressions.toLocaleString("pt-BR")}</td>
+                        <td className="py-2 text-right text-muted-foreground">{s.clicks.toLocaleString("pt-BR")}</td>
+                        <td className="py-2 text-right font-medium">{s.ctr}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
