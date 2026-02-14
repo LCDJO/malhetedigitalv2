@@ -126,3 +126,63 @@
     @apply text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground;
   }
 }
+
+/* Portal do Irmão — dark premium theme */
+.portal-theme {
+  --background: 220 22% 8%;
+  --foreground: 40 20% 90%;
+  --card: 220 20% 11%;
+  --card-foreground: 40 15% 88%;
+  --popover: 220 20% 11%;
+  --popover-foreground: 40 15% 88%;
+  --primary: 42 65% 50%;
+  --primary-foreground: 220 25% 8%;
+  --secondary: 220 18% 15%;
+  --secondary-foreground: 40 15% 88%;
+  --muted: 220 18% 14%;
+  --muted-foreground: 220 10% 52%;
+  --accent: 42 65% 50%;
+  --accent-foreground: 220 25% 8%;
+  --destructive: 4 50% 45%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 220 18% 16%;
+  --input: 220 18% 16%;
+  --ring: 42 65% 50%;
+  --radius: 0.5rem;
+}
+
+.portal-theme .portal-sidebar {
+  --portal-sb-bg: 220 25% 7%;
+  --portal-sb-border: 42 40% 22%;
+  background: hsl(var(--portal-sb-bg));
+  border-color: hsl(var(--portal-sb-border));
+}
+
+.portal-theme .portal-gold-border {
+  border-image: linear-gradient(
+    to bottom,
+    hsl(42 65% 45% / 0.4),
+    hsl(42 65% 30% / 0.15)
+  ) 1;
+}
+
+.portal-theme .portal-header-bar {
+  background: linear-gradient(
+    135deg,
+    hsl(220 25% 9%) 0%,
+    hsl(220 22% 12%) 100%
+  );
+  border-bottom: 1px solid hsl(42 40% 22% / 0.5);
+}
+
+.portal-theme .portal-nav-active {
+  background: linear-gradient(90deg, hsl(42 65% 50% / 0.15), hsl(42 65% 50% / 0.05));
+  border-left: 2px solid hsl(42 65% 50%);
+  color: hsl(42 60% 68%);
+}
+
+.portal-theme .portal-card {
+  background: hsl(220 20% 11%);
+  border: 1px solid hsl(42 40% 22% / 0.25);
+  box-shadow: 0 4px 24px hsl(220 30% 4% / 0.5);
+}

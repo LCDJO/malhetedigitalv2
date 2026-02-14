@@ -22,11 +22,14 @@ import ControleAceites from "./pages/ControleAceites";
 import NotFound from "./pages/NotFound";
 
 import PortalAuth from "./pages/portal/PortalAuth";
+import PortalDashboard from "./pages/portal/PortalDashboard";
 import PortalCadastro from "./pages/portal/PortalCadastro";
+import PortalJornada from "./pages/portal/PortalJornada";
 import PortalFinanceiro from "./pages/portal/PortalFinanceiro";
 import PortalPrestacaoContas from "./pages/portal/PortalPrestacaoContas";
 import PortalPerfil from "./pages/portal/PortalPerfil";
 import PortalMinhaLoja from "./pages/portal/PortalMinhaLoja";
+import PortalDocumentos from "./pages/portal/PortalDocumentos";
 
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -81,10 +84,13 @@ const App = () => (
                 <ProtectedRoute portalRedirect="/portal/auth">
                   <PortalLayout>
                     <Routes>
-                      <Route path="/" element={<PortalCadastro />} />
+                      <Route path="/" element={<PortalDashboard />} />
+                      <Route path="/perfil" element={<PortalCadastro />} />
+                      <Route path="/jornada" element={<PortalJornada />} />
                       <Route path="/minha-loja" element={<PortalMinhaLoja />} />
                       <Route path="/financeiro" element={<PortalFinanceiro />} />
                       <Route path="/prestacao-contas" element={<PortalPrestacaoContas />} />
+                      <Route path="/documentos" element={<PortalDocumentos />} />
                       <Route path="/seguranca" element={<PortalPerfil />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
