@@ -41,6 +41,15 @@ import AdminAuth from "./pages/admin/AdminAuth";
 import AdminBannerLogin from "./pages/admin/AdminBannerLogin";
 import AdminBannerAnalytics from "./pages/admin/AdminBannerAnalytics";
 import AdminIntegracoes from "./pages/admin/AdminIntegracoes";
+import AdminAnunciantes from "./pages/admin/AdminAnunciantes";
+
+import { AnuncianteLayout } from "@/components/anunciante/AnuncianteLayout";
+import AnuncianteAuth from "./pages/anunciante/AnuncianteAuth";
+import AnuncianteDashboard from "./pages/anunciante/AnuncianteDashboard";
+import AnuncianteCampanhas from "./pages/anunciante/AnuncianteCampanhas";
+import AnuncianteCriativos from "./pages/anunciante/AnuncianteCriativos";
+import AnuncianteAnalytics from "./pages/anunciante/AnuncianteAnalytics";
+import AnunciantePerfil from "./pages/anunciante/AnunciantePerfil";
 
 const queryClient = new QueryClient();
 
@@ -54,7 +63,25 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/admin/auth" element={<AdminAuth />} />
+            <Route path="/anunciante/auth" element={<AnuncianteAuth />} />
             <Route path="/portal/auth" element={<PortalAuth />} />
+
+            {/* Portal do Anunciante */}
+            <Route
+              path="/anunciante/*"
+              element={
+                <AnuncianteLayout>
+                  <Routes>
+                    <Route path="/" element={<AnuncianteDashboard />} />
+                    <Route path="/campanhas" element={<AnuncianteCampanhas />} />
+                    <Route path="/criativos" element={<AnuncianteCriativos />} />
+                    <Route path="/analytics" element={<AnuncianteAnalytics />} />
+                    <Route path="/perfil" element={<AnunciantePerfil />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </AnuncianteLayout>
+              }
+            />
 
             {/* Painel SuperAdmin */}
             <Route
@@ -74,6 +101,7 @@ const App = () => (
                       <Route path="/controle-aceites" element={<ControleAceites />} />
                       <Route path="/configuracoes" element={<AdminConfigSuperAdmin />} />
                       <Route path="/integracoes" element={<AdminIntegracoes />} />
+                      <Route path="/anunciantes" element={<AdminAnunciantes />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </AdminLayout>
