@@ -10,7 +10,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Pencil, Search, Building2, CreditCard, Trash2, Undo2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Plus, Pencil, Search, Building2, CreditCard, Trash2, Undo2, Mail, Phone, MapPin, Hash, Globe, ScrollText, Shield, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { ConfirmSensitiveAction } from "@/components/ConfirmSensitiveAction";
 import type { Tables } from "@/integrations/supabase/types";
@@ -371,119 +373,218 @@ export default function AdminLojas() {
         </CardContent>
       </Card>
 
-      {/* Create / Edit Dialog */}
+      {/* Create / Edit Dialog — Premium redesign */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="font-serif">{editing ? "Editar Loja" : "Nova Loja"}</DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-6 py-2">
-            <div className="space-y-4">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                <Building2 className="h-3.5 w-3.5" /> Identificação
-              </p>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2 sm:col-span-2">
-                  <Label htmlFor="name">Nome da Loja *</Label>
-                  <Input id="name" placeholder="Ex: Loja Estrela do Oriente nº 123" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="slug">Slug (identificador único) *</Label>
-                  <Input id="slug" placeholder="Ex: estrela-oriente-123" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") })} />
-                  <p className="text-[11px] text-muted-foreground">Somente letras minúsculas, números e hífens.</p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lodge_number">Número da Loja</Label>
-                  <Input id="lodge_number" placeholder="Ex: 2693" value={form.lodge_number} onChange={(e) => setForm({ ...form, lodge_number: e.target.value })} />
-                </div>
-                <div className="flex items-center justify-between sm:col-span-2">
-                  <Label htmlFor="active">Loja ativa</Label>
-                  <Switch id="active" checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} />
-                </div>
-              </div>
-            </div>
-
-            <Separator />
-
-            <div className="space-y-4">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                <CreditCard className="h-3.5 w-3.5" /> Plano de Assinatura
-              </p>
-              <div className="space-y-2">
-                <Label>Plano *</Label>
-                <Select value={form.plan_id} onValueChange={(v) => setForm({ ...form, plan_id: v })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um plano..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {plans.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        <div className="flex items-center gap-2">
-                          <span>{p.name}</span>
-                          <span className="text-muted-foreground text-xs">
-                            — R$ {p.price.toFixed(2)}/mês • até {p.max_members} membros
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {plans.length === 0 && (
-                  <p className="text-xs text-muted-foreground italic">Nenhum plano ativo cadastrado. Crie planos em "Planos".</p>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto p-0">
+          {/* Header with avatar */}
+          <div className="px-6 pt-6 pb-4 border-b border-border/40 bg-muted/30">
+            <div className="flex items-start gap-4">
+              <Avatar className="h-14 w-14 rounded-xl border-2 border-primary/20 shadow-sm">
+                <AvatarFallback className="rounded-xl bg-primary/10 text-primary text-xl font-serif font-bold">
+                  {form.name?.[0]?.toUpperCase() || "L"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <DialogHeader className="text-left space-y-1">
+                  <DialogTitle className="font-serif text-xl">
+                    {editing ? "Editar Loja" : "Nova Loja"}
+                  </DialogTitle>
+                  <p className="text-sm text-muted-foreground">
+                    {editing
+                      ? `Editando "${editing.name}" · ${editing.member_count ?? 0} membros`
+                      : "Preencha os dados para cadastrar uma nova Loja na plataforma."}
+                  </p>
+                </DialogHeader>
+                {editing && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge variant={form.is_active ? "default" : "secondary"} className="text-[10px]">
+                      {form.is_active ? "Ativa" : "Inativa"}
+                    </Badge>
+                    {getPlanName(editing.id) && (
+                      <Badge variant="outline" className="text-[10px] gap-1">
+                        <CreditCard className="h-3 w-3" />
+                        {getPlanName(editing.id)}
+                      </Badge>
+                    )}
+                  </div>
                 )}
-              </div>
-            </div>
-
-            <Separator />
-
-            <div className="space-y-4">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Dados Empresariais</p>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="cnpj">CNPJ</Label>
-                  <Input id="cnpj" placeholder="00.000.000/0000-00" value={form.cnpj} onChange={(e) => setForm({ ...form, cnpj: e.target.value })} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">E-mail</Label>
-                  <Input id="email" type="email" placeholder="contato@loja.org.br" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="telefone">Telefone</Label>
-                  <Input id="telefone" placeholder="(00) 00000-0000" value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} />
-                </div>
-                <div className="space-y-2 sm:col-span-2">
-                  <Label htmlFor="endereco">Endereço</Label>
-                  <Input id="endereco" placeholder="Rua, número, bairro, cidade – UF" value={form.endereco} onChange={(e) => setForm({ ...form, endereco: e.target.value })} />
-                </div>
-              </div>
-            </div>
-
-            <Separator />
-
-            <div className="space-y-4">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Dados Maçônicos</p>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="potencia">Potência / Obediência</Label>
-                  <Input id="potencia" placeholder="Ex: Grande Oriente do Brasil (GOB)" value={form.potencia} onChange={(e) => setForm({ ...form, potencia: e.target.value })} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="rito">Rito Adotado</Label>
-                  <Input id="rito" placeholder="Ex: Rito Escocês Antigo e Aceito" value={form.rito} onChange={(e) => setForm({ ...form, rito: e.target.value })} />
-                </div>
-                <div className="space-y-2 sm:col-span-2">
-                  <Label htmlFor="orient">Oriente</Label>
-                  <Input id="orient" placeholder="Ex: Alta Floresta – MT" value={form.orient} onChange={(e) => setForm({ ...form, orient: e.target.value })} />
-                </div>
               </div>
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSave} disabled={saving}>{saving ? "Salvando..." : editing ? "Salvar" : "Criar Loja"}</Button>
-          </DialogFooter>
+          {/* Tabbed form */}
+          <div className="px-6 py-5">
+            <Tabs defaultValue="identificacao" className="w-full">
+              <TabsList className="w-full justify-start gap-1 bg-muted/50 p-1 h-auto flex-wrap">
+                <TabsTrigger value="identificacao" className="gap-1.5 text-xs">
+                  <Building2 className="h-3.5 w-3.5" /> Identificação
+                </TabsTrigger>
+                <TabsTrigger value="plano" className="gap-1.5 text-xs">
+                  <CreditCard className="h-3.5 w-3.5" /> Plano
+                </TabsTrigger>
+                <TabsTrigger value="empresarial" className="gap-1.5 text-xs">
+                  <ScrollText className="h-3.5 w-3.5" /> Empresarial
+                </TabsTrigger>
+                <TabsTrigger value="maconico" className="gap-1.5 text-xs">
+                  <Shield className="h-3.5 w-3.5" /> Maçônico
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Tab: Identificação */}
+              <TabsContent value="identificacao" className="mt-5 space-y-5">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="name" className="flex items-center gap-1.5">
+                      <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                      Nome da Loja <span className="text-destructive">*</span>
+                    </Label>
+                    <Input id="name" placeholder="Ex: Loja Estrela do Oriente nº 123" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="slug" className="flex items-center gap-1.5">
+                      <Globe className="h-3.5 w-3.5 text-muted-foreground" />
+                      Slug <span className="text-destructive">*</span>
+                    </Label>
+                    <Input id="slug" placeholder="estrela-oriente-123" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") })} className="font-mono text-sm" />
+                    <p className="text-[11px] text-muted-foreground">Identificador único. Somente letras minúsculas, números e hífens.</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lodge_number" className="flex items-center gap-1.5">
+                      <Hash className="h-3.5 w-3.5 text-muted-foreground" />
+                      Número da Loja
+                    </Label>
+                    <Input id="lodge_number" placeholder="Ex: 2693" value={form.lodge_number} onChange={(e) => setForm({ ...form, lodge_number: e.target.value })} />
+                  </div>
+                </div>
+                <Separator />
+                <div className="flex items-center justify-between p-3 rounded-lg border border-border/60 bg-muted/20">
+                  <div>
+                    <Label htmlFor="active" className="text-sm font-medium">Loja ativa</Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">Lojas inativas não podem ser acessadas por membros.</p>
+                  </div>
+                  <Switch id="active" checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} />
+                </div>
+              </TabsContent>
+
+              {/* Tab: Plano */}
+              <TabsContent value="plano" className="mt-5 space-y-4">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5">
+                    <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
+                    Plano de Assinatura <span className="text-destructive">*</span>
+                  </Label>
+                  <Select value={form.plan_id} onValueChange={(v) => setForm({ ...form, plan_id: v })}>
+                    <SelectTrigger className="h-11">
+                      <SelectValue placeholder="Selecione um plano..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {plans.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{p.name}</span>
+                            <span className="text-muted-foreground text-xs">
+                              — R$ {p.price.toFixed(2)}/mês • até {p.max_members} membros
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {plans.length === 0 && (
+                  <div className="flex items-center gap-3 p-4 rounded-lg border border-dashed border-border bg-muted/20 text-muted-foreground">
+                    <CreditCard className="h-5 w-5 opacity-50" />
+                    <div>
+                      <p className="text-sm font-medium">Nenhum plano disponível</p>
+                      <p className="text-xs">Crie planos de assinatura na seção "Planos" para vinculá-los às Lojas.</p>
+                    </div>
+                  </div>
+                )}
+                {form.plan_id && (
+                  <div className="p-3 rounded-lg border border-primary/20 bg-primary/5">
+                    <p className="text-xs text-primary font-medium">
+                      ✓ Plano selecionado: {plans.find(p => p.id === form.plan_id)?.name}
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* Tab: Empresarial */}
+              <TabsContent value="empresarial" className="mt-5 space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="cnpj" className="flex items-center gap-1.5">
+                      <ScrollText className="h-3.5 w-3.5 text-muted-foreground" />
+                      CNPJ
+                    </Label>
+                    <Input id="cnpj" placeholder="00.000.000/0000-00" value={form.cnpj} onChange={(e) => setForm({ ...form, cnpj: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="flex items-center gap-1.5">
+                      <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                      E-mail
+                    </Label>
+                    <Input id="email" type="email" placeholder="contato@loja.org.br" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="telefone" className="flex items-center gap-1.5">
+                      <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                      Telefone
+                    </Label>
+                    <Input id="telefone" placeholder="(00) 00000-0000" value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} />
+                  </div>
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="endereco" className="flex items-center gap-1.5">
+                      <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                      Endereço
+                    </Label>
+                    <Input id="endereco" placeholder="Rua, número, bairro, cidade – UF" value={form.endereco} onChange={(e) => setForm({ ...form, endereco: e.target.value })} />
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* Tab: Maçônico */}
+              <TabsContent value="maconico" className="mt-5 space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="potencia" className="flex items-center gap-1.5">
+                      <Shield className="h-3.5 w-3.5 text-muted-foreground" />
+                      Potência / Obediência
+                    </Label>
+                    <Input id="potencia" placeholder="Ex: Grande Oriente do Brasil (GOB)" value={form.potencia} onChange={(e) => setForm({ ...form, potencia: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="rito" className="flex items-center gap-1.5">
+                      <ScrollText className="h-3.5 w-3.5 text-muted-foreground" />
+                      Rito Adotado
+                    </Label>
+                    <Input id="rito" placeholder="Ex: Rito Escocês Antigo e Aceito" value={form.rito} onChange={(e) => setForm({ ...form, rito: e.target.value })} />
+                  </div>
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="orient" className="flex items-center gap-1.5">
+                      <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                      Oriente
+                    </Label>
+                    <Input id="orient" placeholder="Ex: Alta Floresta – MT" value={form.orient} onChange={(e) => setForm({ ...form, orient: e.target.value })} />
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
+
+          {/* Footer */}
+          <div className="px-6 py-4 border-t border-border/40 bg-muted/20 flex items-center justify-between">
+            <p className="text-[11px] text-muted-foreground">
+              {editing ? `ID: ${editing.id.slice(0, 8)}…` : "Campos com * são obrigatórios"}
+            </p>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
+              <Button onClick={handleSave} disabled={saving} className="gap-2 min-w-[120px]">
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                {saving ? "Salvando..." : editing ? "Salvar Alterações" : "Criar Loja"}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
