@@ -197,20 +197,22 @@ export default function AnuncianteAuth() {
       return;
     }
 
-    // 2. Create advertiser record
-    const { error: advError } = await supabase.from("advertisers").insert({
-      user_id: userId,
-      company_name: regCompanyName.trim(),
-      trading_name: regTradingName.trim() || null,
-      document_type: regDocType,
-      document_number: regDocNumber.replace(/\D/g, ""),
-      email: regEmail.trim().toLowerCase(),
-      phone: regPhone.trim() || null,
-      website: regWebsite.trim() || null,
+    // 2. Create advertiser record via edge function (bypasses RLS for unconfirmed users)
+    const { data: advData, error: advError } = await supabase.functions.invoke("register-advertiser", {
+      body: {
+        user_id: userId,
+        company_name: regCompanyName.trim(),
+        trading_name: regTradingName.trim() || null,
+        document_type: regDocType,
+        document_number: regDocNumber.replace(/\D/g, ""),
+        email: regEmail.trim().toLowerCase(),
+        phone: regPhone.trim() || null,
+        website: regWebsite.trim() || null,
+      },
     });
 
-    if (advError) {
-      toast.error("Erro ao registrar anunciante: " + advError.message);
+    if (advError || advData?.error) {
+      toast.error("Erro ao registrar anunciante: " + (advData?.error || advError?.message));
       setLoading(false);
       return;
     }
