@@ -61,7 +61,7 @@ export function NovoLancamentoLoja({ tipo, onSaved }: NovoLancamentoLojaProps) {
     const { data } = await supabase
       .from("plano_contas")
       .select("id, codigo, nome, tipo")
-      .eq("status", "ativo")
+      .eq("ativo", true)
       .eq("tipo", tipo)
       .order("codigo", { ascending: true });
     setContas(data ?? []);

@@ -49,7 +49,7 @@ interface ContaPlano {
   nome: string;
   tipo: string;
   conta_pai_id: string | null;
-  status: string;
+  ativo: boolean;
 }
 
 interface ConsolidadoNode {
@@ -117,9 +117,8 @@ const FinanceiroGeral = ({ embedded = false }: FinanceiroGeralProps) => {
     const fromStr = format(dateRange.from, "yyyy-MM-dd");
     const toStr = format(dateRange.to, "yyyy-MM-dd");
 
-    // Fetch KPIs via server-side aggregate + transactions + contas in parallel
-    const [kpiResult, txResult, contasResult] = await Promise.all([
-      supabase.rpc("financial_kpis", { _from: fromStr, _to: toStr }),
+    // Fetch transactions + contas in parallel
+    const [txResult, contasResult] = await Promise.all([
       supabase
         .from("member_transactions")
         .select("id, data, tipo, descricao, valor, status, member_id, conta_plano_id, created_by")
@@ -129,28 +128,19 @@ const FinanceiroGeral = ({ embedded = false }: FinanceiroGeralProps) => {
         .limit(1000),
       supabase
         .from("plano_contas")
-        .select("id, codigo, nome, tipo, conta_pai_id, status")
-        .eq("status", "ativo")
+        .select("id, codigo, nome, tipo, conta_pai_id, ativo")
+        .eq("ativo", true)
         .order("codigo", { ascending: true }),
     ]);
 
-    // Store server-side KPIs
-    if (kpiResult.data && kpiResult.data.length > 0) {
-      const k = kpiResult.data[0];
-      setServerKpis({
-        receitas: Number(k.total_receitas),
-        despesas: Number(k.total_despesas),
-        total: Number(k.total_transacoes),
-      });
-    }
-
-    const contasData = contasResult.data ?? [];
+    const contasData = (contasResult.data ?? []) as ContaPlano[];
     setPlanoContas(contasData);
-    const contaMap = new Map(contasData.map((c) => [c.id, c.nome]));
+    const contaMap = new Map(contasData.map((c: ContaPlano) => [c.id, c.nome]));
 
     if (txResult.data) {
-      const memberIds = [...new Set(txResult.data.map((t) => t.member_id))];
-      const createdByIds = [...new Set(txResult.data.map((t) => t.created_by).filter(Boolean))] as string[];
+      const txData = txResult.data as Array<{id: string; data: string; tipo: string; descricao: string; valor: number; status: string; member_id: string; conta_plano_id: string | null; created_by: string | null}>;
+      const memberIds = [...new Set(txData.map((t) => t.member_id))];
+      const createdByIds = [...new Set(txData.map((t) => t.created_by).filter(Boolean))] as string[];
       
       const [membersRes, profilesRes] = await Promise.all([
         memberIds.length > 0
@@ -164,7 +154,7 @@ const FinanceiroGeral = ({ embedded = false }: FinanceiroGeralProps) => {
       const nameMap = new Map(membersRes.data?.map((m) => [m.id, m.full_name]) ?? []);
       const profileMap = new Map(profilesRes.data?.map((p) => [p.id, p.full_name]) ?? []);
 
-      setTransactions(txResult.data.map((t) => ({
+      setTransactions(txData.map((t) => ({
         ...t,
         member_name: nameMap.get(t.member_id) ?? "—",
         conta_nome: t.conta_plano_id ? contaMap.get(t.conta_plano_id) ?? "—" : "—",

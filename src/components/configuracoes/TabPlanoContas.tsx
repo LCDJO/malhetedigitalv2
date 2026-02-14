@@ -20,7 +20,7 @@ interface Conta {
   nome: string;
   tipo: string;
   conta_pai_id: string | null;
-  status: string;
+  ativo: boolean;
 }
 
 interface TreeNode extends Conta {
@@ -33,30 +33,20 @@ const emptyForm = { codigo: "", nome: "", tipo: "", contaPaiId: "" };
 function buildTree(contas: Conta[]): TreeNode[] {
   const map = new Map<string, TreeNode>();
   const roots: TreeNode[] = [];
-
-  // Create nodes
   for (const c of contas) {
     map.set(c.id, { ...c, children: [], depth: 0 });
   }
-
-  // Build hierarchy
   for (const c of contas) {
     const node = map.get(c.id)!;
     if (c.conta_pai_id && map.has(c.conta_pai_id)) {
-      const parent = map.get(c.conta_pai_id)!;
-      parent.children.push(node);
+      map.get(c.conta_pai_id)!.children.push(node);
     } else {
       roots.push(node);
     }
   }
-
-  // Sort children and assign depth
   function sortAndDepth(nodes: TreeNode[], depth: number) {
     nodes.sort((a, b) => a.codigo.localeCompare(b.codigo));
-    for (const n of nodes) {
-      n.depth = depth;
-      sortAndDepth(n.children, depth + 1);
-    }
+    for (const n of nodes) { n.depth = depth; sortAndDepth(n.children, depth + 1); }
   }
   sortAndDepth(roots, 0);
   return roots;
@@ -100,7 +90,7 @@ export function TabPlanoContas() {
     setLoading(true);
     const { data } = await supabase
       .from("plano_contas")
-      .select("id, codigo, nome, tipo, conta_pai_id, status")
+      .select("id, codigo, nome, tipo, conta_pai_id, ativo")
       .order("codigo", { ascending: true });
     setContas(data ?? []);
     setLoading(false);
@@ -110,7 +100,6 @@ export function TabPlanoContas() {
 
   const tree = useMemo(() => buildTree(contas), [contas]);
 
-  // Expand all on first load
   useEffect(() => {
     if (contas.length > 0 && expanded.size === 0) {
       setExpanded(new Set(getAllIds(tree)));
@@ -177,22 +166,22 @@ export function TabPlanoContas() {
 
   const handleInactivate = async () => {
     if (!inactivateTarget) return;
-    const newStatus = inactivateTarget.status === "ativo" ? "inativo" : "ativo";
-    const { error } = await supabase.from("plano_contas").update({ status: newStatus }).eq("id", inactivateTarget.id);
+    const newAtivo = !inactivateTarget.ativo;
+    const { error } = await supabase.from("plano_contas").update({ ativo: newAtivo }).eq("id", inactivateTarget.id);
     if (error) { toast.error("Erro ao alterar status."); return; }
     logAction({
       action: "TOGGLE_CONTA_STATUS",
       targetTable: "plano_contas",
       targetId: inactivateTarget.id,
-      details: { conta: inactivateTarget.nome, novo_status: newStatus },
+      details: { conta: inactivateTarget.nome, novo_status: newAtivo ? "ativo" : "inativo" },
     });
-    toast.success(`Conta ${newStatus === "ativo" ? "reativada" : "inativada"} com sucesso.`);
+    toast.success(`Conta ${newAtivo ? "reativada" : "inativada"} com sucesso.`);
     setInactivateTarget(null);
     fetchContas();
   };
 
   const availableParents = (excludeId?: string) =>
-    contas.filter((c) => c.status === "ativo" && c.id !== excludeId);
+    contas.filter((c) => c.ativo && c.id !== excludeId);
 
   if (loading) {
     return (
@@ -229,7 +218,7 @@ export function TabPlanoContas() {
               {visibleNodes.map((node) => {
                 const hasChildren = node.children.length > 0;
                 const isExpanded = expanded.has(node.id);
-                const isInactive = node.status === "inativo";
+                const isInactive = !node.ativo;
 
                 return (
                   <div
@@ -241,7 +230,6 @@ export function TabPlanoContas() {
                     )}
                     style={{ paddingLeft: `${node.depth * 24 + 8}px` }}
                   >
-                    {/* Expand/collapse toggle */}
                     <button
                       className={cn("flex h-5 w-5 items-center justify-center rounded shrink-0", hasChildren ? "hover:bg-muted cursor-pointer" : "cursor-default")}
                       onClick={() => hasChildren && toggleExpand(node.id)}
@@ -254,32 +242,23 @@ export function TabPlanoContas() {
                       )}
                     </button>
 
-                    {/* Icon */}
                     {hasChildren ? (
                       <FolderOpen className={cn("h-4 w-4 shrink-0", node.tipo === "receita" ? "text-success" : "text-destructive")} />
                     ) : (
                       <FileText className={cn("h-4 w-4 shrink-0", node.tipo === "receita" ? "text-success/70" : "text-destructive/70")} />
                     )}
 
-                    {/* Code */}
                     <span className="text-xs font-mono text-muted-foreground shrink-0 w-16">{node.codigo}</span>
+                    <span className={cn("text-sm flex-1 truncate", hasChildren ? "font-semibold" : "font-medium")}>{node.nome}</span>
 
-                    {/* Name */}
-                    <span className={cn("text-sm flex-1 truncate", hasChildren ? "font-semibold" : "font-medium")}>
-                      {node.nome}
-                    </span>
-
-                    {/* Type badge */}
                     <Badge variant="outline" className={cn("text-[9px] shrink-0", node.tipo === "receita" ? "text-success border-success/30" : "text-destructive border-destructive/30")}>
                       {node.tipo === "receita" ? "Receita" : "Despesa"}
                     </Badge>
 
-                    {/* Status badge */}
                     {isInactive && (
                       <Badge variant="outline" className="text-[9px] text-muted-foreground border-muted shrink-0">Inativo</Badge>
                     )}
 
-                    {/* Actions */}
                     {canWrite && (
                       <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                         {hasChildren && (
@@ -293,8 +272,8 @@ export function TabPlanoContas() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className={cn("h-6 w-6", node.status === "ativo" ? "text-warning hover:text-warning" : "text-success hover:text-success")}
-                          title={node.status === "ativo" ? "Inativar" : "Reativar"}
+                          className={cn("h-6 w-6", node.ativo ? "text-warning hover:text-warning" : "text-success hover:text-success")}
+                          title={node.ativo ? "Inativar" : "Reativar"}
                           onClick={() => setInactivateTarget(node)}
                         >
                           <Ban className="h-3 w-3" />
@@ -309,7 +288,6 @@ export function TabPlanoContas() {
         </CardContent>
       </Card>
 
-      {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -357,15 +335,14 @@ export function TabPlanoContas() {
         </DialogContent>
       </Dialog>
 
-      {/* Inactivate confirmation */}
       <ConfirmSensitiveAction
         open={inactivateTarget !== null}
         onOpenChange={(open) => { if (!open) setInactivateTarget(null); }}
-        title={inactivateTarget?.status === "ativo" ? "Inativar Conta" : "Reativar Conta"}
-        description={`Deseja ${inactivateTarget?.status === "ativo" ? "inativar" : "reativar"} a conta "${inactivateTarget?.codigo} — ${inactivateTarget?.nome}"? Esta ação será registrada no log de auditoria.`}
-        confirmLabel={inactivateTarget?.status === "ativo" ? "Inativar" : "Reativar"}
-        requireTypedConfirmation={inactivateTarget?.status === "ativo" ? "INATIVAR" : "REATIVAR"}
-        destructive={inactivateTarget?.status === "ativo"}
+        title={inactivateTarget?.ativo ? "Inativar Conta" : "Reativar Conta"}
+        description={`Deseja ${inactivateTarget?.ativo ? "inativar" : "reativar"} a conta "${inactivateTarget?.codigo} — ${inactivateTarget?.nome}"? Esta ação será registrada no log de auditoria.`}
+        confirmLabel={inactivateTarget?.ativo ? "Inativar" : "Reativar"}
+        requireTypedConfirmation={inactivateTarget?.ativo ? "INATIVAR" : "REATIVAR"}
+        destructive={inactivateTarget?.ativo ?? false}
         onConfirm={handleInactivate}
       />
     </div>

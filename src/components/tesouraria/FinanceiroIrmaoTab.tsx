@@ -65,42 +65,30 @@ export function FinanceiroIrmaoTab() {
   const selectedMember = members.find((m) => m.id === selectedMemberId);
 
   const fetchFinanceiro = useCallback(async (memberId: string) => {
-    const [summaryRes, txRes] = await Promise.all([
-      supabase.rpc("member_financial_summary", { _member_id: memberId }),
-      supabase
-        .from("member_transactions")
-        .select("id, data, tipo, descricao, valor, status")
-        .eq("member_id", memberId)
-        .order("data", { ascending: true })
-        .limit(500),
-    ]);
+    const { data: txData } = await supabase
+      .from("member_transactions")
+      .select("id, data, tipo, descricao, valor, status")
+      .eq("member_id", memberId)
+      .order("data", { ascending: true })
+      .limit(500);
 
-    const rows = txRes.data ?? [];
+    const rows = (txData ?? []) as TransactionRow[];
     setTransactions(rows);
 
-    if (summaryRes.data && summaryRes.data.length > 0) {
-      const s = summaryRes.data[0];
-      setFinanceiro({
-        debitos: Number(s.total_debitos),
-        creditos: Number(s.total_creditos),
-        mesesAtraso: Number(s.meses_atraso),
-      });
-    } else {
-      let debitos = 0;
-      let creditos = 0;
-      const now = new Date();
-      const mesesSet = new Set<string>();
-      for (const t of rows) {
-        if (t.status === "em_aberto") {
-          debitos += Number(t.valor);
-          const d = new Date(t.data);
-          if (d <= now) mesesSet.add(`${d.getFullYear()}-${d.getMonth()}`);
-        } else {
-          creditos += Number(t.valor);
-        }
+    let debitos = 0;
+    let creditos = 0;
+    const now = new Date();
+    const mesesSet = new Set<string>();
+    for (const t of rows) {
+      if (t.status === "em_aberto") {
+        debitos += Number(t.valor);
+        const d = new Date(t.data);
+        if (d <= now) mesesSet.add(`${d.getFullYear()}-${d.getMonth()}`);
+      } else {
+        creditos += Number(t.valor);
       }
-      setFinanceiro({ debitos, creditos, mesesAtraso: mesesSet.size });
     }
+    setFinanceiro({ debitos, creditos, mesesAtraso: mesesSet.size });
   }, []);
 
   const handleSelect = (id: string) => {
