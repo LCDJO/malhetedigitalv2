@@ -340,7 +340,10 @@ export type Database = {
           document_number: string
           document_type: string
           email: string
+          facebook: string | null
           id: string
+          instagram: string | null
+          linkedin: string | null
           logo_url: string | null
           phone: string | null
           rejection_reason: string | null
@@ -351,6 +354,7 @@ export type Database = {
           representative_phone: string | null
           scheduled_deletion_at: string | null
           status: Database["public"]["Enums"]["advertiser_status"]
+          tiktok: string | null
           trading_name: string | null
           updated_at: string
           user_id: string
@@ -365,7 +369,10 @@ export type Database = {
           document_number: string
           document_type?: string
           email: string
+          facebook?: string | null
           id?: string
+          instagram?: string | null
+          linkedin?: string | null
           logo_url?: string | null
           phone?: string | null
           rejection_reason?: string | null
@@ -376,6 +383,7 @@ export type Database = {
           representative_phone?: string | null
           scheduled_deletion_at?: string | null
           status?: Database["public"]["Enums"]["advertiser_status"]
+          tiktok?: string | null
           trading_name?: string | null
           updated_at?: string
           user_id: string
@@ -390,7 +398,10 @@ export type Database = {
           document_number?: string
           document_type?: string
           email?: string
+          facebook?: string | null
           id?: string
+          instagram?: string | null
+          linkedin?: string | null
           logo_url?: string | null
           phone?: string | null
           rejection_reason?: string | null
@@ -401,6 +412,7 @@ export type Database = {
           representative_phone?: string | null
           scheduled_deletion_at?: string | null
           status?: Database["public"]["Enums"]["advertiser_status"]
+          tiktok?: string | null
           trading_name?: string | null
           updated_at?: string
           user_id?: string
