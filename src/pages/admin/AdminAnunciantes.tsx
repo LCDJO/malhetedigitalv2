@@ -54,7 +54,12 @@ export default function AdminAnunciantes() {
 
   const fetchAdvertisers = async () => {
     let query = supabase.from("advertisers").select("*").order("created_at", { ascending: false });
-    if (filter !== "todos") query = query.eq("status", filter as "pendente" | "aprovado" | "rejeitado" | "suspenso");
+    if (filter === "todos") {
+      // Excluir "aguardando_exclusao" e "banido" da listagem geral
+      query = query.not("status", "in", '("aguardando_exclusao","banido")');
+    } else {
+      query = query.eq("status", filter as any);
+    }
     const { data } = await query;
     setAdvertisers((data as Advertiser[]) ?? []);
     setLoading(false);
