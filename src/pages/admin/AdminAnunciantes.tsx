@@ -49,7 +49,7 @@ export default function AdminAnunciantes() {
 
   const fetchAdvertisers = async () => {
     let query = supabase.from("advertisers").select("*").order("created_at", { ascending: false });
-    if (filter !== "todos") query = query.eq("status", filter);
+    if (filter !== "todos") query = query.eq("status", filter as "pendente" | "aprovado" | "rejeitado" | "suspenso");
     const { data } = await query;
     setAdvertisers((data as Advertiser[]) ?? []);
     setLoading(false);
