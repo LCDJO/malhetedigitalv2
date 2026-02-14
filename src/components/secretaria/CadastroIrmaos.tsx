@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -131,6 +132,7 @@ const emptyForm = {
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 0] as const; // 0 = todos
 
 export function CadastroIrmaos() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { hasPermission, session } = useAuth();
   const { logAction } = useAuditLog();
   const [members, setMembers] = useState<Member[]>([]);
@@ -208,6 +210,18 @@ export function CadastroIrmaos() {
   }, []);
 
   useEffect(() => { fetchMembers(); }, [fetchMembers]);
+
+  // Auto-open edit dialog when navigated from GestaoUsuarios with edit_email param
+  useEffect(() => {
+    const editEmail = searchParams.get("edit_email");
+    if (editEmail && members.length > 0 && !dialogOpen) {
+      const member = members.find((m) => m.email?.toLowerCase() === editEmail.toLowerCase());
+      if (member) {
+        openEdit(member);
+        setSearchParams({}, { replace: true }); // clean URL
+      }
+    }
+  }, [members, searchParams]);
 
   // Reset page when filters change
   useEffect(() => { setCurrentPage(1); }, [search, filterDegree, filterStatus, pageSize]);

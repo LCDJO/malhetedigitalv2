@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, roleLabels, type AppRole } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,6 +40,7 @@ interface UserRow {
 
 export default function GestaoUsuarios() {
   const { session } = useAuth();
+  const navigate = useNavigate();
   const { logAction } = useAuditLog();
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -320,8 +322,8 @@ export default function GestaoUsuarios() {
                           <DropdownMenuItem onClick={() => setDetailUser(user)}>
                             <Eye className="h-4 w-4 mr-2" /> Ver Detalhes
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => openEdit(user)}>
-                            <Pencil className="h-4 w-4 mr-2" /> Editar
+                          <DropdownMenuItem onClick={() => navigate(`/secretaria?edit_email=${encodeURIComponent(user.email)}`)}>
+                            <Pencil className="h-4 w-4 mr-2" /> Editar na Secretaria
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => setResetUser(user)}>
                             <KeyRound className="h-4 w-4 mr-2" /> Resetar Senha
