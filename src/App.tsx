@@ -62,6 +62,9 @@ const App = () => (
                       <Route path="/usuarios" element={<AdminUsuarios />} />
                       <Route path="/planos" element={<AdminPlanos />} />
                       <Route path="/banner-login" element={<AdminBannerLogin />} />
+                      <Route path="/incidentes" element={<Incidentes />} />
+                      <Route path="/gestao-termos" element={<GestaoTermos />} />
+                      <Route path="/controle-aceites" element={<ControleAceites />} />
                       <Route path="/configuracoes" element={<AdminConfigSuperAdmin />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
@@ -141,30 +144,6 @@ const App = () => (
                         element={
                           <ProtectedRoute module="configuracoes">
                             <LogAuditoria />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/incidentes"
-                        element={
-                          <ProtectedRoute module="configuracoes">
-                            <Incidentes />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/gestao-termos"
-                        element={
-                          <ProtectedRoute module="configuracoes">
-                            <GestaoTermos />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/controle-aceites"
-                        element={
-                          <ProtectedRoute module="configuracoes">
-                            <ControleAceites />
                           </ProtectedRoute>
                         }
                       />

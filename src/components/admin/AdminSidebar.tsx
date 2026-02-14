@@ -6,6 +6,9 @@ import {
   Settings,
   ArrowLeft,
   Monitor,
+  ShieldAlert,
+  Scale,
+  ClipboardCheck,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
@@ -31,6 +34,12 @@ const menuItems = [
   { title: "Usuários", url: "/admin/usuarios", icon: Users },
   { title: "Planos", url: "/admin/planos", icon: CreditCard },
   { title: "Banner Login", url: "/admin/banner-login", icon: Monitor },
+];
+
+const complianceItems = [
+  { title: "Incidentes", url: "/admin/incidentes", icon: ShieldAlert },
+  { title: "Termos e LGPD", url: "/admin/gestao-termos", icon: Scale },
+  { title: "Controle de Aceites", url: "/admin/controle-aceites", icon: ClipboardCheck },
   { title: "Configurações", url: "/admin/configuracoes", icon: Settings },
 ];
 
@@ -87,6 +96,29 @@ export function AdminSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
+        <SidebarGroup className="mt-2">
+          <SidebarGroupLabel className="admin-section-title text-sidebar-foreground/40 px-3 mb-1">
+            Compliance
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {complianceItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild tooltip={item.title}>
+                    <NavLink
+                      to={item.url}
+                      className="text-sidebar-foreground/65 hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground transition-all duration-150 rounded-md"
+                      activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold shadow-sm"
+                    >
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.title}</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
         <SidebarGroup className="mt-4">
           <SidebarGroupContent>
             <SidebarMenu>
