@@ -12,10 +12,10 @@ export function DeleteUserDialog({ open, onOpenChange, userName, onConfirm }: Pr
     <ConfirmSensitiveAction
       open={open}
       onOpenChange={onOpenChange}
-      title="Excluir Usuário"
-      description={`Esta ação excluirá permanentemente o usuário "${userName}" da plataforma, removendo seu acesso, perfil e vínculo com a Loja. Esta ação é irreversível.`}
-      requireTypedConfirmation="EXCLUIR"
-      confirmLabel="Excluir Permanentemente"
+      title="Remover Acesso de Administrador"
+      description={`Esta ação removerá a permissão de administrador do sistema de "${userName}". O cadastro do membro será mantido na Secretaria.`}
+      requireTypedConfirmation="REMOVER"
+      confirmLabel="Remover Permissão"
       destructive
       onConfirm={onConfirm}
     />
