@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2, ShieldCheck, Key, Mail } from "lucide-react";
+import { TwoFactorSettings } from "@/components/TwoFactorSettings";
 
 export default function PortalPerfil() {
   const { user, profile } = useAuth();
@@ -100,6 +101,9 @@ export default function PortalPerfil() {
           </Button>
         </CardContent>
       </Card>
+
+      {/* Two-Factor Authentication */}
+      <TwoFactorSettings />
     </div>
   );
 }

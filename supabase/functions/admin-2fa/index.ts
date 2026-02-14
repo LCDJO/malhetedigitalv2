@@ -83,14 +83,7 @@ Deno.serve(async (req) => {
     const userEmail = userData.user.email || "user@app.com";
     const adminClient = createClient(supabaseUrl, serviceKey);
 
-    // Check superadmin
-    const { data: isSA } = await adminClient.rpc("is_superadmin", { _user_id: userId });
-    if (!isSA) {
-      return new Response(JSON.stringify({ error: "Forbidden - SuperAdmin only" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    // Any authenticated user can manage their own 2FA — no role restriction
 
     const url = new URL(req.url);
     const action = url.searchParams.get("action");
