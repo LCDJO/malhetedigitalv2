@@ -268,7 +268,7 @@ export default function AdminPlanos() {
                     </TableCell>
                     <TableCell className="text-sm">
                       {p.max_totems === 0 ? (
-                        <span className="text-muted-foreground">—</span>
+                        <span className="text-muted-foreground">Ilimitado</span>
                       ) : (
                         p.max_totems
                       )}
@@ -374,7 +374,7 @@ export default function AdminPlanos() {
                   value={form.max_totems}
                   onChange={(e) => setForm({ ...form, max_totems: parseInt(e.target.value) || 0 })}
                 />
-                <p className="text-[11px] text-muted-foreground">0 = nenhum totem</p>
+                <p className="text-[11px] text-muted-foreground">0 = ilimitado</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="plan-stripe">Stripe Price ID</Label>
