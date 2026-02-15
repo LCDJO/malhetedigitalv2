@@ -12,7 +12,7 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import {
-  UserPlus, Search, Users, Pencil, Eye,
+  UserPlus, Search, Users, Eye,
   ShieldCheck, ShieldOff, KeyRound, Trash2, Loader2, Crown,
 } from "lucide-react";
 import { useAuditLog } from "@/hooks/useAuditLog";
@@ -343,14 +343,6 @@ export default function GestaoUsuarios() {
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>Ver Detalhes</TooltipContent>
-                          </Tooltip>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/secretaria?edit_email=${encodeURIComponent(user.email)}`)}>
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Editar na Secretaria</TooltipContent>
                           </Tooltip>
                           <Tooltip>
                             <TooltipTrigger asChild>
