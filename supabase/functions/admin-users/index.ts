@@ -345,13 +345,19 @@ Deno.serve(async (req) => {
 
       // Update global role
       if (role !== undefined) {
-        await adminClient.from("user_roles").delete().eq("user_id", user_id);
+        console.log("[admin-users] Removing role for user_id:", user_id, "role value:", role, "typeof role:", typeof role);
+        const { error: deleteErr, count: deleteCount } = await adminClient
+          .from("user_roles")
+          .delete({ count: "exact" })
+          .eq("user_id", user_id);
+        console.log("[admin-users] Delete result - error:", deleteErr, "count:", deleteCount);
         if (role) {
-          await adminClient.from("user_roles").insert({
+          const { error: insertErr } = await adminClient.from("user_roles").insert({
             user_id,
             role,
             assigned_by: claims.user.id,
           });
+          console.log("[admin-users] Insert role result - error:", insertErr);
         }
       }
 
