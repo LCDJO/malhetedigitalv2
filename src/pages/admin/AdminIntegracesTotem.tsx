@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -40,12 +39,6 @@ import {
   KeyRound,
   Building2,
   ExternalLink,
-  QrCode,
-  FileText,
-  CreditCard,
-  Bell,
-  Palette,
-  Settings,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -148,43 +141,6 @@ export default function AdminIntegracesTotem() {
   const formatCode = (code: string) =>
     code.length > 4 ? `${code.slice(0, 4)}-${code.slice(4)}` : code;
 
-  const features = [
-    {
-      icon: QrCode,
-      title: "Consulta Financeira",
-      description: "Permite que os Irmãos consultem sua situação financeira diretamente no totem, usando CPF ou CIM.",
-      enabled: true,
-    },
-    {
-      icon: FileText,
-      title: "Emissão de Documentos",
-      description: "Gera declarações de quitação e comprovantes de pagamento sob demanda.",
-      enabled: false,
-      badge: "Em breve",
-    },
-    {
-      icon: CreditCard,
-      title: "Pagamento no Totem",
-      description: "Integração com PIX e cartão para quitação de débitos diretamente no terminal.",
-      enabled: false,
-      badge: "Em breve",
-    },
-    {
-      icon: Bell,
-      title: "Avisos e Comunicados",
-      description: "Exibe comunicados da Loja em modo carrossel quando o totem está em standby.",
-      enabled: false,
-      badge: "Em breve",
-    },
-    {
-      icon: Palette,
-      title: "Personalização Visual",
-      description: "Permite personalizar cores, logotipo e mensagem de boas-vindas exibidos no totem.",
-      enabled: false,
-      badge: "Em breve",
-    },
-  ];
-
   return (
     <div className="space-y-8 max-w-5xl">
       <div>
@@ -195,7 +151,7 @@ export default function AdminIntegracesTotem() {
           <div className="flex-1">
             <h1 className="text-2xl font-serif font-bold text-foreground">Totem</h1>
             <p className="text-sm text-muted-foreground mt-0.5">
-              Gerencie códigos de ativação e configure as funcionalidades dos totens
+              Gerencie códigos de ativação dos totens de todas as Lojas
             </p>
           </div>
         </div>
@@ -227,248 +183,119 @@ export default function AdminIntegracesTotem() {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="codigos" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 max-w-md">
-          <TabsTrigger value="codigos" className="gap-1.5 text-xs">
-            <KeyRound className="h-3.5 w-3.5" />
-            Códigos
-          </TabsTrigger>
-          <TabsTrigger value="funcionalidades" className="gap-1.5 text-xs">
-            <Settings className="h-3.5 w-3.5" />
-            Funcionalidades
-          </TabsTrigger>
-          <TabsTrigger value="configuracao" className="gap-1.5 text-xs">
-            <Palette className="h-3.5 w-3.5" />
-            Configuração
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Tab: Códigos */}
-        <TabsContent value="codigos" className="space-y-6">
-          <section>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-accent/10">
-                  <Building2 className="h-4 w-4 text-accent-foreground" />
-                </div>
-                <h2 className="text-base font-serif font-semibold text-foreground">
-                  Códigos Gerados
-                </h2>
-                <Badge variant="secondary" className="text-[10px]">
-                  {codes.length} {codes.length === 1 ? "código" : "códigos"}
-                </Badge>
-              </div>
-              <Button className="gap-1.5" size="sm" onClick={() => setDialogOpen(true)}>
-                <Plus className="h-4 w-4" />
-                Gerar Código
-              </Button>
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-accent/10">
+              <Building2 className="h-4 w-4 text-accent-foreground" />
             </div>
+            <h2 className="text-base font-serif font-semibold text-foreground">
+              Códigos Gerados
+            </h2>
+            <Badge variant="secondary" className="text-[10px]">
+              {codes.length} {codes.length === 1 ? "código" : "códigos"}
+            </Badge>
+          </div>
+          <Button className="gap-1.5" size="sm" onClick={() => setDialogOpen(true)}>
+            <Plus className="h-4 w-4" />
+            Gerar Código
+          </Button>
+        </div>
 
-            <Card className="border-border/60 shadow-sm">
-              <CardContent className="p-0">
-                {isLoading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                  </div>
-                ) : codes.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-12 text-center gap-2">
-                    <Monitor className="h-10 w-10 text-muted-foreground/30" />
-                    <p className="text-sm text-muted-foreground">Nenhum código gerado ainda</p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-1.5 mt-2"
-                      onClick={() => setDialogOpen(true)}
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                      Gerar primeiro código
-                    </Button>
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Código</TableHead>
-                        <TableHead>Loja</TableHead>
-                        <TableHead>Identificação</TableHead>
-                        <TableHead>Criado em</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="w-[100px]">Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {codes.map((item) => (
-                        <TableRow key={item.id}>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <code className="font-mono text-sm font-semibold tracking-wider bg-muted px-2 py-0.5 rounded">
-                                {formatCode(item.code)}
-                              </code>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7"
-                                onClick={() => handleCopy(item.code, item.id)}
-                              >
-                                {copiedId === item.id ? (
-                                  <CheckCircle className="h-3.5 w-3.5 text-green-600" />
-                                ) : (
-                                  <Copy className="h-3.5 w-3.5" />
-                                )}
-                              </Button>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            {(item as any).tenants?.name ?? "—"}
-                            {(item as any).tenants?.lodge_number && (
-                              <span className="text-muted-foreground ml-1">
-                                nº {(item as any).tenants.lodge_number}
-                              </span>
+        <Card className="border-border/60 shadow-sm">
+          <CardContent className="p-0">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : codes.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center gap-2">
+                <Monitor className="h-10 w-10 text-muted-foreground/30" />
+                <p className="text-sm text-muted-foreground">Nenhum código gerado ainda</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 mt-2"
+                  onClick={() => setDialogOpen(true)}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Gerar primeiro código
+                </Button>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Código</TableHead>
+                    <TableHead>Loja</TableHead>
+                    <TableHead>Identificação</TableHead>
+                    <TableHead>Criado em</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="w-[100px]">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {codes.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <code className="font-mono text-sm font-semibold tracking-wider bg-muted px-2 py-0.5 rounded">
+                            {formatCode(item.code)}
+                          </code>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() => handleCopy(item.code, item.id)}
+                          >
+                            {copiedId === item.id ? (
+                              <CheckCircle className="h-3.5 w-3.5 text-green-600" />
+                            ) : (
+                              <Copy className="h-3.5 w-3.5" />
                             )}
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {item.label || "—"}
-                          </TableCell>
-                          <TableCell className="text-xs text-muted-foreground">
-                            {format(new Date(item.created_at), "dd/MM/yyyy HH:mm")}
-                          </TableCell>
-                          <TableCell>
-                            <Switch
-                              checked={item.is_active}
-                              onCheckedChange={(checked) =>
-                                toggleMutation.mutate({ id: item.id, is_active: checked })
-                              }
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-destructive hover:text-destructive"
-                              onClick={() => deleteMutation.mutate(item.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </section>
-        </TabsContent>
-
-        {/* Tab: Funcionalidades */}
-        <TabsContent value="funcionalidades" className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Ative ou desative as funcionalidades disponíveis nos totens vinculados.
-          </p>
-          <div className="grid gap-4">
-            {features.map((feat) => (
-              <Card key={feat.title} className="border-border/60 shadow-sm">
-                <CardContent className="p-4 sm:p-5">
-                  <div className="flex items-start gap-4">
-                    <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 shrink-0">
-                      <feat.icon className="h-5 w-5 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-sm font-semibold text-foreground">{feat.title}</h3>
-                        {feat.badge && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                            {feat.badge}
-                          </Badge>
+                          </Button>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {(item as any).tenants?.name ?? "—"}
+                        {(item as any).tenants?.lodge_number && (
+                          <span className="text-muted-foreground ml-1">
+                            nº {(item as any).tenants.lodge_number}
+                          </span>
                         )}
-                      </div>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        {feat.description}
-                      </p>
-                    </div>
-                    <Switch
-                      checked={feat.enabled}
-                      disabled={!!feat.badge}
-                      className="shrink-0 mt-1"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-
-        {/* Tab: Configuração */}
-        <TabsContent value="configuracao" className="space-y-6">
-          <p className="text-sm text-muted-foreground">
-            Personalize a aparência e comportamento padrão dos totens.
-          </p>
-          <div className="grid gap-6 sm:grid-cols-2">
-            <Card className="border-border/60 shadow-sm">
-              <CardContent className="p-5 space-y-4">
-                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                  <Palette className="h-4 w-4 text-primary" />
-                  Aparência
-                </h3>
-                <div className="space-y-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Mensagem de boas-vindas
-                    </Label>
-                    <Input placeholder="Bem-vindo à Loja..." defaultValue="" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Tempo de inatividade (segundos)
-                    </Label>
-                    <Input type="number" placeholder="60" defaultValue="60" />
-                    <p className="text-[11px] text-muted-foreground">
-                      Tempo até o totem voltar à tela inicial após inatividade
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-border/60 shadow-sm">
-              <CardContent className="p-5 space-y-4">
-                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                  <Settings className="h-4 w-4 text-primary" />
-                  Comportamento
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-foreground">Modo quiosque</p>
-                      <p className="text-[11px] text-muted-foreground">
-                        Impede navegação fora do aplicativo
-                      </p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-foreground">Som de interação</p>
-                      <p className="text-[11px] text-muted-foreground">
-                        Feedback sonoro ao tocar na tela
-                      </p>
-                    </div>
-                    <Switch />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-foreground">Modo escuro</p>
-                      <p className="text-[11px] text-muted-foreground">
-                        Tema escuro para ambientes com pouca luz
-                      </p>
-                    </div>
-                    <Switch />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-      </Tabs>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {item.label || "—"}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {format(new Date(item.created_at), "dd/MM/yyyy HH:mm")}
+                      </TableCell>
+                      <TableCell>
+                        <Switch
+                          checked={item.is_active}
+                          onCheckedChange={(checked) =>
+                            toggleMutation.mutate({ id: item.id, is_active: checked })
+                          }
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={() => deleteMutation.mutate(item.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      </section>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md">
