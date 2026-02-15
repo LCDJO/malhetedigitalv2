@@ -218,9 +218,6 @@ export default function GestaoUsuarios() {
             Gerencie os usuários e permissões desta Loja
           </p>
         </div>
-        <Button onClick={openCreate} className="gap-2" disabled={!tenantId}>
-          <UserPlus className="h-4 w-4" /> Novo Usuário
-        </Button>
       </div>
 
       {/* KPIs */}
