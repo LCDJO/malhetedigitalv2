@@ -672,11 +672,28 @@ export function CadastroIrmaos() {
                               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setViewMember(m)} title="Visualizar"><Eye className="h-4 w-4" /></Button>
                               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(m)} title="Editar"><Pencil className="h-4 w-4" /></Button>
                               <PermissionGate module="secretaria" action="manage_users">
-                                {m.email && !systemUserEmails.has(m.email.toLowerCase()) && (
-                                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setPromotingMember(m)} title="Tornar Administrador">
-                                    <Crown className="h-4 w-4 text-amber-500" />
-                                  </Button>
-                                )}
+                                {(() => {
+                                  const hasEmail = !!m.email;
+                                  const alreadySystem = hasEmail && systemUserEmails.has(m.email!.toLowerCase());
+                                  const canPromote = hasEmail && !alreadySystem;
+                                  const tooltipMsg = !hasEmail
+                                    ? "Cadastre um e-mail para este irmão antes de promovê-lo"
+                                    : alreadySystem
+                                      ? "Este irmão já possui acesso ao sistema"
+                                      : "Tornar Administrador";
+                                  return (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      disabled={!canPromote}
+                                      onClick={() => canPromote && setPromotingMember(m)}
+                                      title={tooltipMsg}
+                                    >
+                                      <Crown className={cn("h-4 w-4", canPromote ? "text-amber-500" : "text-muted-foreground/40")} />
+                                    </Button>
+                                  );
+                                })()}
                               </PermissionGate>
                               <PermissionGate module="secretaria" action="approve">
                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeletingMember(m)} title="Excluir"><Trash2 className="h-4 w-4" /></Button>
