@@ -171,11 +171,14 @@ export default function GestaoUsuarios() {
     setResetSaving(true);
     try {
       const { ok, data } = await apiCall("reset_password", "PUT", { user_id: resetUser.id, new_password: newPassword });
-      if (!ok) { toast.error(data.error || "Erro ao resetar senha"); return; }
+      if (!ok) { toast.error(data.error || "Erro ao resetar senha"); setResetSaving(false); return; }
       toast.success(`Senha de ${resetUser.full_name} resetada`);
       logAction({ action: "RESET_PASSWORD", targetTable: "profiles", targetId: resetUser.id, details: { email: resetUser.email } });
       setResetUser(null);
-    } catch { toast.error("Erro inesperado"); } finally { setResetSaving(false); }
+    } catch (err) {
+      console.error("Reset password error:", err);
+      toast.error("Erro inesperado ao resetar senha");
+    } finally { setResetSaving(false); }
   };
 
   const handleDelete = async () => {
