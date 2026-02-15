@@ -278,6 +278,10 @@ export function AdminSidebar() {
                           </CollapsibleContent>
                         </SidebarMenuItem>
               </Collapsible>
+                    </SidebarMenu>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
 
               {/* Submenu: Totem */}
               <Collapsible open={totemOpen} onOpenChange={setTotemOpen}>
@@ -312,10 +316,6 @@ export function AdminSidebar() {
                         </SidebarMenuItem>
                       ))}
                     </SidebarMenu>
-                  </CollapsibleContent>
-                </SidebarMenuItem>
-              </Collapsible>
-            </SidebarMenu>
                   </CollapsibleContent>
                 </SidebarMenuItem>
               </Collapsible>
