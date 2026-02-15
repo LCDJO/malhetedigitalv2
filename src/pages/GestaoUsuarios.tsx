@@ -190,16 +190,14 @@ export default function GestaoUsuarios() {
   const handleDelete = async () => {
     if (!deleteUser) return;
     try {
-      console.log("[handleDelete] Calling apiCall for user:", deleteUser.id, deleteUser.full_name);
       const resp = await apiCall("update", "PUT", { user_id: deleteUser.id, role: null });
-      console.log("[handleDelete] apiCall response:", JSON.stringify(resp));
       if (!resp.ok) { toast.error(resp.data?.error || "Erro ao remover permissão"); return; }
       toast.success(`Permissão de administrador removida de ${deleteUser.full_name}`);
       logAction({ action: "REMOVE_ADMIN", targetTable: "user_roles", targetId: deleteUser.id, details: { email: deleteUser.email } });
       fetchUsers();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      console.error("[handleDelete] Error caught:", message, err);
+      console.error("Delete user error:", message);
       toast.error(`Erro ao remover: ${message}`);
     } finally {
       setDeleteUser(null);
