@@ -17,7 +17,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { Search, Plus, Pencil, Eye, X, User, Users, CalendarIcon, Loader2, ChevronLeft, ChevronRight, Filter, Upload, Trash2, KeyRound, Copy, Check, ShieldCheck } from "lucide-react";
+import { Search, Plus, Pencil, Eye, X, User, Users, CalendarIcon, Loader2, ChevronLeft, ChevronRight, Filter, Upload, Trash2, KeyRound, Copy, Check, ShieldCheck, Crown } from "lucide-react";
 import { toast } from "sonner";
 import { PermissionGate } from "@/components/PermissionGate";
 import { useAuth, roleLabels, type AppRole } from "@/contexts/AuthContext";
@@ -151,6 +151,8 @@ export function CadastroIrmaos() {
   const [deletingMember, setDeletingMember] = useState<Member | null>(null);
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [systemUserEmails, setSystemUserEmails] = useState<Set<string>>(new Set());
+  const [promotingMember, setPromotingMember] = useState<Member | null>(null);
+  const [promoteSaving, setPromoteSaving] = useState(false);
   // Password management
   const [portalPassword, setPortalPassword] = useState("");
   const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
@@ -494,6 +496,52 @@ export function CadastroIrmaos() {
     }
   };
 
+  const handlePromoteToAdmin = async () => {
+    if (!promotingMember || !tenantId || !session?.access_token) return;
+    if (!promotingMember.email?.trim()) {
+      toast.error("O membro precisa ter um e-mail cadastrado para receber acesso ao sistema.");
+      return;
+    }
+    setPromoteSaving(true);
+    try {
+      const tempPassword = crypto.randomUUID().slice(0, 12);
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-users?action=create`;
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: promotingMember.email.trim(),
+          full_name: promotingMember.full_name.trim(),
+          password: tempPassword,
+          role: "administrador",
+          tenant_id: tenantId,
+          tenant_role: "admin",
+          cpf: promotingMember.cpf || undefined,
+          phone: promotingMember.phone || undefined,
+          address: promotingMember.address || undefined,
+          birth_date: promotingMember.birth_date || undefined,
+        }),
+      });
+      const result = await resp.json();
+      if (resp.ok) {
+        toast.success(`${promotingMember.full_name} agora é Administrador! Senha temporária: ${tempPassword}`);
+        logAction({ action: "PROMOTE_MEMBER_ADMIN", targetTable: "members", targetId: promotingMember.id, details: { email: promotingMember.email, role: "administrador" } });
+        fetchSystemUserEmails();
+      } else {
+        toast.error(result.error || "Erro ao promover membro.");
+      }
+    } catch {
+      toast.error("Erro de conexão.");
+    } finally {
+      setPromoteSaving(false);
+      setPromotingMember(null);
+    }
+  };
+
   const DateField = ({ label, value, onChange }: { label: string; value: Date | undefined; onChange: (d: Date | undefined) => void }) => (
     <div className="space-y-1.5">
       <Label>{label}</Label>
@@ -623,6 +671,13 @@ export function CadastroIrmaos() {
                             <div className="flex justify-end gap-1">
                               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setViewMember(m)} title="Visualizar"><Eye className="h-4 w-4" /></Button>
                               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(m)} title="Editar"><Pencil className="h-4 w-4" /></Button>
+                              <PermissionGate module="secretaria" action="manage_users">
+                                {m.email && !systemUserEmails.has(m.email.toLowerCase()) && (
+                                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setPromotingMember(m)} title="Tornar Administrador">
+                                    <Crown className="h-4 w-4 text-amber-500" />
+                                  </Button>
+                                )}
+                              </PermissionGate>
                               <PermissionGate module="secretaria" action="approve">
                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeletingMember(m)} title="Excluir"><Trash2 className="h-4 w-4" /></Button>
                               </PermissionGate>
@@ -987,6 +1042,16 @@ export function CadastroIrmaos() {
           }
           setDeletingMember(null);
         }}
+      />
+      {/* Dialog Tornar Administrador */}
+      <ConfirmSensitiveAction
+        open={!!promotingMember}
+        onOpenChange={(open) => { if (!open) setPromotingMember(null); }}
+        title="Tornar Administrador"
+        description={`Deseja conceder acesso de administrador do sistema a "${promotingMember?.full_name}"? Uma senha temporária será gerada automaticamente.`}
+        confirmLabel={promoteSaving ? "Processando..." : "Confirmar Promoção"}
+        requireTypedConfirmation="PROMOVER"
+        onConfirm={handlePromoteToAdmin}
       />
     </>
   );
