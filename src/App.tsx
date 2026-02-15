@@ -20,6 +20,7 @@ import Incidentes from "./pages/Incidentes";
 import GestaoTermos from "./pages/GestaoTermos";
 import ControleAceites from "./pages/ControleAceites";
 import NotFound from "./pages/NotFound";
+import TotemAdmin from "./pages/TotemAdmin";
 
 import PortalAuth from "./pages/portal/PortalAuth";
 import PortalDashboard from "./pages/portal/PortalDashboard";
@@ -168,6 +169,14 @@ const App = () => (
                         element={
                           <ProtectedRoute module="tesouraria">
                             <Tesouraria />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/totem"
+                        element={
+                          <ProtectedRoute module="totem">
+                            <TotemAdmin />
                           </ProtectedRoute>
                         }
                       />
