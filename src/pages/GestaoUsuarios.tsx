@@ -338,14 +338,6 @@ export default function GestaoUsuarios() {
                         <div className="flex items-center justify-end gap-1">
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDetailUser(user)}>
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Ver Detalhes</TooltipContent>
-                          </Tooltip>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
                               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setResetUser(user)}>
                                 <KeyRound className="h-4 w-4" />
                               </Button>
@@ -362,18 +354,6 @@ export default function GestaoUsuarios() {
                               <TooltipContent>Tornar Administrador</TooltipContent>
                             </Tooltip>
                           )}
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toggleActive(user)}>
-                                {user.is_active ? (
-                                  <ShieldOff className="h-4 w-4 text-destructive" />
-                                ) : (
-                                  <ShieldCheck className="h-4 w-4 text-success" />
-                                )}
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>{user.is_active ? "Desativar" : "Ativar"}</TooltipContent>
-                          </Tooltip>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
