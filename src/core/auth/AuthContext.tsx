@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback, useRef, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 import type { AppRole, PermissionAction } from "./types";
@@ -35,7 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<AppRole | null>(null);
   const [loading, setLoading] = useState(true);
   const [termsAccepted, setTermsAccepted] = useState<boolean | null>(null);
-  const sessionTokenRef = useRef<string | null>(null);
+  
 
   const checkTermsAcceptance = useCallback(async (userId: string) => {
     const { data: activeTerm } = await supabase
@@ -110,60 +110,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, [fetchProfileAndRole, checkTermsAcceptance]);
 
-  // ─── Single-session enforcement for admin roles ───
-  const ADMIN_ROLES: AppRole[] = ["administrador", "superadmin"];
-
-  const registerSession = useCallback(async (userId: string) => {
-    const token = crypto.randomUUID();
-    sessionTokenRef.current = token;
-
-    // Upsert: if row exists update, otherwise insert
-    const { data: existing } = await supabase
-      .from("active_sessions")
-      .select("id")
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    if (existing) {
-      await supabase
-        .from("active_sessions")
-        .update({ session_token: token })
-        .eq("user_id", userId);
-    } else {
-      await supabase
-        .from("active_sessions")
-        .insert({ user_id: userId, session_token: token });
-    }
-  }, []);
-
-  // Poll to check if this session is still the active one
-  useEffect(() => {
-    if (!user || !role || !ADMIN_ROLES.includes(role) || !sessionTokenRef.current) return;
-
-    const interval = setInterval(async () => {
-      const { data } = await supabase
-        .from("active_sessions")
-        .select("session_token")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (data && data.session_token !== sessionTokenRef.current) {
-        clearInterval(interval);
-        toast.error("Sua sessão foi encerrada porque um novo login foi detectado em outro dispositivo.");
-        sessionTokenRef.current = null;
-        await supabase.auth.signOut();
-      }
-    }, 15000); // check every 15s
-
-    return () => clearInterval(interval);
-  }, [user, role]);
-
-  // Register session when role is determined as admin
-  useEffect(() => {
-    if (user && role && ADMIN_ROLES.includes(role) && !sessionTokenRef.current) {
-      registerSession(user.id);
-    }
-  }, [user, role, registerSession]);
+  // ─── Single-session enforcement DISABLED ───
+  // TODO: re-enable when ready
+  // const ADMIN_ROLES: AppRole[] = ["administrador", "superadmin"];
 
   const isAdmin = role === "superadmin" || role === "administrador";
 
