@@ -36,6 +36,7 @@ import {
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserTenant } from "@/core/tenant";
 
 function generateCode(): string {
   const chars = "0123456789";
@@ -47,30 +48,26 @@ function generateCode(): string {
 export default function TotemAdmin() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { tenantId, loading: tenantLoading } = useUserTenant();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newLabel, setNewLabel] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // Get current user's tenant
-  const { data: tenantData } = useQuery({
-    queryKey: ["my-tenant"],
+  // Get tenant plan features for max_totems
+  const { data: tenant } = useQuery({
+    queryKey: ["tenant-plan-features", tenantId],
     queryFn: async () => {
-      if (!user) return null;
       const { data, error } = await supabase
-        .from("tenant_users")
-        .select("tenant_id, tenants(id, name, lodge_number, plan_features)")
-        .eq("user_id", user.id)
-        .eq("is_active", true)
-        .limit(1)
-        .maybeSingle();
+        .from("tenants")
+        .select("id, name, plan_features")
+        .eq("id", tenantId!)
+        .single();
       if (error) throw error;
       return data;
     },
-    enabled: !!user,
+    enabled: !!tenantId,
   });
 
-  const tenantId = tenantData?.tenant_id;
-  const tenant = tenantData?.tenants as any;
   const planFeatures = tenant?.plan_features as any;
   const maxTotems = planFeatures?.max_totems ?? 0; // 0 = unlimited
 
@@ -150,6 +147,23 @@ export default function TotemAdmin() {
 
   const formatCode = (code: string) =>
     code.length > 4 ? `${code.slice(0, 4)}-${code.slice(4)}` : code;
+
+  if (tenantLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!tenantId) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-center gap-2">
+        <AlertTriangle className="h-10 w-10 text-amber-500" />
+        <p className="text-sm text-muted-foreground">Nenhuma Loja vinculada ao seu usuário.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 max-w-5xl">
