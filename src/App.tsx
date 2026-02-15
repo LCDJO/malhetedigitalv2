@@ -48,6 +48,7 @@ import AdminIntegracoesBB from "./pages/admin/AdminIntegracoesBB";
 import AdminIntegracoesBradesco from "./pages/admin/AdminIntegracoesBradesco";
 import AdminIntegracoesItau from "./pages/admin/AdminIntegracoesItau";
 import AdminIntegracoesStripe from "./pages/admin/AdminIntegracoesStripe";
+import AdminIntegracesTotem from "./pages/admin/AdminIntegracesTotem";
 import AdminAnunciantes from "./pages/admin/AdminAnunciantes";
 
 import { AnuncianteLayout } from "@/components/anunciante/AnuncianteLayout";
@@ -115,6 +116,7 @@ const App = () => (
                       <Route path="/integracoes/bancos/bradesco" element={<AdminIntegracoesBradesco />} />
                       <Route path="/integracoes/bancos/itau" element={<AdminIntegracoesItau />} />
                       <Route path="/integracoes/bancos/sicredi" element={<AdminIntegracoesSicredi />} />
+                      <Route path="/integracoes/totem" element={<AdminIntegracesTotem />} />
                       <Route path="/anunciantes" element={<AdminAnunciantes />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>

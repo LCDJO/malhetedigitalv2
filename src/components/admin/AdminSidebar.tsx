@@ -70,6 +70,10 @@ const integracaoBancos = [
   { title: "Sicredi", url: "/admin/integracoes/bancos/sicredi", icon: Building2 },
 ];
 
+const integracaoTotem = [
+  { title: "Totem", url: "/admin/integracoes/totem", icon: Monitor },
+];
+
 const adsItems = [
   { title: "Anunciantes", url: "/admin/anunciantes", icon: Megaphone },
   { title: "Banner", url: "/admin/banner-login", icon: Monitor },
@@ -84,9 +88,11 @@ export function AdminSidebar() {
   const isComunicacaoRoute = location.pathname.startsWith("/admin/integracoes/email") || location.pathname.startsWith("/admin/integracoes/whatsapp") || location.pathname.startsWith("/admin/integracoes/telegram");
   const isPagamentosRoute = location.pathname.startsWith("/admin/integracoes/stripe") || location.pathname.startsWith("/admin/integracoes/bancos");
   const isBancosRoute = location.pathname.startsWith("/admin/integracoes/bancos");
+  const isTotemRoute = location.pathname.startsWith("/admin/integracoes/totem");
   const [comunicacaoOpen, setComunicacaoOpen] = useState(isComunicacaoRoute);
   const [pagamentosOpen, setPagamentosOpen] = useState(isPagamentosRoute);
   const [bancosOpen, setBancosOpen] = useState(isBancosRoute);
+  const [totemOpen, setTotemOpen] = useState(isTotemRoute);
 
   const initials = profile?.full_name
     ? profile.full_name.split(" ").filter(Boolean).map((w) => w[0]).slice(0, 2).join("").toUpperCase()
@@ -271,8 +277,45 @@ export function AdminSidebar() {
                             </SidebarMenu>
                           </CollapsibleContent>
                         </SidebarMenuItem>
-                      </Collapsible>
+              </Collapsible>
+
+              {/* Submenu: Totem */}
+              <Collapsible open={totemOpen} onOpenChange={setTotemOpen}>
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton
+                      tooltip="Totem"
+                      className={cn(
+                        "text-sidebar-foreground/65 hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground transition-all duration-150 rounded-md",
+                        totemOpen && "bg-sidebar-accent/50 text-sidebar-accent-foreground"
+                      )}
+                    >
+                      <Monitor className="h-4 w-4" />
+                      <span>Totem</span>
+                      <ChevronDown className={cn("ml-auto h-3.5 w-3.5 transition-transform duration-200", !totemOpen && "-rotate-90")} />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenu className="ml-4 mt-0.5 border-l border-sidebar-border pl-2">
+                      {integracaoTotem.map((item) => (
+                        <SidebarMenuItem key={item.title}>
+                          <SidebarMenuButton asChild tooltip={item.title}>
+                            <NavLink
+                              to={item.url}
+                              className="text-sidebar-foreground/65 hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground transition-all duration-150 rounded-md text-[13px]"
+                              activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold shadow-sm"
+                            >
+                              <item.icon className="h-3.5 w-3.5" />
+                              <span>{item.title}</span>
+                            </NavLink>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))}
                     </SidebarMenu>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
+            </SidebarMenu>
                   </CollapsibleContent>
                 </SidebarMenuItem>
               </Collapsible>
