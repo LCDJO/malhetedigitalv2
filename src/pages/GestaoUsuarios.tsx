@@ -183,13 +183,18 @@ export default function GestaoUsuarios() {
 
   const handleDelete = async () => {
     if (!deleteUser) return;
-    // Instead of deleting from DB, remove admin role
-    const { ok, data } = await apiCall("update", "PUT", { user_id: deleteUser.id, role: null });
-    if (!ok) { toast.error(data.error || "Erro ao remover permissão"); return; }
-    toast.success(`Permissão de administrador removida de ${deleteUser.full_name}`);
-    logAction({ action: "REMOVE_ADMIN", targetTable: "user_roles", targetId: deleteUser.id, details: { email: deleteUser.email } });
-    setDeleteUser(null);
-    fetchUsers();
+    try {
+      const { ok, data } = await apiCall("update", "PUT", { user_id: deleteUser.id, role: null });
+      if (!ok) { toast.error(data.error || "Erro ao remover permissão"); return; }
+      toast.success(`Permissão de administrador removida de ${deleteUser.full_name}`);
+      logAction({ action: "REMOVE_ADMIN", targetTable: "user_roles", targetId: deleteUser.id, details: { email: deleteUser.email } });
+      fetchUsers();
+    } catch (err) {
+      console.error("Delete user error:", err);
+      toast.error("Erro inesperado ao remover permissão");
+    } finally {
+      setDeleteUser(null);
+    }
   };
 
   const adminCount = users.filter((u) => u.role === "administrador").length;
