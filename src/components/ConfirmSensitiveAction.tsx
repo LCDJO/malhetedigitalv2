@@ -80,6 +80,10 @@ export function ConfirmSensitiveAction({
               onChange={(e) => setTypedValue(e.target.value)}
               placeholder={requireTypedConfirmation}
               autoFocus
+              autoComplete="off"
+              data-1p-ignore
+              data-lpignore="true"
+              data-form-type="other"
             />
           </div>
         )}
