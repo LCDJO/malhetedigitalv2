@@ -12,6 +12,7 @@ import {
   Scale,
   ClipboardCheck,
   LogOut,
+  Monitor,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth, roleLabels } from "@/contexts/AuthContext";
@@ -37,6 +38,7 @@ const menuItems = [
   { title: "Secretaria", url: "/secretaria", icon: BookOpen, module: "secretaria" },
   { title: "Chancelaria", url: "/chancelaria", icon: Stamp, module: "chancelaria" },
   { title: "Tesouraria", url: "/tesouraria", icon: Wallet, module: "tesouraria" },
+  { title: "Totem", url: "/totem", icon: Monitor, module: "totem" },
   
   { title: "Relatórios", url: "/relatorios", icon: FileBarChart, module: "dashboard" },
   { title: "Configurações", url: "/configuracoes", icon: Settings, module: "configuracoes" },

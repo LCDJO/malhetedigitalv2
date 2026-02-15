@@ -8,6 +8,7 @@ export const permissionsMatrix: Record<AppRole, Record<string, PermissionAction[
     tesouraria: ["read", "write", "approve", "manage_users"],
     chancelaria: ["read", "write", "approve", "manage_users"],
     configuracoes: ["read", "write", "approve", "manage_users"],
+    totem: ["read", "write", "approve", "manage_users"],
   },
   administrador: {
     dashboard: ["read", "write", "approve", "manage_users"],
@@ -15,6 +16,7 @@ export const permissionsMatrix: Record<AppRole, Record<string, PermissionAction[
     tesouraria: ["read", "write", "approve", "manage_users"],
     chancelaria: ["read", "write", "approve", "manage_users"],
     configuracoes: ["read", "write", "approve", "manage_users"],
+    totem: ["read", "write", "approve", "manage_users"],
   },
 };
 
