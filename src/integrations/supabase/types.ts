@@ -1067,6 +1067,7 @@ export type Database = {
           interval_days: number
           is_active: boolean
           max_members: number
+          max_totems: number
           modules: Json
           name: string
           price: number
@@ -1082,6 +1083,7 @@ export type Database = {
           interval_days?: number
           is_active?: boolean
           max_members?: number
+          max_totems?: number
           modules?: Json
           name: string
           price?: number
@@ -1097,6 +1099,7 @@ export type Database = {
           interval_days?: number
           is_active?: boolean
           max_members?: number
+          max_totems?: number
           modules?: Json
           name?: string
           price?: number
@@ -1483,30 +1486,36 @@ export type Database = {
           code: string
           created_at: string
           created_by: string | null
+          device_id: string | null
           expires_at: string | null
           id: string
           is_active: boolean
           label: string | null
+          last_seen_at: string | null
           tenant_id: string
         }
         Insert: {
           code: string
           created_at?: string
           created_by?: string | null
+          device_id?: string | null
           expires_at?: string | null
           id?: string
           is_active?: boolean
           label?: string | null
+          last_seen_at?: string | null
           tenant_id: string
         }
         Update: {
           code?: string
           created_at?: string
           created_by?: string | null
+          device_id?: string | null
           expires_at?: string | null
           id?: string
           is_active?: boolean
           label?: string | null
+          last_seen_at?: string | null
           tenant_id?: string
         }
         Relationships: [

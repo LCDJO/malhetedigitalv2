@@ -21,6 +21,7 @@ const ALL_MODULES = [
   { id: "tesouraria", label: "Tesouraria" },
   { id: "chancelaria", label: "Chancelaria" },
   { id: "configuracoes", label: "Configurações" },
+  { id: "totem", label: "Totem" },
 ];
 
 interface Plan {
@@ -33,6 +34,7 @@ interface Plan {
   features: string[];
   modules: string[];
   max_members: number;
+  max_totems: number;
   stripe_price_id: string | null;
   created_at: string;
 }
@@ -45,6 +47,7 @@ const emptyForm = {
   is_active: true,
   modules: ALL_MODULES.map((m) => m.id),
   max_members: 0,
+  max_totems: 0,
   stripe_price_id: "",
 };
 
@@ -97,6 +100,7 @@ export default function AdminPlanos() {
       is_active: p.is_active,
       modules: p.modules,
       max_members: p.max_members,
+      max_totems: (p as any).max_totems ?? 0,
       stripe_price_id: p.stripe_price_id ?? "",
     });
     setDialogOpen(true);
@@ -127,6 +131,7 @@ export default function AdminPlanos() {
       features: form.modules,
       modules: form.modules,
       max_members: Number(form.max_members),
+      max_totems: Number(form.max_totems),
       stripe_price_id: form.stripe_price_id.trim() || null,
       tenant_id: null,
     };
@@ -226,8 +231,9 @@ export default function AdminPlanos() {
                   <TableHead>Valor</TableHead>
                   <TableHead>Ciclo</TableHead>
                   <TableHead>Módulos</TableHead>
-                  <TableHead>Limite Membros</TableHead>
-                  <TableHead>Status</TableHead>
+                   <TableHead>Limite Membros</TableHead>
+                   <TableHead>Totens</TableHead>
+                   <TableHead>Status</TableHead>
                   <TableHead className="w-[100px]">Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -258,6 +264,13 @@ export default function AdminPlanos() {
                         <span className="text-muted-foreground">Ilimitado</span>
                       ) : (
                         p.max_members
+                      )}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {p.max_totems === 0 ? (
+                        <span className="text-muted-foreground">—</span>
+                      ) : (
+                        p.max_totems
                       )}
                     </TableCell>
                     <TableCell>
@@ -340,7 +353,7 @@ export default function AdminPlanos() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="plan-members">Limite de Membros</Label>
                 <Input
@@ -353,6 +366,17 @@ export default function AdminPlanos() {
                 <p className="text-[11px] text-muted-foreground">0 = ilimitado</p>
               </div>
               <div className="space-y-2">
+                <Label htmlFor="plan-totems">Limite de Totens</Label>
+                <Input
+                  id="plan-totems"
+                  type="number"
+                  min={0}
+                  value={form.max_totems}
+                  onChange={(e) => setForm({ ...form, max_totems: parseInt(e.target.value) || 0 })}
+                />
+                <p className="text-[11px] text-muted-foreground">0 = nenhum totem</p>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="plan-stripe">Stripe Price ID</Label>
                 <Input
                   id="plan-stripe"
@@ -360,7 +384,7 @@ export default function AdminPlanos() {
                   value={form.stripe_price_id}
                   onChange={(e) => setForm({ ...form, stripe_price_id: e.target.value })}
                 />
-                <p className="text-[11px] text-muted-foreground">Opcional, para integração Stripe.</p>
+                <p className="text-[11px] text-muted-foreground">Opcional</p>
               </div>
             </div>
             <div className="space-y-3">
