@@ -107,28 +107,60 @@ Deno.serve(async (req) => {
 
         const userIds = tenantUsers.map((tu: { user_id: string }) => tu.user_id);
 
-        const { data: profiles } = await adminClient
-          .from("profiles")
-          .select("id, full_name, avatar_url, is_active, created_at, cpf, phone, address, birth_date")
-          .in("id", userIds);
+        // Get member data by matching auth email to members.email
+        const memberEmails = userIds
+          .map((uid: string) => emailMap[uid])
+          .filter(Boolean);
 
-        const profileMap: Record<string, { full_name: string; avatar_url: string | null; is_active: boolean; created_at: string }> = {};
-        profiles?.forEach((p: { id: string; full_name: string; avatar_url: string | null; is_active: boolean; created_at: string }) => {
-          profileMap[p.id] = p;
+        const { data: members } = await adminClient
+          .from("members")
+          .select("id, full_name, avatar_url, status, email, cpf, phone, address, birth_date")
+          .eq("tenant_id", tenantId)
+          .in("email", memberEmails);
+
+        const memberByEmail: Record<string, {
+          full_name: string;
+          avatar_url: string | null;
+          status: string;
+          email: string;
+          cpf: string | null;
+          phone: string | null;
+          address: string | null;
+          birth_date: string | null;
+        }> = {};
+        members?.forEach((m: {
+          full_name: string;
+          avatar_url: string | null;
+          status: string;
+          email: string;
+          cpf: string | null;
+          phone: string | null;
+          address: string | null;
+          birth_date: string | null;
+        }) => {
+          if (m.email) memberByEmail[m.email.toLowerCase()] = m;
         });
 
         const users = tenantUsers
           .filter((tu: { user_id: string }) => !!roleMap[tu.user_id])
-          .map((tu: { user_id: string; role: string; is_active: boolean; created_at: string }) => ({
-            id: tu.user_id,
-            full_name: profileMap[tu.user_id]?.full_name || "—",
-            avatar_url: profileMap[tu.user_id]?.avatar_url || null,
-            email: emailMap[tu.user_id] || "",
-            role: roleMap[tu.user_id] || null,
-            tenant_role: tu.role,
-            is_active: tu.is_active && (profileMap[tu.user_id]?.is_active ?? true),
-            created_at: tu.created_at,
-          }));
+          .map((tu: { user_id: string; role: string; is_active: boolean; created_at: string }) => {
+            const email = emailMap[tu.user_id] || "";
+            const member = memberByEmail[email.toLowerCase()];
+            return {
+              id: tu.user_id,
+              full_name: member?.full_name || email,
+              avatar_url: member?.avatar_url || null,
+              email,
+              role: roleMap[tu.user_id] || null,
+              tenant_role: tu.role,
+              is_active: tu.is_active,
+              created_at: tu.created_at,
+              cpf: member?.cpf || null,
+              phone: member?.phone || null,
+              address: member?.address || null,
+              birth_date: member?.birth_date || null,
+            };
+          });
 
         return new Response(JSON.stringify(users), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
