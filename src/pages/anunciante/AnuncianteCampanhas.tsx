@@ -35,6 +35,7 @@ const PAGE_OPTIONS = [
   { value: "portal_jornada", label: "Portal — Jornada" },
   { value: "login", label: "Tela de Login" },
   { value: "dashboard_admin", label: "Dashboard Admin" },
+  { value: "totem", label: "Totem" },
 ];
 
 const SLOT_OPTIONS = [
@@ -42,6 +43,7 @@ const SLOT_OPTIONS = [
   { value: "sidebar", label: "Sidebar" },
   { value: "inline", label: "Inline (entre conteúdo)" },
   { value: "footer", label: "Rodapé" },
+  { value: "totem_bottom", label: "Totem — Rodapé" },
 ];
 
 export default function AnuncianteCampanhas() {
