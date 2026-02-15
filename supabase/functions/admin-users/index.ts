@@ -202,7 +202,8 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Create auth user
+      // Create auth user or find existing
+      let userId: string;
       const { data: newUser, error: createErr } =
         await adminClient.auth.admin.createUser({
           email,
@@ -212,34 +213,59 @@ Deno.serve(async (req) => {
         });
 
       if (createErr) {
-        return new Response(JSON.stringify({ error: createErr.message }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        // If user already exists, find them and proceed
+        if (createErr.message?.includes("already been registered")) {
+          const { data: authUsers } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
+          const existing = authUsers?.users?.find((u: { email?: string }) => u.email?.toLowerCase() === email.toLowerCase());
+          if (!existing) {
+            return new Response(JSON.stringify({ error: "Usuário existe mas não foi encontrado" }), {
+              status: 400,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+          userId = existing.id;
+        } else {
+          return new Response(JSON.stringify({ error: createErr.message }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      } else {
+        userId = newUser!.user!.id;
       }
 
       // Assign global role & update profile with PF data
-      if (newUser?.user) {
-        // Update profile with extra fields
-        const profileUpdates: Record<string, unknown> = {};
-        if (cpf) profileUpdates.cpf = cpf;
-        if (phone) profileUpdates.phone = phone;
-        if (address) profileUpdates.address = address;
-        if (birth_date) profileUpdates.birth_date = birth_date;
-        if (Object.keys(profileUpdates).length > 0) {
-          await adminClient.from("profiles").update(profileUpdates).eq("id", newUser.user.id);
-        }
+      // Update profile with extra fields
+      const profileUpdates: Record<string, unknown> = {};
+      if (full_name) profileUpdates.full_name = full_name;
+      if (cpf) profileUpdates.cpf = cpf;
+      if (phone) profileUpdates.phone = phone;
+      if (address) profileUpdates.address = address;
+      if (birth_date) profileUpdates.birth_date = birth_date;
+      if (Object.keys(profileUpdates).length > 0) {
+        await adminClient.from("profiles").update(profileUpdates).eq("id", userId);
+      }
 
-        await adminClient.from("user_roles").insert({
-          user_id: newUser.user.id,
-          role,
-          assigned_by: claims.user.id,
-        });
+      // Remove existing role and assign new one
+      await adminClient.from("user_roles").delete().eq("user_id", userId);
+      await adminClient.from("user_roles").insert({
+        user_id: userId,
+        role,
+        assigned_by: claims.user.id,
+      });
 
-        // Associate to tenant if specified
-        if (bodyTenantId) {
+      // Associate to tenant if specified
+      if (bodyTenantId) {
+        const { data: existingTU } = await adminClient
+          .from("tenant_users")
+          .select("id")
+          .eq("user_id", userId)
+          .eq("tenant_id", bodyTenantId)
+          .maybeSingle();
+
+        if (!existingTU) {
           await adminClient.from("tenant_users").insert({
-            user_id: newUser.user.id,
+            user_id: userId,
             tenant_id: bodyTenantId,
             role: tenant_role || "member",
             is_active: true,
@@ -247,7 +273,7 @@ Deno.serve(async (req) => {
         }
       }
 
-      return new Response(JSON.stringify({ success: true, user_id: newUser?.user?.id }), {
+      return new Response(JSON.stringify({ success: true, user_id: userId }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
