@@ -59,7 +59,6 @@ Deno.serve(async (req) => {
 
     // ─── LIST ────────────────────────────────────────────────
     if (req.method === "GET" && action === "list") {
-      // Get auth emails
       const { data: authUsers } = await adminClient.auth.admin.listUsers({
         perPage: 1000,
       });
@@ -68,7 +67,6 @@ Deno.serve(async (req) => {
         if (u.email) emailMap[u.id] = u.email;
       });
 
-      // Get all roles
       const { data: roles } = await adminClient
         .from("user_roles")
         .select("user_id, role");
@@ -78,9 +76,7 @@ Deno.serve(async (req) => {
       });
 
       if (tenantId) {
-        // ── TENANT-SCOPED: only users belonging to this tenant ──
         if (!isSuperadmin) {
-          // Verify caller belongs to this tenant
           const { data: isMember } = await adminClient.rpc("is_tenant_member", {
             _user_id: claims.user.id,
             _tenant_id: tenantId,
@@ -106,8 +102,6 @@ Deno.serve(async (req) => {
         }
 
         const userIds = tenantUsers.map((tu: { user_id: string }) => tu.user_id);
-
-        // Get member data by matching auth email to members.email
         const memberEmails = userIds
           .map((uid: string) => emailMap[uid])
           .filter(Boolean);
@@ -166,7 +160,6 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       } else {
-        // ── GLOBAL: only SuperAdmin-level users (not tenant users) ──
         if (!isSuperadmin) {
           return new Response(JSON.stringify({ error: "Forbidden: apenas SuperAdmin pode listar todos os usuários" }), {
             status: 403,
@@ -174,7 +167,6 @@ Deno.serve(async (req) => {
           });
         }
 
-        // Only get users that have a superadmin role
         const { data: superadminRoles } = await adminClient
           .from("user_roles")
           .select("user_id, role")
@@ -226,7 +218,6 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Only superadmin can assign superadmin role
       if (role === "superadmin" && !isSuperadmin) {
         return new Response(
           JSON.stringify({ error: "Apenas SuperAdmin pode atribuir esse perfil" }),
@@ -234,7 +225,6 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Create auth user or find existing
       let userId: string;
       const { data: newUser, error: createErr } =
         await adminClient.auth.admin.createUser({
@@ -245,10 +235,9 @@ Deno.serve(async (req) => {
         });
 
       if (createErr) {
-        // If user already exists, find them and proceed
         if (createErr.message?.includes("already been registered")) {
-          const { data: authUsers } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
-          const existing = authUsers?.users?.find((u: { email?: string }) => u.email?.toLowerCase() === email.toLowerCase());
+          const { data: authUsersData } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
+          const existing = authUsersData?.users?.find((u: { email?: string }) => u.email?.toLowerCase() === email.toLowerCase());
           if (!existing) {
             return new Response(JSON.stringify({ error: "Usuário existe mas não foi encontrado" }), {
               status: 400,
@@ -266,8 +255,6 @@ Deno.serve(async (req) => {
         userId = newUser!.user!.id;
       }
 
-      // Assign global role & update profile with PF data
-      // Update profile with extra fields
       const profileUpdates: Record<string, unknown> = {};
       if (full_name) profileUpdates.full_name = full_name;
       if (cpf) profileUpdates.cpf = cpf;
@@ -278,7 +265,6 @@ Deno.serve(async (req) => {
         await adminClient.from("profiles").update(profileUpdates).eq("id", userId);
       }
 
-      // Remove existing role and assign new one
       await adminClient.from("user_roles").delete().eq("user_id", userId);
       await adminClient.from("user_roles").insert({
         user_id: userId,
@@ -286,7 +272,6 @@ Deno.serve(async (req) => {
         assigned_by: claims.user.id,
       });
 
-      // Associate to tenant if specified
       if (bodyTenantId) {
         const { data: existingTU } = await adminClient
           .from("tenant_users")
@@ -322,7 +307,6 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Only superadmin can assign superadmin role
       if (role === "superadmin" && !isSuperadmin) {
         return new Response(
           JSON.stringify({ error: "Apenas SuperAdmin pode atribuir esse perfil" }),
@@ -330,7 +314,6 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Update profile
       const updates: Record<string, unknown> = {};
       if (full_name !== undefined) updates.full_name = full_name;
       if (is_active !== undefined) updates.is_active = is_active;
@@ -343,25 +326,20 @@ Deno.serve(async (req) => {
         await adminClient.from("profiles").update(updates).eq("id", user_id);
       }
 
-      // Update global role
       if (role !== undefined) {
-        console.log("[admin-users] Removing role for user_id:", user_id, "role value:", role, "typeof role:", typeof role);
-        const { error: deleteErr, count: deleteCount } = await adminClient
+        await adminClient
           .from("user_roles")
-          .delete({ count: "exact" })
+          .delete()
           .eq("user_id", user_id);
-        console.log("[admin-users] Delete result - error:", deleteErr, "count:", deleteCount);
         if (role) {
-          const { error: insertErr } = await adminClient.from("user_roles").insert({
+          await adminClient.from("user_roles").insert({
             user_id,
             role,
             assigned_by: claims.user.id,
           });
-          console.log("[admin-users] Insert role result - error:", insertErr);
         }
       }
 
-      // Update tenant association
       if (bodyTenantId && tenant_role !== undefined) {
         const { data: existing } = await adminClient
           .from("tenant_users")
@@ -385,7 +363,6 @@ Deno.serve(async (req) => {
         }
       }
 
-      // If deactivating, also ban the user in auth
       if (is_active !== undefined) {
         await adminClient.auth.admin.updateUserById(user_id, {
           ban_duration: is_active ? "none" : "876600h",
@@ -432,12 +409,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ─── 2FA STATUS (for admin to check another user's 2FA) ──
+    // ─── 2FA STATUS ──────────────────────────────────────────
     if (req.method === "GET" && action === "2fa_status") {
       const targetUserId = url.searchParams.get("user_id");
 
       if (targetUserId) {
-        // Single user
         const { data } = await adminClient
           .from("user_2fa")
           .select("is_enabled")
@@ -449,7 +425,6 @@ Deno.serve(async (req) => {
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       } else {
-        // All users' 2FA status
         const { data } = await adminClient
           .from("user_2fa")
           .select("user_id, is_enabled")
@@ -500,7 +475,6 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Prevent self-deletion
       if (user_id === claims.user.id) {
         return new Response(
           JSON.stringify({ error: "Você não pode excluir a si mesmo" }),
@@ -508,7 +482,6 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Remove role, profile, and auth user
       await adminClient.from("user_roles").delete().eq("user_id", user_id);
       await adminClient.from("tenant_users").delete().eq("user_id", user_id);
       await adminClient.from("profiles").delete().eq("id", user_id);
@@ -538,7 +511,6 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Prevent superadmins from being linked to tenants
       const { data: targetRole } = await adminClient
         .from("user_roles")
         .select("role")

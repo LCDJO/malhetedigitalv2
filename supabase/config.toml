@@ -9,5 +9,26 @@ verify_jwt = false
 [functions.audit-log]
 verify_jwt = false
 
+[functions.bootstrap]
+verify_jwt = false
+
+[functions.first-access]
+verify_jwt = false
+
 [functions.manage-portal-user]
+verify_jwt = false
+
+[functions.register-advertiser]
+verify_jwt = false
+
+[functions.register-lodge]
+verify_jwt = false
+
+[functions.seed-superadmin]
+verify_jwt = false
+
+[functions.send-verification-code]
+verify_jwt = false
+
+[functions.verify-email-code]
 verify_jwt = false
