@@ -78,16 +78,22 @@ export default function GestaoUsuarios() {
     async (action: string, method: string, body?: Record<string, unknown>, extraParams?: string) => {
       const params = `action=${action}${tenantId ? `&tenant_id=${tenantId}` : ""}${extraParams ? `&${extraParams}` : ""}`;
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-users?${params}`;
+      const headers: Record<string, string> = {
+        Authorization: `Bearer ${session?.access_token}`,
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      };
+      if (body) {
+        headers["Content-Type"] = "application/json";
+      }
       const resp = await fetch(url, {
         method,
-        headers: {
-          Authorization: `Bearer ${session?.access_token}`,
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          "Content-Type": "application/json",
-        },
+        headers,
         ...(body ? { body: JSON.stringify(body) } : {}),
       });
-      return { ok: resp.ok, data: await resp.json() };
+      const text = await resp.text();
+      let data;
+      try { data = JSON.parse(text); } catch { data = { error: text }; }
+      return { ok: resp.ok, data };
     },
     [session?.access_token, tenantId]
   );
