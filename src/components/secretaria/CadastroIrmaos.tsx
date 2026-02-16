@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
+import { listMembers, createMember, updateMember, deleteMember } from "@/services/members";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -198,14 +199,11 @@ export function CadastroIrmaos() {
   useEffect(() => { fetchSystemUserEmails(); }, [fetchSystemUserEmails]);
   const fetchMembers = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("members")
-      .select("*")
-      .order("full_name");
-    if (error) {
-      toast.error("Erro ao carregar membros.");
-    } else {
+    try {
+      const data = await listMembers();
       setMembers(data || []);
+    } catch (e) {
+      toast.error("Erro ao carregar membros.");
     }
     setLoading(false);
   }, []);
@@ -298,10 +296,8 @@ export function CadastroIrmaos() {
     };
 
     if (editingId) {
-      const { error } = await supabase.from("members").update(payload).eq("id", editingId);
-      if (error) {
-        toast.error(error.message.includes("unique") ? "CPF ou CIM já cadastrado para outro irmão." : "Erro ao atualizar cadastro.");
-      } else {
+      try {
+        await updateMember(editingId, payload);
         toast.success("Cadastro atualizado com sucesso.");
         logAction({ action: "UPDATE_MEMBER", targetTable: "members", targetId: editingId, details: { full_name: payload.full_name } });
 
@@ -344,12 +340,13 @@ export function CadastroIrmaos() {
 
         closeDialog();
         fetchMembers();
+      } catch (e: any) {
+        const msg = e?.message || "";
+        toast.error(msg.includes("unique") || msg.includes("409") ? "CPF ou CIM já cadastrado para outro irmão." : "Erro ao atualizar cadastro.");
       }
     } else {
-      const { data: inserted, error } = await supabase.from("members").insert(payload).select("id").single();
-      if (error) {
-        toast.error(error.message.includes("unique") ? "CPF ou CIM já cadastrado." : "Erro ao cadastrar irmão.");
-      } else {
+      try {
+        const inserted = await createMember(payload);
         toast.success("Irmão cadastrado com sucesso no quadro de obreiros.");
         logAction({ action: "CREATE_MEMBER", targetTable: "members", targetId: inserted?.id, details: { full_name: payload.full_name } });
 
@@ -392,6 +389,9 @@ export function CadastroIrmaos() {
 
         closeDialog();
         fetchMembers();
+      } catch (e: any) {
+        const msg = e?.message || "";
+        toast.error(msg.includes("unique") || msg.includes("409") ? "CPF ou CIM já cadastrado." : "Erro ao cadastrar irmão.");
       }
     }
     setSaving(false);
@@ -1049,13 +1049,13 @@ export function CadastroIrmaos() {
         destructive
         onConfirm={async () => {
           if (!deletingMember) return;
-          const { error } = await supabase.from("members").delete().eq("id", deletingMember.id);
-          if (error) {
-            toast.error("Erro ao excluir: " + error.message);
-          } else {
+          try {
+            await deleteMember(deletingMember.id);
             toast.success("Cadastro excluído com sucesso.");
             logAction({ action: "DELETE_MEMBER", targetTable: "members", targetId: deletingMember.id, details: { full_name: deletingMember.full_name } });
             fetchMembers();
+          } catch (e: any) {
+            toast.error("Erro ao excluir: " + (e?.message || "erro desconhecido"));
           }
           setDeletingMember(null);
         }}

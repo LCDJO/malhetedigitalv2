@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { bulkCreateMembers } from "@/services/members";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -203,20 +203,22 @@ export function ImportarCSV({ open, onOpenChange, onSuccess }: ImportarCSVProps)
       notes: r.row.notes || null,
     }));
 
-    const { error, data } = await supabase.from("members").insert(payload).select("id");
-    setImporting(false);
-    if (error) {
-      if (error.message.includes("unique")) {
-        toast.error("Alguns CPFs ou CIMs já estão cadastrados. Verifique duplicatas.");
-      } else {
-        toast.error("Erro ao importar: " + error.message);
-      }
-    } else {
-      toast.success(`${data.length} irmão(s) importado(s) com sucesso.`);
-      logAction({ action: "IMPORT_MEMBERS_CSV", targetTable: "members", details: { count: data.length } });
+    try {
+      const result = await bulkCreateMembers(payload);
+      setImporting(false);
+      toast.success(`${result.imported} irmão(s) importado(s) com sucesso.`);
+      logAction({ action: "IMPORT_MEMBERS_CSV", targetTable: "members", details: { count: result.imported } });
       reset();
       onOpenChange(false);
       onSuccess();
+    } catch (e: any) {
+      setImporting(false);
+      const msg = e?.message || "";
+      if (msg.includes("unique") || msg.includes("409")) {
+        toast.error("Alguns CPFs ou CIMs já estão cadastrados. Verifique duplicatas.");
+      } else {
+        toast.error("Erro ao importar: " + msg);
+      }
     }
   };
 
