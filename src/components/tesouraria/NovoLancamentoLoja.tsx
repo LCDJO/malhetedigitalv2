@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { createTransaction, listPlanoContas } from "@/services/transactions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,13 +58,10 @@ export function NovoLancamentoLoja({ tipo, onSaved }: NovoLancamentoLojaProps) {
 
   const fetchContas = useCallback(async () => {
     setLoadingContas(true);
-    const { data } = await supabase
-      .from("plano_contas")
-      .select("id, codigo, nome, tipo")
-      .eq("ativo", true)
-      .eq("tipo", tipo)
-      .order("codigo", { ascending: true });
-    setContas(data ?? []);
+    try {
+      const data = await listPlanoContas(tipo);
+      setContas(data ?? []);
+    } catch { /* silent */ }
     setLoadingContas(false);
   }, [tipo]);
 
@@ -88,43 +85,24 @@ export function NovoLancamentoLoja({ tipo, onSaved }: NovoLancamentoLojaProps) {
     const contaSelecionada = contas.find((c) => c.id === form.contaPlanoId);
 
     setSaving(true);
-
-    const payloadBase = {
-      member_id: LOJA_MEMBER_ID,
-      tipo: isReceita ? "receita" : "despesa",
-      descricao: form.descricao.trim(),
-      valor: v,
-      data: format(form.data, "yyyy-MM-dd"),
-      created_by: session?.user?.id,
-      conta_plano_id: form.contaPlanoId,
-      forma_pagamento: form.formaPagamento || null,
-    };
-
-    const statusCandidates = isReceita
-      ? ["pago", "Pago"]
-      : ["em_aberto", "em aberto", "Em Aberto", "aberto", "pendente", "cancelado"];
-    let insertError: { message?: string } | null = null;
-
-    for (const statusValue of statusCandidates) {
-      const { error } = await supabase
-        .from("member_transactions")
-        .insert({ ...payloadBase, status: statusValue });
-
-      if (!error) {
-        insertError = null;
-        break;
-      }
-
-      insertError = error;
-    }
-
-    setSaving(false);
-
-    if (insertError) {
-      toast.error(insertError.message || "Erro ao registrar lançamento. Tente novamente.");
-      console.error(insertError);
+    try {
+      await createTransaction({
+        member_id: LOJA_MEMBER_ID,
+        tipo: isReceita ? "receita" : "despesa",
+        descricao: form.descricao.trim(),
+        valor: v,
+        data: format(form.data, "yyyy-MM-dd"),
+        status: isReceita ? "pago" : "em_aberto",
+        created_by: session?.user?.id,
+        conta_plano_id: form.contaPlanoId,
+        forma_pagamento: form.formaPagamento || null,
+      });
+    } catch (e: any) {
+      setSaving(false);
+      toast.error(e?.message || "Erro ao registrar lançamento. Tente novamente.");
       return;
     }
+    setSaving(false);
 
     logAction({
       action: isReceita ? "CREATE_RECEITA_LOJA" : "CREATE_DESPESA_LOJA",

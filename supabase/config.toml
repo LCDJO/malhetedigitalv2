@@ -38,3 +38,12 @@ verify_jwt = false
 
 [functions.api-members]
 verify_jwt = false
+
+[functions.api-transactions]
+verify_jwt = false
+
+[functions.api-config]
+verify_jwt = false
+
+[functions.api-dashboard]
+verify_jwt = false

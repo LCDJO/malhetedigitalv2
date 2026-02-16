@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { createTransaction, listPlanoContas } from "@/services/transactions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,12 +56,10 @@ export function NovoLancamento({ memberId, memberName, onLancamentoSaved }: Novo
 
   const fetchContas = useCallback(async () => {
     setLoadingContas(true);
-    const { data } = await supabase
-      .from("plano_contas")
-      .select("id, codigo, nome, tipo")
-      .eq("ativo", true)
-      .order("codigo", { ascending: true });
-    setContas(data ?? []);
+    try {
+      const data = await listPlanoContas();
+      setContas(data ?? []);
+    } catch { /* silent */ }
     setLoadingContas(false);
   }, []);
 
@@ -91,24 +89,24 @@ export function NovoLancamento({ memberId, memberName, onLancamentoSaved }: Novo
     const contaSelecionada = contas.find((c) => c.id === form.contaPlanoId);
 
     setSaving(true);
-    const { error } = await supabase.from("member_transactions").insert({
-      member_id: memberId,
-      tipo: form.tipo,
-      descricao: form.descricao.trim(),
-      valor: v,
-      data: format(form.data, "yyyy-MM-dd"),
-      status: form.tipo === "receita" ? "pago" : "em_aberto",
-      created_by: session?.user?.id,
-      conta_plano_id: form.contaPlanoId,
-      forma_pagamento: form.formaPagamento || null,
-    });
-    setSaving(false);
-
-    if (error) {
-      toast.error(error.message || "Erro ao registrar lançamento. Tente novamente.");
-      console.error(error);
+    try {
+      await createTransaction({
+        member_id: memberId,
+        tipo: form.tipo,
+        descricao: form.descricao.trim(),
+        valor: v,
+        data: format(form.data, "yyyy-MM-dd"),
+        status: form.tipo === "receita" ? "pago" : "em_aberto",
+        created_by: session?.user?.id,
+        conta_plano_id: form.contaPlanoId,
+        forma_pagamento: form.formaPagamento || null,
+      });
+    } catch (e: any) {
+      setSaving(false);
+      toast.error(e?.message || "Erro ao registrar lançamento. Tente novamente.");
       return;
     }
+    setSaving(false);
 
     logAction({
       action: form.tipo === "receita" ? "CREATE_RECEITA" : "CREATE_DESPESA",

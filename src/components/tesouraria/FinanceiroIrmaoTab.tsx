@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { listActiveMembers, listTransactions } from "@/services/transactions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -51,12 +51,10 @@ export function FinanceiroIrmaoTab() {
 
   const fetchMembers = useCallback(async () => {
     setLoadingMembers(true);
-    const { data } = await supabase
-      .from("members")
-      .select("id, full_name, cim, cpf, degree, status, initiation_date")
-      .eq("status", "ativo")
-      .order("full_name");
-    if (data) setMembers(data);
+    try {
+      const data = await listActiveMembers("id, full_name, cim, cpf, degree, status, initiation_date");
+      if (data) setMembers(data);
+    } catch { /* silent */ }
     setLoadingMembers(false);
   }, []);
 
@@ -65,30 +63,26 @@ export function FinanceiroIrmaoTab() {
   const selectedMember = members.find((m) => m.id === selectedMemberId);
 
   const fetchFinanceiro = useCallback(async (memberId: string) => {
-    const { data: txData } = await supabase
-      .from("member_transactions")
-      .select("id, data, tipo, descricao, valor, status")
-      .eq("member_id", memberId)
-      .order("data", { ascending: true })
-      .limit(500);
+    try {
+      const txData = await listTransactions({ member_id: memberId, limit: 500 });
+      const rows = (txData ?? []) as TransactionRow[];
+      setTransactions(rows);
 
-    const rows = (txData ?? []) as TransactionRow[];
-    setTransactions(rows);
-
-    let debitos = 0;
-    let creditos = 0;
-    const now = new Date();
-    const mesesSet = new Set<string>();
-    for (const t of rows) {
-      if (t.status === "em_aberto") {
-        debitos += Number(t.valor);
-        const d = new Date(t.data);
-        if (d <= now) mesesSet.add(`${d.getFullYear()}-${d.getMonth()}`);
-      } else {
-        creditos += Number(t.valor);
+      let debitos = 0;
+      let creditos = 0;
+      const now = new Date();
+      const mesesSet = new Set<string>();
+      for (const t of rows) {
+        if (t.status === "em_aberto") {
+          debitos += Number(t.valor);
+          const d = new Date(t.data);
+          if (d <= now) mesesSet.add(`${d.getFullYear()}-${d.getMonth()}`);
+        } else {
+          creditos += Number(t.valor);
+        }
       }
-    }
-    setFinanceiro({ debitos, creditos, mesesAtraso: mesesSet.size });
+      setFinanceiro({ debitos, creditos, mesesAtraso: mesesSet.size });
+    } catch { /* silent */ }
   }, []);
 
   const handleSelect = (id: string) => {

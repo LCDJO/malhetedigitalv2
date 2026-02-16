@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { batchCreateTransactions, listActiveMembers } from "@/services/transactions";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -53,8 +53,10 @@ export function LancamentoLote() {
   useEffect(() => {
     (async () => {
       setLoadingMembers(true);
-      const { data } = await supabase.from("members").select("id, full_name, cim").eq("status", "ativo").order("full_name");
-      if (data) setMembers(data);
+      try {
+        const data = await listActiveMembers("id, full_name, cim");
+        if (data) setMembers(data);
+      } catch { /* silent */ }
       setLoadingMembers(false);
     })();
   }, []);
@@ -92,12 +94,19 @@ export function LancamentoLote() {
       created_by: session?.user?.id,
     }));
 
-    const { error } = await supabase.from("member_transactions").insert(rows);
-
-    if (error) {
+    try {
+      await batchCreateTransactions(rows, {
+        tipo,
+        valor: valorNum,
+        situacao,
+        total_membros: targetIrmaos.length,
+        total_geral: valorNum * targetIrmaos.length,
+        data: format(data, "yyyy-MM-dd"),
+        descricao: descricao || tipoLabels[tipo],
+      });
+    } catch {
       setSaving(false);
       toast.error("Erro ao registrar lançamentos em lote. Tente novamente.");
-      console.error(error);
       return;
     }
 

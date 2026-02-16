@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { ShieldAlert, Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { cancelTransaction } from "@/services/transactions";
 import { useAuditLog } from "@/hooks/useAuditLog";
 import { toast } from "sonner";
 
@@ -47,39 +47,8 @@ export function CancelarLancamento({ transaction, open, onOpenChange, onCancelle
     setLoading(true);
 
     try {
-      // 1. Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Não autenticado");
+      await cancelTransaction(transaction.id, motivo.trim());
 
-      // 2. Create reverse (inverse) transaction
-      const isDebito = transaction.status === "em_aberto";
-      const { error: insertError } = await supabase
-        .from("member_transactions")
-        .insert({
-          member_id: transaction.member_id,
-          tipo: transaction.tipo,
-          descricao: `[CANCELAMENTO] ${transaction.descricao} — Motivo: ${motivo.trim()}`,
-          valor: transaction.valor,
-          // Inverse: if original was debit (em aberto), reverse is credit (pago) and vice-versa
-          status: isDebito ? "pago" : "em_aberto",
-          data: new Date().toISOString().slice(0, 10),
-          conta_plano_id: transaction.conta_plano_id,
-          created_by: user.id,
-        });
-
-      if (insertError) throw insertError;
-
-      // 3. Mark original as cancelled (update description to flag it)
-      const { error: updateError } = await supabase
-        .from("member_transactions")
-        .update({
-          descricao: `[CANCELADO] ${transaction.descricao}`,
-        })
-        .eq("id", transaction.id);
-
-      if (updateError) throw updateError;
-
-      // 4. Audit log
       logAction({
         action: "cancelamento_lancamento",
         targetTable: "member_transactions",
