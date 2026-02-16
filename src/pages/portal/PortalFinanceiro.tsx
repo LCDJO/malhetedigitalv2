@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { getMyTransactions } from "@/services/portal";
 import { usePortalMemberContext } from "@/components/portal/PortalLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,14 +17,12 @@ export default function PortalFinanceiro() {
 
   useEffect(() => {
     const fetchTxs = async () => {
-      const { data: txs } = await supabase
-        .from("member_transactions")
-        .select("id, data, tipo, descricao, valor, status")
-        .eq("member_id", member.id)
-        .order("data", { ascending: false })
-        .limit(200);
-
-      setTransactions(txs ?? []);
+      try {
+        const txs = await getMyTransactions(member.id);
+        setTransactions(txs ?? []);
+      } catch {
+        // silently fail
+      }
       setLoading(false);
     };
     fetchTxs();

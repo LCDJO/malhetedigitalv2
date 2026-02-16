@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { getPortalStats } from "@/services/portal";
 import { usePortalMemberContext } from "@/components/portal/PortalLayout";
 import { PortalBannerCarousel } from "@/components/portal/PortalBannerCarousel";
 import { AdSlot } from "@/components/ads/AdSlot";
@@ -33,18 +33,13 @@ export default function PortalDashboard() {
 
   useEffect(() => {
     const fetchStats = async () => {
-      const { count: active } = await supabase
-        .from("members")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "ativo");
-      setActiveCount(active ?? 0);
-
-      const { count: pending } = await supabase
-        .from("member_transactions")
-        .select("id", { count: "exact", head: true })
-        .eq("member_id", member.id)
-        .eq("status", "em aberto");
-      setPendingCount(pending ?? 0);
+      try {
+        const data = await getPortalStats();
+        setActiveCount(data.active_count);
+        setPendingCount(data.pending_count);
+      } catch {
+        // silently fail
+      }
     };
     fetchStats();
   }, [member.id]);
