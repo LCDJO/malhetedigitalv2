@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { getReportMembers } from "@/services/dashboard";
+import { listTransactions } from "@/services/transactions";
 import { useLodgeConfig } from "@/hooks/useLodgeConfig";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -106,10 +107,7 @@ export default function RelatorioBrothers() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
-        .from("members")
-        .select("id, full_name, cim, cpf, status, degree, email, phone, initiation_date, elevation_date, exaltation_date")
-        .order("full_name");
+      const data = await getReportMembers("id, full_name, cim, cpf, status, degree, email, phone, initiation_date, elevation_date, exaltation_date");
       setMembers(data ?? []);
       setLoading(false);
     })();
@@ -119,12 +117,7 @@ export default function RelatorioBrothers() {
     if (!selectedMember) { setTransactions([]); return; }
     (async () => {
       setLoadingTx(true);
-      const { data } = await supabase
-        .from("member_transactions")
-        .select("id, tipo, valor, descricao, data, status, member_id, created_at")
-        .eq("member_id", selectedMember)
-        .in("status", ["pago", "em_aberto"])
-        .order("data", { ascending: false });
+      const data = await listTransactions({ member_id: selectedMember, status: "pago,em_aberto" });
       setTransactions(data ?? []);
       setLoadingTx(false);
     })();

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { listTenantsWithData, createTenant, updateTenant, deleteTenant as deleteTenantApi, restoreTenant, manageSubscription } from "@/services/admin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,39 +45,42 @@ export default function AdminLojas() {
   const [editing, setEditing] = useState<TenantWithConfig | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
-  const [deleteTenant, setDeleteTenant] = useState<TenantWithConfig | null>(null);
+  const [deleteTenantTarget, setDeleteTenantTarget] = useState<TenantWithConfig | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const [{ data: tenantsData }, { data: configsData }, { data: plansData }, { data: subsData }, { data: membersCountData }] = await Promise.all([
-      supabase.from("tenants").select("*").order("created_at", { ascending: false }),
-      supabase.from("lodge_config").select("*"),
-      supabase.from("plans").select("*").eq("is_active", true).order("price"),
-      supabase.from("subscriptions").select("id, tenant_id, plan_id, status").eq("status", "active"),
-      supabase.from("members").select("tenant_id"),
-    ]);
+    try {
+      const result = await listTenantsWithData();
+      const tenantsData = result.tenants ?? [];
+      const configsData = result.configs ?? [];
+      const plansData = result.plans ?? [];
+      const subsData = result.subscriptions ?? [];
+      const membersCountData = result.members ?? [];
 
-    setPlans(plansData ?? []);
+      setPlans(plansData);
 
-    const subsMap: Record<string, { plan_id: string; id: string }> = {};
-    (subsData ?? []).forEach((s) => { subsMap[s.tenant_id] = { plan_id: s.plan_id, id: s.id }; });
-    setSubscriptions(subsMap);
+      const subsMap: Record<string, { plan_id: string; id: string }> = {};
+      subsData.forEach((s: any) => { subsMap[s.tenant_id] = { plan_id: s.plan_id, id: s.id }; });
+      setSubscriptions(subsMap);
 
-    const configMap = new Map<string, LodgeConfig>();
-    (configsData ?? []).forEach((c) => { if (c.tenant_id) configMap.set(c.tenant_id, c); });
+      const configMap = new Map<string, LodgeConfig>();
+      configsData.forEach((c: any) => { if (c.tenant_id) configMap.set(c.tenant_id, c); });
 
-    const memberCountMap = new Map<string, number>();
-    (membersCountData ?? []).forEach((m) => {
-      if (m.tenant_id) memberCountMap.set(m.tenant_id, (memberCountMap.get(m.tenant_id) || 0) + 1);
-    });
+      const memberCountMap = new Map<string, number>();
+      membersCountData.forEach((m: any) => {
+        if (m.tenant_id) memberCountMap.set(m.tenant_id, (memberCountMap.get(m.tenant_id) || 0) + 1);
+      });
 
-    const merged: TenantWithConfig[] = (tenantsData ?? []).map((t) => ({
-      ...t,
-      lodge_config: configMap.get(t.id) ?? null,
-      member_count: memberCountMap.get(t.id) ?? 0,
-    }));
+      const merged: TenantWithConfig[] = tenantsData.map((t: any) => ({
+        ...t,
+        lodge_config: configMap.get(t.id) ?? null,
+        member_count: memberCountMap.get(t.id) ?? 0,
+      }));
 
-    setTenants(merged);
+      setTenants(merged);
+    } catch (e: any) {
+      toast({ title: "Erro ao carregar dados", description: e.message, variant: "destructive" });
+    }
     setLoading(false);
   }, []);
 
@@ -140,92 +143,60 @@ export default function AdminLojas() {
       potencia: form.potencia, rito: form.rito, orient: form.orient, lodge_number: form.lodge_number,
     };
 
-    let tenantId = editing?.id;
+    try {
+      let tenantId = editing?.id;
 
-    if (editing) {
-      const { error } = await supabase.from("tenants").update(payload).eq("id", editing.id);
-      if (error) {
-        toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" });
-        setSaving(false); return;
-      }
-    } else {
-      const { data, error } = await supabase.from("tenants").insert(payload).select("id").single();
-      if (error) {
-        toast({ title: "Erro ao criar Loja", description: error.message, variant: "destructive" });
-        setSaving(false); return;
-      }
-      tenantId = data.id;
-    }
-
-    // Handle plan/subscription
-    if (tenantId && form.plan_id) {
-      const existingSub = subscriptions[tenantId];
-      if (existingSub) {
-        if (existingSub.plan_id !== form.plan_id) {
-          await supabase.from("subscriptions").update({ plan_id: form.plan_id }).eq("id", existingSub.id);
-        }
+      if (editing) {
+        await updateTenant(editing.id, payload);
       } else {
-        const { data: ownerData } = await supabase
-          .from("tenant_users")
-          .select("user_id")
-          .eq("tenant_id", tenantId)
-          .eq("role", "owner")
-          .limit(1)
-          .maybeSingle();
-
-        const userId = ownerData?.user_id || tenantId;
-
-        await supabase.from("subscriptions").insert({
-          tenant_id: tenantId,
-          plan_id: form.plan_id,
-          user_id: userId,
-          status: "active",
-        });
+        const result = await createTenant(payload);
+        tenantId = result.id;
       }
-    } else if (tenantId && !form.plan_id && subscriptions[tenantId]) {
-      await supabase.from("subscriptions").update({ status: "canceled" }).eq("id", subscriptions[tenantId].id);
-    }
 
-    toast({ title: editing ? "Loja atualizada com sucesso" : "Loja criada com sucesso" });
-    logAction({ action: editing ? "UPDATE_TENANT" : "CREATE_TENANT", targetTable: "tenants", targetId: tenantId ?? undefined, details: { name: form.name } });
+      // Handle plan/subscription
+      if (tenantId && form.plan_id) {
+        const existingSub = subscriptions[tenantId];
+        if (existingSub) {
+          if (existingSub.plan_id !== form.plan_id) {
+            await manageSubscription({ subscription_id: existingSub.id, plan_id: form.plan_id, operation: "update" });
+          }
+        } else {
+          await manageSubscription({ tenant_id: tenantId, plan_id: form.plan_id, operation: "create" });
+        }
+      } else if (tenantId && !form.plan_id && subscriptions[tenantId]) {
+        await manageSubscription({ subscription_id: subscriptions[tenantId].id, operation: "cancel" });
+      }
+
+      toast({ title: editing ? "Loja atualizada com sucesso" : "Loja criada com sucesso" });
+      logAction({ action: editing ? "UPDATE_TENANT" : "CREATE_TENANT", targetTable: "tenants", targetId: tenantId ?? undefined, details: { name: form.name } });
+    } catch (e: any) {
+      toast({ title: "Erro ao salvar", description: e.message, variant: "destructive" });
+    }
     setSaving(false);
     setDialogOpen(false);
     fetchData();
   };
 
   const handleDelete = async () => {
-    if (!deleteTenant) return;
-    const now = new Date();
-    const purgeDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-
-    const { error } = await supabase.from("tenants").update({
-      deleted_at: now.toISOString(),
-      purge_at: purgeDate.toISOString(),
-      is_active: false,
-    } as any).eq("id", deleteTenant.id);
-
-    if (error) {
-      toast({ title: "Erro ao excluir loja", description: error.message, variant: "destructive" });
-    } else {
+    if (!deleteTenantTarget) return;
+    try {
+      await deleteTenantApi(deleteTenantTarget.id);
       toast({ title: "Loja marcada para exclusão", description: "Os dados serão removidos permanentemente em 30 dias." });
-      logAction({ action: "DELETE_TENANT", targetTable: "tenants", targetId: deleteTenant.id, details: { name: deleteTenant.name } });
+      logAction({ action: "DELETE_TENANT", targetTable: "tenants", targetId: deleteTenantTarget.id, details: { name: deleteTenantTarget.name } });
+    } catch (e: any) {
+      toast({ title: "Erro ao excluir loja", description: e.message, variant: "destructive" });
     }
-    setDeleteTenant(null);
+    setDeleteTenantTarget(null);
     fetchData();
   };
 
   const handleRestore = async (t: TenantWithConfig) => {
-    const { error } = await supabase.from("tenants").update({
-      deleted_at: null,
-      purge_at: null,
-      is_active: true,
-    } as any).eq("id", t.id);
-
-    if (error) {
-      toast({ title: "Erro ao restaurar", description: error.message, variant: "destructive" });
-    } else {
+    try {
+      await restoreTenant(t.id);
       toast({ title: "Loja restaurada com sucesso" });
       logAction({ action: "RESTORE_TENANT", targetTable: "tenants", targetId: t.id, details: { name: t.name } });
+    } catch (e: any) {
+      toast({ title: "Erro ao restaurar", description: e.message, variant: "destructive" });
     }
     fetchData();
   };
@@ -234,7 +205,6 @@ export default function AdminLojas() {
     (t) => t.name.toLowerCase().includes(search.toLowerCase()) || t.slug.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Separate active from deleted
   const activeTenants = filtered.filter((t) => !isDeleted(t));
   const deletedTenants = filtered.filter((t) => isDeleted(t));
 
@@ -309,7 +279,7 @@ export default function AdminLojas() {
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(t)} title="Editar">
                               <Pencil className="h-3.5 w-3.5" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeleteTenant(t)} title="Excluir">
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeleteTenantTarget(t)} title="Excluir">
                               <Trash2 className="h-3.5 w-3.5 text-destructive" />
                             </Button>
                           </div>
@@ -373,10 +343,9 @@ export default function AdminLojas() {
         </CardContent>
       </Card>
 
-      {/* Create / Edit Dialog — Premium redesign */}
+      {/* Create / Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto p-0">
-          {/* Header with avatar */}
           <div className="px-6 pt-6 pb-4 border-b border-border/40 bg-muted/30">
             <div className="flex items-start gap-4">
               <Avatar className="h-14 w-14 rounded-xl border-2 border-primary/20 shadow-sm">
@@ -412,7 +381,6 @@ export default function AdminLojas() {
             </div>
           </div>
 
-          {/* Tabbed form */}
           <div className="px-6 py-5">
             <Tabs defaultValue="identificacao" className="w-full">
               <TabsList className="w-full justify-start gap-1 bg-muted/50 p-1 h-auto flex-wrap">
@@ -430,7 +398,6 @@ export default function AdminLojas() {
                 </TabsTrigger>
               </TabsList>
 
-              {/* Tab: Identificação */}
               <TabsContent value="identificacao" className="mt-5 space-y-5">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2 sm:col-span-2">
@@ -466,7 +433,6 @@ export default function AdminLojas() {
                 </div>
               </TabsContent>
 
-              {/* Tab: Plano */}
               <TabsContent value="plano" className="mt-5 space-y-4">
                 <div className="space-y-2">
                   <Label className="flex items-center gap-1.5">
@@ -509,7 +475,6 @@ export default function AdminLojas() {
                 )}
               </TabsContent>
 
-              {/* Tab: Empresarial */}
               <TabsContent value="empresarial" className="mt-5 space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
@@ -543,7 +508,6 @@ export default function AdminLojas() {
                 </div>
               </TabsContent>
 
-              {/* Tab: Maçônico */}
               <TabsContent value="maconico" className="mt-5 space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
@@ -572,7 +536,6 @@ export default function AdminLojas() {
             </Tabs>
           </div>
 
-          {/* Footer */}
           <div className="px-6 py-4 border-t border-border/40 bg-muted/20 flex items-center justify-between">
             <p className="text-[11px] text-muted-foreground">
               {editing ? `ID: ${editing.id.slice(0, 8)}…` : "Campos com * são obrigatórios"}
@@ -588,12 +551,11 @@ export default function AdminLojas() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete confirmation */}
       <ConfirmSensitiveAction
-        open={!!deleteTenant}
-        onOpenChange={(open) => { if (!open) setDeleteTenant(null); }}
+        open={!!deleteTenantTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTenantTarget(null); }}
         title="Excluir Loja"
-        description={`Tem certeza que deseja excluir a loja "${deleteTenant?.name}"? Todos os dados associados (membros, lançamentos, configurações) serão permanentemente removidos após 30 dias. Durante esse período, a exclusão pode ser revertida.`}
+        description={`Tem certeza que deseja excluir a loja "${deleteTenantTarget?.name}"? Todos os dados associados (membros, lançamentos, configurações) serão permanentemente removidos após 30 dias. Durante esse período, a exclusão pode ser revertida.`}
         confirmLabel="Excluir"
         requireTypedConfirmation="EXCLUIR"
         destructive

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { listTransactions, listPlanoContas } from "@/services/transactions";
+import { getReportMembers } from "@/services/dashboard";
 import { CancelarLancamento } from "@/components/tesouraria/CancelarLancamento";
 import { PermissionGate } from "@/components/PermissionGate";
 import { DemonstrativoTab } from "@/components/financeiro/DemonstrativoTab";
@@ -14,17 +15,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from "date-fns";
 import { cn } from "@/lib/utils";
 import {
-  TrendingUp,
-  TrendingDown,
-  Scale,
-  Wallet,
-  CalendarIcon,
-  List,
-  FileText,
-  BarChart3,
-  Loader2,
-  ArrowUpDown,
-  Filter,
+  TrendingUp, TrendingDown, Scale, Wallet, CalendarIcon, List, FileText, BarChart3,
+  Loader2, ArrowUpDown, Filter,
 } from "lucide-react";
 import { NovoLancamentoLoja } from "@/components/tesouraria/NovoLancamentoLoja";
 
@@ -117,50 +109,24 @@ const FinanceiroGeral = ({ embedded = false }: FinanceiroGeralProps) => {
     const fromStr = format(dateRange.from, "yyyy-MM-dd");
     const toStr = format(dateRange.to, "yyyy-MM-dd");
 
-    // Fetch transactions + contas in parallel
-    const [txResult, contasResult] = await Promise.all([
-      supabase
-        .from("member_transactions")
-        .select("id, data, tipo, descricao, valor, status, member_id, conta_plano_id, created_by")
-        .gte("data", fromStr)
-        .lte("data", toStr)
-        .order("data", { ascending: true })
-        .limit(1000),
-      supabase
-        .from("plano_contas")
-        .select("id, codigo, nome, tipo, conta_pai_id, ativo")
-        .eq("ativo", true)
-        .order("codigo", { ascending: true }),
+    const [txData, contasData, membersData, profilesData] = await Promise.all([
+      listTransactions({ start_date: fromStr, end_date: toStr, limit: 1000 }),
+      listPlanoContas(),
+      getReportMembers("id, full_name"),
+      getReportMembers("id, full_name"), // profiles via dashboard endpoint
     ]);
 
-    const contasData = (contasResult.data ?? []) as ContaPlano[];
-    setPlanoContas(contasData);
-    const contaMap = new Map(contasData.map((c: ContaPlano) => [c.id, c.nome]));
+    const contas = (contasData ?? []) as ContaPlano[];
+    setPlanoContas(contas);
+    const contaMap = new Map(contas.map((c: ContaPlano) => [c.id, c.nome]));
+    const nameMap = new Map((membersData ?? []).map((m: any) => [m.id, m.full_name]));
 
-    if (txResult.data) {
-      const txData = txResult.data as Array<{id: string; data: string; tipo: string; descricao: string; valor: number; status: string; member_id: string; conta_plano_id: string | null; created_by: string | null}>;
-      const memberIds = [...new Set(txData.map((t) => t.member_id))];
-      const createdByIds = [...new Set(txData.map((t) => t.created_by).filter(Boolean))] as string[];
-      
-      const [membersRes, profilesRes] = await Promise.all([
-        memberIds.length > 0
-          ? supabase.from("members").select("id, full_name").in("id", memberIds)
-          : Promise.resolve({ data: [] as { id: string; full_name: string }[] }),
-        createdByIds.length > 0
-          ? supabase.from("profiles").select("id, full_name").in("id", createdByIds)
-          : Promise.resolve({ data: [] as { id: string; full_name: string }[] }),
-      ]);
-
-      const nameMap = new Map(membersRes.data?.map((m) => [m.id, m.full_name]) ?? []);
-      const profileMap = new Map(profilesRes.data?.map((p) => [p.id, p.full_name]) ?? []);
-
-      setTransactions(txData.map((t) => ({
-        ...t,
-        member_name: nameMap.get(t.member_id) ?? "—",
-        conta_nome: t.conta_plano_id ? contaMap.get(t.conta_plano_id) ?? "—" : "—",
-        created_by_name: t.created_by ? profileMap.get(t.created_by) ?? "—" : "—",
-      })));
-    }
+    setTransactions((txData ?? []).map((t: any) => ({
+      ...t,
+      member_name: nameMap.get(t.member_id) ?? "—",
+      conta_nome: t.conta_plano_id ? contaMap.get(t.conta_plano_id) ?? "—" : "—",
+      created_by_name: t.created_by ? nameMap.get(t.created_by) ?? "—" : "—",
+    })));
     setLoading(false);
   }, [dateRange]);
 
@@ -172,7 +138,6 @@ const FinanceiroGeral = ({ embedded = false }: FinanceiroGeralProps) => {
       const resultado = serverKpis.receitas - serverKpis.despesas;
       return { receitas: serverKpis.receitas, despesas: serverKpis.despesas, resultado };
     }
-    // Fallback: client-side from loaded transactions
     let receitas = 0;
     let despesas = 0;
     for (const t of transactions) {
@@ -223,8 +188,6 @@ const FinanceiroGeral = ({ embedded = false }: FinanceiroGeralProps) => {
   // Consolidated tree by plano de contas
   const consolidadoTree = useMemo(() => {
     if (planoContas.length === 0) return [];
-
-    // Sum by tipo (category key in transactions maps to plano_contas tipo match)
     const tipoTotals = new Map<string, { receitas: number; despesas: number }>();
     for (const t of transactions) {
       const key = t.tipo;
@@ -233,13 +196,10 @@ const FinanceiroGeral = ({ embedded = false }: FinanceiroGeralProps) => {
       else entry.despesas += Number(t.valor);
       tipoTotals.set(key, entry);
     }
-
-    // Build tree from plano_contas
     const nodeMap = new Map<string, ConsolidadoNode>();
     for (const c of planoContas) {
       nodeMap.set(c.id, { id: c.id, codigo: c.codigo, nome: c.nome, tipo: c.tipo, total: 0, children: [], depth: 0 });
     }
-
     const roots: ConsolidadoNode[] = [];
     for (const c of planoContas) {
       const node = nodeMap.get(c.id)!;
@@ -249,27 +209,19 @@ const FinanceiroGeral = ({ embedded = false }: FinanceiroGeralProps) => {
         roots.push(node);
       }
     }
-
-    // Assign totals to leaf nodes by matching tipo name (lowercase)
-    // Match: conta.nome.toLowerCase() matches transaction.tipo key
     const contasByName = new Map<string, ConsolidadoNode>();
     for (const [, node] of nodeMap) {
       contasByName.set(node.nome.toLowerCase(), node);
     }
-
-    // Map transaction tipos to plano nodes
     const tipoToContaName: Record<string, string> = {
       mensalidade: "mensalidades",
       taxa: "taxas",
       avulso: "avulso",
     };
-
     for (const [tipo, totals] of tipoTotals) {
       const lookupName = tipoToContaName[tipo] ?? tipo;
-      // Try exact match, then partial
       let target = contasByName.get(lookupName) ?? contasByName.get(tipo);
       if (!target) {
-        // Try finding any conta whose name contains the tipo
         for (const [name, node] of contasByName) {
           if (name.includes(tipo) || tipo.includes(name)) { target = node; break; }
         }
@@ -278,8 +230,6 @@ const FinanceiroGeral = ({ embedded = false }: FinanceiroGeralProps) => {
         target.total = target.tipo === "receita" ? totals.receitas : totals.despesas;
       }
     }
-
-    // Bubble up totals
     function sumUp(node: ConsolidadoNode): number {
       if (node.children.length === 0) return node.total;
       let childSum = 0;
@@ -287,15 +237,12 @@ const FinanceiroGeral = ({ embedded = false }: FinanceiroGeralProps) => {
       node.total = childSum + node.total;
       return node.total;
     }
-
     function setDepth(nodes: ConsolidadoNode[], d: number) {
       for (const n of nodes) { n.depth = d; setDepth(n.children, d + 1); }
     }
-
     for (const r of roots) sumUp(r);
     setDepth(roots, 0);
     roots.sort((a, b) => a.codigo.localeCompare(b.codigo));
-
     return roots;
   }, [planoContas, transactions]);
 
@@ -316,7 +263,7 @@ const FinanceiroGeral = ({ embedded = false }: FinanceiroGeralProps) => {
   const fluxoMensal = useMemo(() => {
     const map = new Map<string, { receitas: number; despesas: number }>();
     for (const t of transactions) {
-      const key = t.data.slice(0, 7); // yyyy-MM
+      const key = t.data.slice(0, 7);
       const entry = map.get(key) ?? { receitas: 0, despesas: 0 };
       if (t.status === "pago") entry.receitas += Number(t.valor);
       else entry.despesas += Number(t.valor);

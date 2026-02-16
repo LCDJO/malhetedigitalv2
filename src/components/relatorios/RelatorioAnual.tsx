@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { getReportTransactions, getReportMembers } from "@/services/dashboard";
 import { useLodgeConfig } from "@/hooks/useLodgeConfig";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -56,16 +56,12 @@ export default function RelatorioAnual() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const [txRes, memRes] = await Promise.all([
-        supabase.from("member_transactions")
-          .select("tipo, valor, data, status")
-          .in("status", VALID_STATUSES)
-          .gte("data", `${ano}-01-01`)
-          .lte("data", `${ano}-12-31`),
-        supabase.from("members").select("id").eq("status", "ativo"),
+      const [txData, memData] = await Promise.all([
+        getReportTransactions({ start_date: `${ano}-01-01`, end_date: `${ano}-12-31`, statuses: VALID_STATUSES }),
+        getReportMembers("id", "ativo"),
       ]);
-      setTransactions(txRes.data ?? []);
-      setActiveCount(memRes.data?.length ?? 0);
+      setTransactions(txData ?? []);
+      setActiveCount(memData?.length ?? 0);
       setLoading(false);
     })();
   }, [ano]);

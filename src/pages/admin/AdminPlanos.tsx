@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { listPlans, createPlan, updatePlan, deletePlan } from "@/services/admin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -65,30 +65,24 @@ export default function AdminPlanos() {
 
   const fetchPlans = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from("plans")
-      .select("*")
-      .is("tenant_id", null)
-      .order("price", { ascending: true });
-    setPlans(
-      (data ?? []).map((p: any) => ({
-        ...p,
-        features: Array.isArray(p.features) ? p.features : [],
-        modules: Array.isArray(p.modules) ? p.modules : [],
-      }))
-    );
+    try {
+      const data = await listPlans();
+      setPlans(
+        (data ?? []).map((p: any) => ({
+          ...p,
+          features: Array.isArray(p.features) ? p.features : [],
+          modules: Array.isArray(p.modules) ? p.modules : [],
+        }))
+      );
+    } catch (e) {
+      console.error(e);
+    }
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-    fetchPlans();
-  }, [fetchPlans]);
+  useEffect(() => { fetchPlans(); }, [fetchPlans]);
 
-  const openCreate = () => {
-    setEditing(null);
-    setForm(emptyForm);
-    setDialogOpen(true);
-  };
+  const openCreate = () => { setEditing(null); setForm(emptyForm); setDialogOpen(true); };
 
   const openEdit = (p: Plan) => {
     setEditing(p);
@@ -136,22 +130,18 @@ export default function AdminPlanos() {
       tenant_id: null,
     };
 
-    if (editing) {
-      const { error } = await supabase.from("plans").update(payload).eq("id", editing.id);
-      if (error) {
-        toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" });
-      } else {
+    try {
+      if (editing) {
+        await updatePlan(editing.id, payload);
         toast({ title: "Plano atualizado com sucesso" });
         logAction({ action: "UPDATE_PLAN", targetTable: "plans", targetId: editing.id, details: { name: form.name } });
-      }
-    } else {
-      const { error } = await supabase.from("plans").insert(payload);
-      if (error) {
-        toast({ title: "Erro ao criar plano", description: error.message, variant: "destructive" });
       } else {
+        await createPlan(payload);
         toast({ title: "Plano criado com sucesso" });
         logAction({ action: "CREATE_PLAN", targetTable: "plans", details: { name: form.name, price: form.price } });
       }
+    } catch (e: any) {
+      toast({ title: editing ? "Erro ao atualizar" : "Erro ao criar plano", description: e.message, variant: "destructive" });
     }
 
     setSaving(false);
@@ -161,12 +151,12 @@ export default function AdminPlanos() {
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
-    const { error } = await supabase.from("plans").delete().eq("id", deleteTarget.id);
-    if (error) {
-      toast({ title: "Erro ao excluir", description: error.message, variant: "destructive" });
-    } else {
+    try {
+      await deletePlan(deleteTarget.id);
       toast({ title: "Plano excluído com sucesso" });
       logAction({ action: "DELETE_PLAN", targetTable: "plans", targetId: deleteTarget.id, details: { name: deleteTarget.name } });
+    } catch (e: any) {
+      toast({ title: "Erro ao excluir", description: e.message, variant: "destructive" });
     }
     setDeleteTarget(null);
     setShowDeleteConfirm(false);
@@ -201,12 +191,7 @@ export default function AdminPlanos() {
           <div className="flex items-center gap-3">
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar plano..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
-              />
+              <Input placeholder="Buscar plano..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
             </div>
             <Badge variant="secondary" className="text-xs">
               {filtered.length} {filtered.length === 1 ? "plano" : "planos"}
@@ -231,9 +216,9 @@ export default function AdminPlanos() {
                   <TableHead>Valor</TableHead>
                   <TableHead>Ciclo</TableHead>
                   <TableHead>Módulos</TableHead>
-                   <TableHead>Limite Membros</TableHead>
-                   <TableHead>Totens</TableHead>
-                   <TableHead>Status</TableHead>
+                  <TableHead>Limite Membros</TableHead>
+                  <TableHead>Totens</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead className="w-[100px]">Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -243,9 +228,7 @@ export default function AdminPlanos() {
                     <TableCell>
                       <div>
                         <span className="font-medium">{p.name}</span>
-                        {p.description && (
-                          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{p.description}</p>
-                        )}
+                        {p.description && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{p.description}</p>}
                       </div>
                     </TableCell>
                     <TableCell className="font-mono text-sm">{formatCurrency(p.price)}</TableCell>
@@ -253,25 +236,15 @@ export default function AdminPlanos() {
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
                         {p.modules.map((m) => (
-                          <Badge key={m} variant="outline" className="text-[10px] px-1.5 py-0">
-                            {m}
-                          </Badge>
+                          <Badge key={m} variant="outline" className="text-[10px] px-1.5 py-0">{m}</Badge>
                         ))}
                       </div>
                     </TableCell>
                     <TableCell className="text-sm">
-                      {p.max_members === 0 ? (
-                        <span className="text-muted-foreground">Ilimitado</span>
-                      ) : (
-                        p.max_members
-                      )}
+                      {p.max_members === 0 ? <span className="text-muted-foreground">Ilimitado</span> : p.max_members}
                     </TableCell>
                     <TableCell className="text-sm">
-                      {p.max_totems === 0 ? (
-                        <span className="text-muted-foreground">Ilimitado</span>
-                      ) : (
-                        p.max_totems
-                      )}
+                      {p.max_totems === 0 ? <span className="text-muted-foreground">Ilimitado</span> : p.max_totems}
                     </TableCell>
                     <TableCell>
                       <Badge variant={p.is_active ? "default" : "secondary"} className="text-[10px]">
@@ -283,15 +256,8 @@ export default function AdminPlanos() {
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(p)}>
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                          onClick={() => {
-                            setDeleteTarget(p);
-                            setShowDeleteConfirm(true);
-                          }}
-                        >
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={() => { setDeleteTarget(p); setShowDeleteConfirm(true); }}>
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>
@@ -304,7 +270,6 @@ export default function AdminPlanos() {
         </CardContent>
       </Card>
 
-      {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
@@ -313,77 +278,36 @@ export default function AdminPlanos() {
           <div className="space-y-4 py-2 max-h-[60vh] overflow-y-auto">
             <div className="space-y-2">
               <Label htmlFor="plan-name">Nome do Plano</Label>
-              <Input
-                id="plan-name"
-                placeholder="Ex: Premium"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-              />
+              <Input id="plan-name" placeholder="Ex: Premium" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="plan-desc">Descrição</Label>
-              <Textarea
-                id="plan-desc"
-                placeholder="Descrição do plano..."
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                rows={2}
-              />
+              <Textarea id="plan-desc" placeholder="Descrição do plano..." value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="plan-price">Valor (R$)</Label>
-                <Input
-                  id="plan-price"
-                  type="number"
-                  min={0}
-                  step={0.01}
-                  value={form.price}
-                  onChange={(e) => setForm({ ...form, price: parseFloat(e.target.value) || 0 })}
-                />
+                <Input id="plan-price" type="number" min={0} step={0.01} value={form.price} onChange={(e) => setForm({ ...form, price: parseFloat(e.target.value) || 0 })} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="plan-interval">Ciclo (dias)</Label>
-                <Input
-                  id="plan-interval"
-                  type="number"
-                  min={1}
-                  value={form.interval_days}
-                  onChange={(e) => setForm({ ...form, interval_days: parseInt(e.target.value) || 30 })}
-                />
+                <Input id="plan-interval" type="number" min={1} value={form.interval_days} onChange={(e) => setForm({ ...form, interval_days: parseInt(e.target.value) || 30 })} />
               </div>
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="plan-members">Limite de Membros</Label>
-                <Input
-                  id="plan-members"
-                  type="number"
-                  min={0}
-                  value={form.max_members}
-                  onChange={(e) => setForm({ ...form, max_members: parseInt(e.target.value) || 0 })}
-                />
+                <Input id="plan-members" type="number" min={0} value={form.max_members} onChange={(e) => setForm({ ...form, max_members: parseInt(e.target.value) || 0 })} />
                 <p className="text-[11px] text-muted-foreground">0 = ilimitado</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="plan-totems">Limite de Totens</Label>
-                <Input
-                  id="plan-totems"
-                  type="number"
-                  min={0}
-                  value={form.max_totems}
-                  onChange={(e) => setForm({ ...form, max_totems: parseInt(e.target.value) || 0 })}
-                />
+                <Input id="plan-totems" type="number" min={0} value={form.max_totems} onChange={(e) => setForm({ ...form, max_totems: parseInt(e.target.value) || 0 })} />
                 <p className="text-[11px] text-muted-foreground">0 = ilimitado</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="plan-stripe">Stripe Price ID</Label>
-                <Input
-                  id="plan-stripe"
-                  placeholder="price_..."
-                  value={form.stripe_price_id}
-                  onChange={(e) => setForm({ ...form, stripe_price_id: e.target.value })}
-                />
+                <Input id="plan-stripe" placeholder="price_..." value={form.stripe_price_id} onChange={(e) => setForm({ ...form, stripe_price_id: e.target.value })} />
                 <p className="text-[11px] text-muted-foreground">Opcional</p>
               </div>
             </div>
@@ -391,14 +315,8 @@ export default function AdminPlanos() {
               <Label>Módulos Disponíveis</Label>
               <div className="grid grid-cols-2 gap-2">
                 {ALL_MODULES.map((mod) => (
-                  <label
-                    key={mod.id}
-                    className="flex items-center gap-2 p-2 rounded-md border border-border/60 cursor-pointer hover:bg-accent/50 transition-colors"
-                  >
-                    <Checkbox
-                      checked={form.modules.includes(mod.id)}
-                      onCheckedChange={() => toggleModule(mod.id)}
-                    />
+                  <label key={mod.id} className="flex items-center gap-2 p-2 rounded-md border border-border/60 cursor-pointer hover:bg-accent/50 transition-colors">
+                    <Checkbox checked={form.modules.includes(mod.id)} onCheckedChange={() => toggleModule(mod.id)} />
                     <span className="text-sm">{mod.label}</span>
                   </label>
                 ))}
@@ -406,17 +324,11 @@ export default function AdminPlanos() {
             </div>
             <div className="flex items-center justify-between pt-2">
               <Label htmlFor="plan-active">Plano ativo</Label>
-              <Switch
-                id="plan-active"
-                checked={form.is_active}
-                onCheckedChange={(v) => setForm({ ...form, is_active: v })}
-              />
+              <Switch id="plan-active" checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              Cancelar
-            </Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
             <Button onClick={handleSave} disabled={saving} className="gap-2">
               {saving && <Loader2 className="h-4 w-4 animate-spin" />}
               {editing ? "Salvar" : "Criar Plano"}
@@ -425,7 +337,6 @@ export default function AdminPlanos() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation */}
       {deleteTarget && (
         <ConfirmSensitiveAction
           open={showDeleteConfirm}
