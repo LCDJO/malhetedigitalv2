@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { createTransaction, listRecentTransactions, listActiveMembers } from "@/services/transactions";
 import { supabase } from "@/integrations/supabase/client";
 import { useLodgeConfig } from "@/hooks/useLodgeConfig";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -72,32 +73,25 @@ export function LancamentoIndividual({ onLancamentoSaved }: LancamentoIndividual
 
   const fetchMembers = useCallback(async () => {
     setLoadingMembers(true);
-    const { data } = await supabase
-      .from("members")
-      .select("id, full_name, cim, degree")
-      .eq("status", "ativo")
-      .order("full_name");
-    if (data) setMembers(data);
+    try {
+      const data = await listActiveMembers("id, full_name, cim, degree");
+      if (data) setMembers(data);
+    } catch { /* silent */ }
     setLoadingMembers(false);
   }, []);
 
   // Fetch recent transactions created in this session (last 20)
   const fetchRecent = useCallback(async () => {
-    const { data } = await supabase
-      .from("member_transactions")
-      .select("id, data, tipo, descricao, valor, status, member_id")
-      .order("created_at", { ascending: false })
-      .limit(20);
-    if (data) {
-      // Enrich with member names
-      const memberIds = [...new Set(data.map((t) => t.member_id))];
-      const { data: membersData } = await supabase
-        .from("members")
-        .select("id, full_name")
-        .in("id", memberIds);
-      const nameMap = new Map(membersData?.map((m) => [m.id, m.full_name]) ?? []);
-      setRecentTx(data.map((t) => ({ ...t, member_name: nameMap.get(t.member_id) ?? "—" })));
-    }
+    try {
+      const data = await listRecentTransactions(20);
+      if (data) {
+        // Enrich with member names
+        const memberIds = [...new Set(data.map((t: any) => t.member_id))];
+        const membersData = await listActiveMembers("id, full_name");
+        const nameMap = new Map(membersData?.map((m: any) => [m.id, m.full_name]) ?? []);
+        setRecentTx(data.map((t: any) => ({ ...t, member_name: nameMap.get(t.member_id) ?? "—" })));
+      }
+    } catch { /* silent */ }
   }, []);
 
   useEffect(() => { fetchMembers(); fetchRecent(); }, [fetchMembers, fetchRecent]);
@@ -116,22 +110,22 @@ export function LancamentoIndividual({ onLancamentoSaved }: LancamentoIndividual
     if (!irmao) { toast.error("Irmão não encontrado."); return; }
 
     setSaving(true);
-    const { error } = await supabase.from("member_transactions").insert({
-      member_id: form.irmaoId,
-      tipo: form.tipo,
-      descricao: form.descricao.trim() || tipoLabels[form.tipo],
-      valor: v,
-      data: format(form.data, "yyyy-MM-dd"),
-      status: form.situacao,
-      created_by: session?.user?.id,
-    });
-    setSaving(false);
-
-    if (error) {
+    try {
+      await createTransaction({
+        member_id: form.irmaoId,
+        tipo: form.tipo,
+        descricao: form.descricao.trim() || tipoLabels[form.tipo],
+        valor: v,
+        data: format(form.data, "yyyy-MM-dd"),
+        status: form.situacao,
+        created_by: session?.user?.id,
+      });
+    } catch (e: any) {
+      setSaving(false);
       toast.error("Erro ao registrar lançamento. Tente novamente.");
-      console.error(error);
       return;
     }
+    setSaving(false);
 
     logAction({
       action: form.situacao === "pago" ? "CREATE_CREDIT" : "CREATE_DEBIT",

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { createTransaction } from "@/services/transactions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,21 +36,22 @@ export function NovoDebito({ memberId, memberName, onDebitoSaved }: NovoDebitoPr
     if (v <= 0 || isNaN(v)) { toast.error("O valor deve ser maior que zero."); return; }
 
     setSaving(true);
-    const { error } = await supabase.from("member_transactions").insert({
-      member_id: memberId,
-      tipo: form.categoria,
-      descricao: form.descricao.trim() || undefined,
-      valor: v,
-      data: format(form.data, "yyyy-MM-dd"),
-      status: "em_aberto",
-      created_by: session?.user?.id,
-    });
-    setSaving(false);
-
-    if (error) {
+    try {
+      await createTransaction({
+        member_id: memberId,
+        tipo: form.categoria,
+        descricao: form.descricao.trim() || undefined,
+        valor: v,
+        data: format(form.data, "yyyy-MM-dd"),
+        status: "em_aberto",
+        created_by: session?.user?.id,
+      });
+    } catch {
+      setSaving(false);
       toast.error("Erro ao registrar débito. Tente novamente.");
       return;
     }
+    setSaving(false);
 
     logAction({
       action: "CREATE_DEBIT",

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { createTransaction, listTransactions, batchUpdateStatus } from "@/services/transactions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,13 +58,10 @@ export function NovoCredito({ memberId, memberName, onCreditoSaved }: NovoCredit
   useEffect(() => {
     const fetchDebitos = async () => {
       setLoadingDebitos(true);
-      const { data } = await supabase
-        .from("member_transactions")
-        .select("id, data, descricao, valor, tipo")
-        .eq("member_id", memberId)
-        .eq("status", "em_aberto")
-        .order("data", { ascending: true });
-      setDebitosAbertos(data ?? []);
+      try {
+        const data = await listTransactions({ member_id: memberId, status: "em_aberto" });
+        setDebitosAbertos(data ?? []);
+      } catch { /* silent */ }
       setLoadingDebitos(false);
     };
     fetchDebitos();
@@ -118,28 +115,25 @@ export function NovoCredito({ memberId, memberName, onCreditoSaved }: NovoCredit
     if (selectedDebitoIds.length > 0) descParts.push(`Compensação de ${selectedDebitoIds.length} débito(s)`);
     const descricao = descParts.join(" — ");
 
-    const { error } = await supabase.from("member_transactions").insert({
-      member_id: memberId,
-      tipo: "avulso",
-      descricao,
-      valor: valorNum,
-      data: format(data, "yyyy-MM-dd"),
-      status: "pago",
-      created_by: session?.user?.id,
-    });
+    try {
+      await createTransaction({
+        member_id: memberId,
+        tipo: "avulso",
+        descricao,
+        valor: valorNum,
+        data: format(data, "yyyy-MM-dd"),
+        status: "pago",
+        created_by: session?.user?.id,
+      });
 
-    if (error) {
+      // Mark selected debits as paid
+      if (selectedDebitoIds.length > 0) {
+        await batchUpdateStatus(selectedDebitoIds, "pago");
+      }
+    } catch {
       setSaving(false);
       toast.error("Erro ao registrar crédito. Tente novamente.");
       return;
-    }
-
-    // Mark selected debits as paid
-    if (selectedDebitoIds.length > 0) {
-      await supabase
-        .from("member_transactions")
-        .update({ status: "pago" })
-        .in("id", selectedDebitoIds);
     }
 
     logAction({
