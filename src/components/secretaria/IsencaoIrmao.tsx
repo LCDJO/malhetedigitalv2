@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { listMembers } from "@/services/members";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,12 +51,12 @@ export function IsencaoIrmao() {
 
   const fetchMembers = useCallback(async () => {
     setLoadingMembers(true);
-    const { data, error } = await supabase
-      .from("members")
-      .select("id, full_name, cim")
-      .eq("status", "ativo")
-      .order("full_name");
-    if (!error && data) setMembers(data);
+    try {
+      const data = await listMembers();
+      setMembers((data ?? []).filter((m: any) => m.status === "ativo"));
+    } catch (e) {
+      console.error(e);
+    }
     setLoadingMembers(false);
   }, []);
 

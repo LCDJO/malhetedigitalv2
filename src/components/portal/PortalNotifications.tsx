@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getNotifications, markNotificationsRead } from "@/services/portal";
 import { usePortalMemberContext } from "./PortalLayout";
 import { Bell, CheckCheck, Wallet, Calendar, Info, Loader2, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -35,13 +36,12 @@ export function PortalNotifications() {
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   const fetchNotifications = useCallback(async () => {
-    const { data } = await supabase
-      .from("notifications")
-      .select("*")
-      .eq("member_id", member.id)
-      .order("created_at", { ascending: false })
-      .limit(30);
-    if (data) setNotifications(data as Notification[]);
+    try {
+      const data = await getNotifications(member.id);
+      if (data) setNotifications(data as Notification[]);
+    } catch (e) {
+      console.error("Failed to fetch notifications", e);
+    }
     setLoading(false);
   }, [member.id]);
 
@@ -71,7 +71,7 @@ export function PortalNotifications() {
   }, [fetchNotifications, member.id]);
 
   const markAsRead = async (id: string) => {
-    await supabase.from("notifications").update({ is_read: true }).eq("id", id);
+    await markNotificationsRead([id]);
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
     );
@@ -80,7 +80,7 @@ export function PortalNotifications() {
   const markAllAsRead = async () => {
     const unreadIds = notifications.filter((n) => !n.is_read).map((n) => n.id);
     if (unreadIds.length === 0) return;
-    await supabase.from("notifications").update({ is_read: true }).in("id", unreadIds);
+    await markNotificationsRead(unreadIds);
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
   };
 

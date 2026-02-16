@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { listMembers } from "@/services/members";
+import { listTransactions } from "@/services/transactions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -112,23 +113,23 @@ export function FinanceiroIrmao() {
 
   const fetchMembers = useCallback(async () => {
     setLoadingMembers(true);
-    const { data, error } = await supabase
-      .from("members")
-      .select("id, full_name, cim, cpf, degree, status, email, phone, avatar_url")
-      .order("full_name");
-    if (!error && data) setMembers(data);
+    try {
+      const data = await listMembers();
+      setMembers(data ?? []);
+    } catch (e) {
+      console.error(e);
+    }
     setLoadingMembers(false);
   }, []);
 
   const fetchTransactions = useCallback(async (memberId: string) => {
     setLoadingTx(true);
-    const { data, error } = await supabase
-      .from("member_transactions")
-      .select("id, tipo, valor, descricao, data, status, created_at")
-      .eq("member_id", memberId)
-      .order("data", { ascending: false });
-    if (!error && data) setTransactions(data);
-    else setTransactions([]);
+    try {
+      const data = await listTransactions({ member_id: memberId });
+      setTransactions(data ?? []);
+    } catch (e) {
+      setTransactions([]);
+    }
     setLoadingTx(false);
   }, []);
 

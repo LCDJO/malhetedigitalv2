@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { getReportTransactions, getReportMembers } from "@/services/dashboard";
 import { useLodgeConfig } from "@/hooks/useLodgeConfig";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -77,16 +77,13 @@ export default function RelatorioInadimplencia() {
       const lastDay = new Date(endYear, endMonth, 0).getDate();
       const endDate = `${ano}-${mes.padStart(2, "0")}-${lastDay}`;
 
-      const [txRes, memRes] = await Promise.all([
-        supabase.from("member_transactions")
-          .select("id, tipo, valor, data, status, member_id")
-          .in("status", VALID_STATUSES)
-          .gte("data", startDate).lte("data", endDate),
-        supabase.from("members").select("id, full_name, cim, status, degree"),
+      const [txData, memData] = await Promise.all([
+        getReportTransactions({ start_date: startDate, end_date: endDate, statuses: VALID_STATUSES }),
+        getReportMembers("id, full_name, cim, status, degree"),
       ]);
 
-      setTransactions(txRes.data ?? []);
-      setMembers(memRes.data ?? []);
+      setTransactions(txData ?? []);
+      setMembers(memData ?? []);
       setLoading(false);
     })();
   }, [ano, mes]);
