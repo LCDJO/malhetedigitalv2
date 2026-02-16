@@ -1,9 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { getAnnualSummary } from "@/services/portal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2, FileBarChart } from "lucide-react";
-import { format, startOfYear, endOfYear } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -20,23 +19,17 @@ export default function PortalPrestacaoContas() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetch = async () => {
+    const fetchData = async () => {
       setLoading(true);
-      const from = format(startOfYear(new Date(year, 0)), "yyyy-MM-dd");
-      const to = format(endOfYear(new Date(year, 0)), "yyyy-MM-dd");
-
-      const { data } = await supabase
-        .from("member_transactions")
-        .select("data, tipo, valor, status")
-        .gte("data", from)
-        .lte("data", to)
-        .order("data", { ascending: true })
-        .limit(1000);
-
-      setTransactions(data ?? []);
+      try {
+        const data = await getAnnualSummary(year);
+        setTransactions(data ?? []);
+      } catch {
+        // silently fail
+      }
       setLoading(false);
     };
-    fetch();
+    fetchData();
   }, [year]);
 
   const monthlyData = useMemo(() => {

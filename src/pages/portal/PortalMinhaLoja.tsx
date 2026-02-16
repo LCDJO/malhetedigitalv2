@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { getLodgeInfo } from "@/services/portal";
 import { usePortalMemberContext } from "@/components/portal/PortalLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -43,26 +43,17 @@ export default function PortalMinhaLoja() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetch = async () => {
-      // Lodge config
-      const { data: cfg } = await supabase
-        .from("lodge_config")
-        .select("lodge_name, lodge_number, orient, potencia, logotipo_url, endereco, telefone, email_institucional")
-        .limit(1)
-        .maybeSingle();
-
-      if (cfg) setLodge(cfg as LodgeInfo);
-
-      // Active members count
-      const { count } = await supabase
-        .from("members")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "ativo");
-
-      setActiveCount(count ?? 0);
+    const fetchData = async () => {
+      try {
+        const data = await getLodgeInfo();
+        if (data.lodge) setLodge(data.lodge as LodgeInfo);
+        setActiveCount(data.active_count);
+      } catch {
+        // silently fail
+      }
       setLoading(false);
     };
-    fetch();
+    fetchData();
   }, []);
 
   if (loading) {

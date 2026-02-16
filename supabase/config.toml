@@ -47,3 +47,9 @@ verify_jwt = false
 
 [functions.api-dashboard]
 verify_jwt = false
+
+[functions.api-portal]
+verify_jwt = false
+
+[functions.api-admin]
+verify_jwt = false

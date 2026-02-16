@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { getDashboardStats } from "@/services/dashboard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Users, UserCheck, GraduationCap, Shield, Activity } from "lucide-react";
@@ -28,32 +28,28 @@ const Index = () => {
 
   useEffect(() => {
     (async () => {
-      const [activeRes, inactiveRes, allRes, inadRes] = await Promise.all([
-        supabase.from("members").select("id", { count: "exact", head: true }).eq("status", "ativo"),
-        supabase.from("members").select("id", { count: "exact", head: true }).neq("status", "ativo"),
-        supabase.from("members").select("id, degree, master_installed").eq("status", "ativo"),
-        supabase.from("member_transactions").select("member_id").eq("status", "em_aberto"),
-      ]);
-
-      const porGrau: Record<string, number> = {};
-      let mestresInstalados = 0;
-      if (allRes.data) {
-        for (const m of allRes.data) {
-          porGrau[m.degree] = (porGrau[m.degree] || 0) + 1;
-          if (m.master_installed) mestresInstalados++;
+      try {
+        const data = await getDashboardStats();
+        const porGrau: Record<string, number> = {};
+        let mestresInstalados = 0;
+        if (data.members) {
+          for (const m of data.members) {
+            porGrau[m.degree] = (porGrau[m.degree] || 0) + 1;
+            if (m.master_installed) mestresInstalados++;
+          }
         }
+
+        setStats({
+          totalAtivos: data.active_count,
+          totalInativos: data.inactive_count,
+          totalMembros: data.active_count + data.inactive_count,
+          porGrau,
+          mestresInstalados,
+          inadimplentes: data.overdue_member_ids?.length ?? 0,
+        });
+      } catch {
+        // silently fail
       }
-
-      const inadSet = new Set(inadRes.data?.map((t) => t.member_id) ?? []);
-
-      setStats({
-        totalAtivos: activeRes.count ?? 0,
-        totalInativos: inactiveRes.count ?? 0,
-        totalMembros: (activeRes.count ?? 0) + (inactiveRes.count ?? 0),
-        porGrau,
-        mestresInstalados,
-        inadimplentes: inadSet.size,
-      });
     })();
   }, []);
 

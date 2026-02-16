@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { getAdminStats } from "@/services/admin";
 import { Building2, Users, CreditCard, Activity } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -16,19 +16,12 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     async function fetchStats() {
-      const [tenantsRes, usersRes, membersRes] = await Promise.all([
-        supabase.from("tenants").select("id, is_active"),
-        supabase.from("tenant_users").select("id", { count: "exact", head: true }),
-        supabase.from("members").select("id", { count: "exact", head: true }),
-      ]);
-
-      const tenants = tenantsRes.data ?? [];
-      setStats({
-        totalTenants: tenants.length,
-        activeTenants: tenants.filter((t) => t.is_active).length,
-        totalUsers: usersRes.count ?? 0,
-        totalMembers: membersRes.count ?? 0,
-      });
+      try {
+        const data = await getAdminStats();
+        setStats(data);
+      } catch {
+        // silently fail
+      }
       setLoading(false);
     }
     fetchStats();

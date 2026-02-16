@@ -13,6 +13,7 @@ import { TabRegrasMaconicas } from "@/components/configuracoes/TabRegrasMaconica
 import { TabCategoriasFinanceiras, type CategoriaFinanceira } from "@/components/configuracoes/TabCategoriasFinanceiras";
 import { TabPreferencias } from "@/components/configuracoes/TabPreferencias";
 import { TabPlanoContas } from "@/components/configuracoes/TabPlanoContas";
+import { getLodgeConfig, updateLodgeConfig } from "@/services/config";
 
 interface LodgeConfig extends DadosLojaConfig {
   id: string;
@@ -69,23 +70,21 @@ export default function Configuracoes() {
 
   useEffect(() => {
     (async () => {
-      const { data, error } = await supabase
-        .from("lodge_config")
-        .select("*")
-        .limit(1)
-        .maybeSingle();
-      if (error) {
+      try {
+        const data = await getLodgeConfig();
+        if (data) {
+          const parsed: LodgeConfig = {
+            ...defaultConfig,
+            ...data,
+            categorias_financeiras: Array.isArray(data.categorias_financeiras)
+              ? data.categorias_financeiras
+              : [],
+          };
+          setConfig(parsed);
+          previousConfig.current = parsed;
+        }
+      } catch {
         toast.error("Erro ao carregar configurações.");
-      } else if (data) {
-        const parsed: LodgeConfig = {
-          ...defaultConfig,
-          ...(data as any),
-          categorias_financeiras: Array.isArray((data as any).categorias_financeiras)
-            ? (data as any).categorias_financeiras
-            : [],
-        };
-        setConfig(parsed);
-        previousConfig.current = parsed;
       }
       setLoading(false);
     })();
@@ -97,24 +96,18 @@ export default function Configuracoes() {
       return;
     }
 
-    // Validate required fields
     if (!config.lodge_name.trim() || !config.lodge_number.trim() || !config.orient.trim() || !config.potencia.trim()) {
       toast.error("Preencha todos os campos obrigatórios.");
       return;
     }
 
     setSaving(true);
-    const { id, ...rest } = config;
-    const { error } = await supabase
-      .from("lodge_config")
-      .update(rest as any)
-      .eq("id", id);
+    try {
+      await updateLodgeConfig(config as unknown as Record<string, unknown>);
 
-    if (error) {
-      toast.error("Erro ao salvar configurações.");
-    } else {
       // Build diff for audit log
       const prev = previousConfig.current;
+      const { id, ...rest } = config;
       const changes: Record<string, { de: unknown; para: unknown }> = {};
       for (const key of Object.keys(rest) as (keyof typeof rest)[]) {
         const oldVal = (prev as any)[key];
@@ -135,6 +128,8 @@ export default function Configuracoes() {
 
       previousConfig.current = config;
       toast.success("Configurações salvas com sucesso!");
+    } catch {
+      toast.error("Erro ao salvar configurações.");
     }
     setSaving(false);
   };
