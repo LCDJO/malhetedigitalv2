@@ -94,8 +94,8 @@ const navSections: NavSection[] = [
   {
     label: "Configurações",
     items: [
-      { title: "Usuários", url: "/gestao-usuarios", icon: Users, navKey: "gestao_usuarios" },
-      { title: "Permissões", url: "/log-auditoria", icon: ShieldCheck, navKey: "log_auditoria" },
+      { title: "Usuários & Permissões", url: "/gestao-usuarios", icon: Users, navKey: "gestao_usuarios" },
+      { title: "Log de Auditoria", url: "/log-auditoria", icon: ScrollText, navKey: "log_auditoria" },
       { title: "Preferências", url: "/configuracoes", icon: Settings, navKey: "configuracoes" },
     ],
   },
