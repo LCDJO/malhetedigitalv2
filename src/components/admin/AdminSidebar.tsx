@@ -1,3 +1,12 @@
+/**
+ * Admin Sidebar — Section-based navigation for SuperAdmin
+ *
+ * Follows Gestão RH PlatformLayout pattern with:
+ *   - Uppercase section labels
+ *   - Collapsible sub-groups with border-left indicators
+ *   - Segurança section with Usuários & Permissões
+ */
+
 import { useState } from "react";
 import {
   LayoutDashboard,
@@ -17,6 +26,10 @@ import {
   MessageCircle,
   Send,
   ChevronDown,
+  ShieldCheck,
+  ScrollText,
+  KeyRound,
+  Shield,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
@@ -39,56 +52,77 @@ import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 
-const menuItems = [
+// ════════════════════════════════════
+// NAV STRUCTURE — Section-based (RH pattern)
+// ════════════════════════════════════
+
+interface SimpleNavItem {
+  title: string;
+  url: string;
+  icon: typeof LayoutDashboard;
+}
+
+const gestaoItems: SimpleNavItem[] = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
   { title: "Lojas", url: "/admin/lojas", icon: Building2 },
-  { title: "Usuários", url: "/admin/usuarios", icon: Users },
   { title: "Planos", url: "/admin/planos", icon: CreditCard },
 ];
 
-const complianceItems = [
+const segurancaItems: SimpleNavItem[] = [
+  { title: "Usuários", url: "/admin/usuarios", icon: Users },
+  { title: "Permissões", url: "/admin/log-auditoria", icon: ShieldCheck },
+];
+
+const complianceItems: SimpleNavItem[] = [
   { title: "Incidentes", url: "/admin/incidentes", icon: ShieldAlert },
   { title: "Termos e LGPD", url: "/admin/gestao-termos", icon: Scale },
   { title: "Controle de Aceites", url: "/admin/controle-aceites", icon: ClipboardCheck },
   { title: "Configurações", url: "/admin/configuracoes", icon: Settings },
 ];
 
-const integracaoComunicacao = [
+const integracaoComunicacao: SimpleNavItem[] = [
   { title: "Email", url: "/admin/integracoes/email", icon: Mail },
   { title: "WhatsApp", url: "/admin/integracoes/whatsapp", icon: MessageCircle },
   { title: "Telegram", url: "/admin/integracoes/telegram", icon: Send },
 ];
 
-const integracaoPagamentos = [
+const integracaoPagamentos: SimpleNavItem[] = [
   { title: "Stripe", url: "/admin/integracoes/stripe", icon: CreditCard },
 ];
 
-const integracaoBancos = [
+const integracaoBancos: SimpleNavItem[] = [
   { title: "Banco do Brasil", url: "/admin/integracoes/bancos/bb", icon: Building2 },
   { title: "Bradesco", url: "/admin/integracoes/bancos/bradesco", icon: Building2 },
   { title: "Itaú", url: "/admin/integracoes/bancos/itau", icon: Building2 },
   { title: "Sicredi", url: "/admin/integracoes/bancos/sicredi", icon: Building2 },
 ];
 
-const integracaoTotem = [
+const integracaoTotem: SimpleNavItem[] = [
   { title: "Totem", url: "/admin/integracoes/totem", icon: Monitor },
 ];
 
-const adsItems = [
+const adsItems: SimpleNavItem[] = [
   { title: "Anunciantes", url: "/admin/anunciantes", icon: Megaphone },
   { title: "Banner", url: "/admin/banner-login", icon: Monitor },
   { title: "Ads Analytics", url: "/admin/banner-analytics", icon: BarChart3 },
 ];
+
+// ════════════════════════════════════
+// SIDEBAR COMPONENT
+// ════════════════════════════════════
 
 export function AdminSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { profile } = useAuth();
   const location = useLocation();
+
+  // Auto-open collapsibles based on current route
   const isComunicacaoRoute = location.pathname.startsWith("/admin/integracoes/email") || location.pathname.startsWith("/admin/integracoes/whatsapp") || location.pathname.startsWith("/admin/integracoes/telegram");
   const isPagamentosRoute = location.pathname.startsWith("/admin/integracoes/stripe") || location.pathname.startsWith("/admin/integracoes/bancos");
   const isBancosRoute = location.pathname.startsWith("/admin/integracoes/bancos");
   const isTotemRoute = location.pathname.startsWith("/admin/integracoes/totem");
+
   const [comunicacaoOpen, setComunicacaoOpen] = useState(isComunicacaoRoute);
   const [pagamentosOpen, setPagamentosOpen] = useState(isPagamentosRoute);
   const [bancosOpen, setBancosOpen] = useState(isBancosRoute);
@@ -97,6 +131,80 @@ export function AdminSidebar() {
   const initials = profile?.full_name
     ? profile.full_name.split(" ").filter(Boolean).map((w) => w[0]).slice(0, 2).join("").toUpperCase()
     : "??";
+
+  const renderSimpleSection = (label: string, items: SimpleNavItem[]) => (
+    <SidebarGroup className="mt-1">
+      <SidebarGroupLabel className="admin-section-title text-sidebar-foreground/40 px-3 mb-1">
+        {label}
+      </SidebarGroupLabel>
+      <SidebarGroupContent>
+        <SidebarMenu>
+          {items.map((item) => (
+            <SidebarMenuItem key={item.title}>
+              <SidebarMenuButton asChild tooltip={item.title}>
+                <NavLink
+                  to={item.url}
+                  end={item.url === "/admin"}
+                  className="text-sidebar-foreground/65 hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground transition-all duration-150 rounded-md"
+                  activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold shadow-sm"
+                >
+                  <item.icon className="h-4 w-4" />
+                  <span>{item.title}</span>
+                </NavLink>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+  );
+
+  const renderCollapsible = (
+    label: string,
+    icon: typeof LayoutDashboard,
+    items: SimpleNavItem[],
+    open: boolean,
+    onOpenChange: (v: boolean) => void,
+    fontSize = "text-[13px]",
+    iconSize = "h-3.5 w-3.5",
+    marginLeft = "ml-4"
+  ) => (
+    <Collapsible open={open} onOpenChange={onOpenChange}>
+      <SidebarMenuItem>
+        <CollapsibleTrigger asChild>
+          <SidebarMenuButton
+            tooltip={label}
+            className={cn(
+              "text-sidebar-foreground/65 hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground transition-all duration-150 rounded-md",
+              open && "bg-sidebar-accent/50 text-sidebar-accent-foreground"
+            )}
+          >
+            {(() => { const Icon = icon; return <Icon className="h-4 w-4" />; })()}
+            <span>{label}</span>
+            <ChevronDown className={cn("ml-auto h-3.5 w-3.5 transition-transform duration-200", !open && "-rotate-90")} />
+          </SidebarMenuButton>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <SidebarMenu className={cn(marginLeft, "mt-0.5 border-l border-sidebar-border pl-2")}>
+            {items.map((item) => (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton asChild tooltip={item.title}>
+                  <NavLink
+                    to={item.url}
+                    className={cn("text-sidebar-foreground/65 hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground transition-all duration-150 rounded-md", fontSize)}
+                    activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold shadow-sm"
+                  >
+                    <item.icon className={iconSize} />
+                    <span>{item.title}</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </CollapsibleContent>
+      </SidebarMenuItem>
+    </Collapsible>
+  );
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
@@ -108,7 +216,9 @@ export function AdminSidebar() {
           {!collapsed && (
             <div className="flex flex-col">
               <span className="text-[13px] font-bold text-sidebar-accent-foreground tracking-tight">Malhete Digital</span>
-              <span className="text-[11px] text-sidebar-foreground/50 font-medium">SuperAdmin</span>
+              <Badge variant="outline" className="w-fit text-[9px] px-1.5 py-0 border-accent/30 text-accent mt-0.5">
+                Plataforma
+              </Badge>
             </div>
           )}
         </div>
@@ -117,99 +227,24 @@ export function AdminSidebar() {
       <Separator className="bg-sidebar-border mx-4 w-auto opacity-50" />
 
       <SidebarContent className="pt-5 px-2">
-        <SidebarGroup>
-          <SidebarGroupLabel className="admin-section-title text-sidebar-foreground/40 px-3 mb-1">
-            Gestão
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild tooltip={item.title}>
-                    <NavLink
-                      to={item.url}
-                      end={item.url === "/admin"}
-                      className="text-sidebar-foreground/65 hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground transition-all duration-150 rounded-md"
-                      activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold shadow-sm"
-                    >
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {/* Gestão */}
+        {renderSimpleSection("Gestão", gestaoItems)}
 
-        <SidebarGroup className="mt-2">
-          <SidebarGroupLabel className="admin-section-title text-sidebar-foreground/40 px-3 mb-1">
-            Compliance
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {complianceItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild tooltip={item.title}>
-                    <NavLink
-                      to={item.url}
-                      className="text-sidebar-foreground/65 hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground transition-all duration-150 rounded-md"
-                      activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold shadow-sm"
-                    >
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {/* Segurança — NEW: Follows RH pattern */}
+        {renderSimpleSection("Segurança", segurancaItems)}
 
-        <SidebarGroup className="mt-2">
+        {/* Compliance */}
+        {renderSimpleSection("Compliance", complianceItems)}
+
+        {/* Integrações */}
+        <SidebarGroup className="mt-1">
           <SidebarGroupLabel className="admin-section-title text-sidebar-foreground/40 px-3 mb-1">
             Integrações
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {/* Submenu: Comunicação */}
-              <Collapsible open={comunicacaoOpen} onOpenChange={setComunicacaoOpen}>
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton
-                      tooltip="Comunicação"
-                      className={cn(
-                        "text-sidebar-foreground/65 hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground transition-all duration-150 rounded-md",
-                        comunicacaoOpen && "bg-sidebar-accent/50 text-sidebar-accent-foreground"
-                      )}
-                    >
-                      <MessageCircle className="h-4 w-4" />
-                      <span>Comunicação</span>
-                      <ChevronDown className={cn("ml-auto h-3.5 w-3.5 transition-transform duration-200", !comunicacaoOpen && "-rotate-90")} />
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <SidebarMenu className="ml-4 mt-0.5 border-l border-sidebar-border pl-2">
-                      {integracaoComunicacao.map((item) => (
-                        <SidebarMenuItem key={item.title}>
-                          <SidebarMenuButton asChild tooltip={item.title}>
-                            <NavLink
-                              to={item.url}
-                              className="text-sidebar-foreground/65 hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground transition-all duration-150 rounded-md text-[13px]"
-                              activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold shadow-sm"
-                            >
-                              <item.icon className="h-3.5 w-3.5" />
-                              <span>{item.title}</span>
-                            </NavLink>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      ))}
-                    </SidebarMenu>
-                  </CollapsibleContent>
-                </SidebarMenuItem>
-              </Collapsible>
+              {renderCollapsible("Comunicação", MessageCircle, integracaoComunicacao, comunicacaoOpen, setComunicacaoOpen)}
 
-              {/* Submenu: Pagamentos */}
               <Collapsible open={pagamentosOpen} onOpenChange={setPagamentosOpen}>
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
@@ -277,75 +312,21 @@ export function AdminSidebar() {
                             </SidebarMenu>
                           </CollapsibleContent>
                         </SidebarMenuItem>
-              </Collapsible>
+                      </Collapsible>
                     </SidebarMenu>
                   </CollapsibleContent>
                 </SidebarMenuItem>
               </Collapsible>
 
-              {/* Submenu: Totem */}
-              <Collapsible open={totemOpen} onOpenChange={setTotemOpen}>
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton
-                      tooltip="Totem"
-                      className={cn(
-                        "text-sidebar-foreground/65 hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground transition-all duration-150 rounded-md",
-                        totemOpen && "bg-sidebar-accent/50 text-sidebar-accent-foreground"
-                      )}
-                    >
-                      <Monitor className="h-4 w-4" />
-                      <span>Totem</span>
-                      <ChevronDown className={cn("ml-auto h-3.5 w-3.5 transition-transform duration-200", !totemOpen && "-rotate-90")} />
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <SidebarMenu className="ml-4 mt-0.5 border-l border-sidebar-border pl-2">
-                      {integracaoTotem.map((item) => (
-                        <SidebarMenuItem key={item.title}>
-                          <SidebarMenuButton asChild tooltip={item.title}>
-                            <NavLink
-                              to={item.url}
-                              className="text-sidebar-foreground/65 hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground transition-all duration-150 rounded-md text-[13px]"
-                              activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold shadow-sm"
-                            >
-                              <item.icon className="h-3.5 w-3.5" />
-                              <span>{item.title}</span>
-                            </NavLink>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      ))}
-                    </SidebarMenu>
-                  </CollapsibleContent>
-                </SidebarMenuItem>
-              </Collapsible>
+              {renderCollapsible("Totem", Monitor, integracaoTotem, totemOpen, setTotemOpen)}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup className="mt-2">
-          <SidebarGroupLabel className="admin-section-title text-sidebar-foreground/40 px-3 mb-1">
-            ADS
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {adsItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild tooltip={item.title}>
-                    <NavLink
-                      to={item.url}
-                      className="text-sidebar-foreground/65 hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground transition-all duration-150 rounded-md"
-                      activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold shadow-sm"
-                    >
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {/* ADS */}
+        {renderSimpleSection("ADS", adsItems)}
+
+        {/* Voltar ao Painel */}
         <SidebarGroup className="mt-4">
           <SidebarGroupContent>
             <SidebarMenu>
@@ -377,7 +358,7 @@ export function AdminSidebar() {
               <span className="text-[12px] font-medium text-sidebar-accent-foreground truncate">
                 {profile?.full_name ?? "Carregando..."}
               </span>
-              <Badge variant="outline" className="mt-0.5 w-fit text-[9px] px-1.5 py-0 border-accent/40 text-accent">
+              <Badge variant="outline" className="mt-0.5 w-fit text-[9px] px-1.5 py-0 border-sidebar-border text-sidebar-foreground/60">
                 SuperAdmin
               </Badge>
             </div>

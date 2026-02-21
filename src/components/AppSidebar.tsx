@@ -1,3 +1,12 @@
+/**
+ * App Sidebar — Section-based professional navigation
+ *
+ * Follows Gestão RH pattern with:
+ *   - Uppercase section labels with separators
+ *   - Permission-aware visibility via useScope
+ *   - Collapsible sub-groups with border-left indicators
+ */
+
 import { useState } from "react";
 import {
   BookOpen,
@@ -13,9 +22,12 @@ import {
   ClipboardCheck,
   LogOut,
   Monitor,
+  ShieldCheck,
+  ChevronDown,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth, roleLabels } from "@/contexts/AuthContext";
+import { useScope } from "@/contexts/ScopeContext";
 import { MeuPerfilDialog } from "@/components/MeuPerfilDialog";
 import {
   Sidebar,
@@ -32,34 +44,97 @@ import {
 } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { cn } from "@/lib/utils";
+import type { NavKey } from "@/domains/security/permissions";
 
-const menuItems = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard, module: "dashboard" },
-  { title: "Secretaria", url: "/secretaria", icon: BookOpen, module: "secretaria" },
-  { title: "Chancelaria", url: "/chancelaria", icon: Stamp, module: "chancelaria" },
-  { title: "Tesouraria", url: "/tesouraria", icon: Wallet, module: "tesouraria" },
-  { title: "Totem", url: "/totem", icon: Monitor, module: "totem" },
-  
-  { title: "Relatórios", url: "/relatorios", icon: FileBarChart, module: "dashboard" },
-  { title: "Configurações", url: "/configuracoes", icon: Settings, module: "configuracoes" },
-  { title: "Gestão de Usuários", url: "/gestao-usuarios", icon: Users, module: "configuracoes" },
-  { title: "Log de Auditoria", url: "/log-auditoria", icon: ScrollText, module: "configuracoes" },
+// ════════════════════════════════════
+// TYPES
+// ════════════════════════════════════
+
+interface NavItem {
+  title: string;
+  url: string;
+  icon: typeof LayoutDashboard;
+  navKey: NavKey;
+  children?: NavItem[];
+}
+
+interface NavSection {
+  label: string;
+  items: NavItem[];
+}
+
+// ════════════════════════════════════
+// NAV STRUCTURE — Section-based
+// ════════════════════════════════════
+
+const navSections: NavSection[] = [
+  // ── OVERVIEW ──
+  {
+    label: "Overview",
+    items: [
+      { title: "Dashboard", url: "/", icon: LayoutDashboard, navKey: "dashboard" },
+    ],
+  },
+
+  // ── OPERAÇÃO ──
+  {
+    label: "Operação",
+    items: [
+      { title: "Secretaria", url: "/secretaria", icon: BookOpen, navKey: "secretaria" },
+      { title: "Chancelaria", url: "/chancelaria", icon: Stamp, navKey: "chancelaria" },
+      { title: "Tesouraria", url: "/tesouraria", icon: Wallet, navKey: "tesouraria" },
+      { title: "Totem", url: "/totem", icon: Monitor, navKey: "totem" },
+      { title: "Relatórios", url: "/relatorios", icon: FileBarChart, navKey: "relatorios" },
+    ],
+  },
+
+  // ── CONFIGURAÇÕES ──
+  {
+    label: "Configurações",
+    items: [
+      { title: "Usuários", url: "/gestao-usuarios", icon: Users, navKey: "gestao_usuarios" },
+      { title: "Permissões", url: "/log-auditoria", icon: ShieldCheck, navKey: "log_auditoria" },
+      { title: "Preferências", url: "/configuracoes", icon: Settings, navKey: "configuracoes" },
+    ],
+  },
+
+  // ── COMPLIANCE ──
+  {
+    label: "Compliance",
+    items: [
+      { title: "Termos e LGPD", url: "/gestao-termos", icon: Scale, navKey: "gestao_termos" },
+      { title: "Controle de Aceites", url: "/controle-aceites", icon: ClipboardCheck, navKey: "controle_aceites" },
+    ],
+  },
 ];
 
-const complianceItems = [
-  { title: "Termos e LGPD", url: "/gestao-termos", icon: Scale, module: "configuracoes" },
-  { title: "Controle de Aceites", url: "/controle-aceites", icon: ClipboardCheck, module: "configuracoes" },
-];
+// ════════════════════════════════════
+// SIDEBAR COMPONENT
+// ════════════════════════════════════
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const { profile, role, hasModuleAccess, signOut } = useAuth();
+  const { profile, role, signOut } = useAuth();
+  const { canAccessNav, loading: scopeLoading } = useScope();
   const [profileOpen, setProfileOpen] = useState(false);
 
   const initials = profile?.full_name
     ? profile.full_name.split(" ").filter(Boolean).map((w) => w[0]).slice(0, 2).join("").toUpperCase()
     : "??";
+
+  // Filter sections to only show items user can access
+  const visibleSections = navSections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => {
+        if (scopeLoading) return true; // show all while loading
+        return canAccessNav(item.navKey);
+      }),
+    }))
+    .filter((section) => section.items.length > 0);
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
@@ -80,17 +155,15 @@ export function AppSidebar() {
       <Separator className="bg-sidebar-border mx-4 w-auto opacity-50" />
 
       <SidebarContent className="pt-5 px-2">
-        <SidebarGroup>
-          <SidebarGroupLabel className="admin-section-title text-sidebar-foreground/40 px-3 mb-1">
-            Módulos
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {menuItems.map((item) => {
-                const hasAccess = hasModuleAccess(item.module);
-                if (!hasAccess) return null; // Ocultar menus não autorizados
-                return (
-                  <SidebarMenuItem key={item.title}>
+        {visibleSections.map((section) => (
+          <SidebarGroup key={section.label} className="mt-1">
+            <SidebarGroupLabel className="admin-section-title text-sidebar-foreground/40 px-3 mb-1">
+              {section.label}
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {section.items.map((item) => (
+                  <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton asChild tooltip={item.title}>
                       <NavLink
                         to={item.url}
@@ -103,43 +176,17 @@ export function AppSidebar() {
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {/* Compliance section - visible for configuracoes module access */}
-        {hasModuleAccess("configuracoes") && (
-          <SidebarGroup className="mt-2">
-            <SidebarGroupLabel className="admin-section-title text-sidebar-foreground/40 px-3 mb-1">
-              Compliance
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {complianceItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild tooltip={item.title}>
-                      <NavLink
-                        to={item.url}
-                        className="text-sidebar-foreground/65 hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground transition-all duration-150 rounded-md"
-                        activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold shadow-sm"
-                      >
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
                 ))}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
-        )}
+        ))}
 
+        {/* Super Admin shortcut */}
         {role === "superadmin" && (
           <SidebarGroup className="mt-2">
             <SidebarGroupLabel className="admin-section-title text-sidebar-foreground/40 px-3 mb-1">
-              Super Admin
+              Plataforma
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>

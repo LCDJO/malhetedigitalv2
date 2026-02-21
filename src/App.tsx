@@ -158,15 +158,15 @@ const App = () => (
                   <DashboardLayout>
                     <Routes>
                       <Route path="/" element={<Index />} />
-                      <Route path="/secretaria" element={<ProtectedRoute module="secretaria"><Secretaria /></ProtectedRoute>} />
-                      <Route path="/tesouraria" element={<ProtectedRoute module="tesouraria"><Tesouraria /></ProtectedRoute>} />
-                      <Route path="/totem" element={<ProtectedRoute module="totem"><TotemAdmin /></ProtectedRoute>} />
-                      <Route path="/configuracoes" element={<ProtectedRoute module="configuracoes"><Configuracoes /></ProtectedRoute>} />
-                      <Route path="/relatorios" element={<ProtectedRoute module="dashboard"><Relatorios /></ProtectedRoute>} />
-                      <Route path="/gestao-usuarios" element={<ProtectedRoute module="configuracoes"><GestaoUsuarios /></ProtectedRoute>} />
-                      <Route path="/log-auditoria" element={<ProtectedRoute module="configuracoes"><LogAuditoria /></ProtectedRoute>} />
-                      <Route path="/gestao-termos" element={<ProtectedRoute module="configuracoes"><GestaoTermos /></ProtectedRoute>} />
-                      <Route path="/controle-aceites" element={<ProtectedRoute module="configuracoes"><ControleAceites /></ProtectedRoute>} />
+                      <Route path="/secretaria" element={<ProtectedRoute navKey="secretaria"><Secretaria /></ProtectedRoute>} />
+                      <Route path="/tesouraria" element={<ProtectedRoute navKey="tesouraria"><Tesouraria /></ProtectedRoute>} />
+                      <Route path="/totem" element={<ProtectedRoute navKey="totem"><TotemAdmin /></ProtectedRoute>} />
+                      <Route path="/configuracoes" element={<ProtectedRoute navKey="configuracoes"><Configuracoes /></ProtectedRoute>} />
+                      <Route path="/relatorios" element={<ProtectedRoute navKey="relatorios"><Relatorios /></ProtectedRoute>} />
+                      <Route path="/gestao-usuarios" element={<ProtectedRoute navKey="gestao_usuarios"><GestaoUsuarios /></ProtectedRoute>} />
+                      <Route path="/log-auditoria" element={<ProtectedRoute navKey="log_auditoria"><LogAuditoria /></ProtectedRoute>} />
+                      <Route path="/gestao-termos" element={<ProtectedRoute navKey="gestao_termos"><GestaoTermos /></ProtectedRoute>} />
+                      <Route path="/controle-aceites" element={<ProtectedRoute navKey="controle_aceites"><ControleAceites /></ProtectedRoute>} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </DashboardLayout>
