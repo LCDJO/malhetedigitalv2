@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { TicketService } from '@/domains/support/ticket-service';
 import { EvaluationService } from '@/domains/support/evaluation-service';
+import { supabase } from '@/integrations/supabase/client';
 import type { SupportTicket, SupportEvaluation, TicketStatus } from '@/domains/support/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
@@ -303,6 +304,19 @@ function AdminTicketDetail({ ticket, onBack }: { ticket: SupportTicket; onBack: 
   }, [ticket.id]);
 
   useEffect(() => { loadMessages(); }, [loadMessages]);
+
+  // Realtime subscription for live chat
+  useEffect(() => {
+    const channel = supabase
+      .channel(`admin-ticket-msgs-${ticket.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'support_ticket_messages', filter: `ticket_id=eq.${ticket.id}` },
+        () => { loadMessages(); }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [ticket.id, loadMessages]);
 
   const handleSend = async () => {
     if (!newMsg.trim() || !user) return;
