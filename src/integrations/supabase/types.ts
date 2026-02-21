@@ -1336,6 +1336,160 @@ export type Database = {
           },
         ]
       }
+      support_evaluations: {
+        Row: {
+          agent_id: string | null
+          agent_score: number | null
+          comment: string | null
+          created_at: string
+          id: string
+          system_score: number | null
+          tenant_id: string
+          ticket_id: string
+        }
+        Insert: {
+          agent_id?: string | null
+          agent_score?: number | null
+          comment?: string | null
+          created_at?: string
+          id?: string
+          system_score?: number | null
+          tenant_id: string
+          ticket_id: string
+        }
+        Update: {
+          agent_id?: string | null
+          agent_score?: number | null
+          comment?: string | null
+          created_at?: string
+          id?: string
+          system_score?: number | null
+          tenant_id?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_evaluations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_evaluations_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: true
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_ticket_messages: {
+        Row: {
+          attachments: Json
+          content: string
+          created_at: string
+          id: string
+          is_internal: boolean
+          sender_id: string
+          sender_type: Database["public"]["Enums"]["ticket_sender_type"]
+          ticket_id: string
+        }
+        Insert: {
+          attachments?: Json
+          content: string
+          created_at?: string
+          id?: string
+          is_internal?: boolean
+          sender_id: string
+          sender_type?: Database["public"]["Enums"]["ticket_sender_type"]
+          ticket_id: string
+        }
+        Update: {
+          attachments?: Json
+          content?: string
+          created_at?: string
+          id?: string
+          is_internal?: boolean
+          sender_id?: string
+          sender_type?: Database["public"]["Enums"]["ticket_sender_type"]
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_ticket_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_tickets: {
+        Row: {
+          assigned_to: string | null
+          category: Database["public"]["Enums"]["ticket_category"]
+          closed_at: string | null
+          created_at: string
+          created_by: string
+          description: string
+          first_response_at: string | null
+          id: string
+          metadata: Json
+          priority: Database["public"]["Enums"]["ticket_priority"]
+          resolved_at: string | null
+          status: Database["public"]["Enums"]["ticket_status"]
+          subject: string
+          tags: string[]
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          category?: Database["public"]["Enums"]["ticket_category"]
+          closed_at?: string | null
+          created_at?: string
+          created_by: string
+          description?: string
+          first_response_at?: string | null
+          id?: string
+          metadata?: Json
+          priority?: Database["public"]["Enums"]["ticket_priority"]
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
+          subject: string
+          tags?: string[]
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          category?: Database["public"]["Enums"]["ticket_category"]
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string
+          first_response_at?: string | null
+          id?: string
+          metadata?: Json
+          priority?: Database["public"]["Enums"]["ticket_priority"]
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
+          subject?: string
+          tags?: string[]
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_users: {
         Row: {
           created_at: string
@@ -1781,6 +1935,23 @@ export type Database = {
         | "rejeitada"
       subscription_status: "active" | "paused" | "canceled" | "expired"
       tenant_role: "owner" | "admin" | "member"
+      ticket_category:
+        | "billing"
+        | "technical"
+        | "feature_request"
+        | "bug_report"
+        | "account"
+        | "general"
+      ticket_priority: "low" | "medium" | "high" | "urgent"
+      ticket_sender_type: "tenant_user" | "platform_agent" | "system"
+      ticket_status:
+        | "open"
+        | "awaiting_agent"
+        | "awaiting_customer"
+        | "in_progress"
+        | "resolved"
+        | "closed"
+        | "cancelled"
       tipo_solicitacao_titular: "correcao" | "exclusao" | "exportacao"
       transaction_type: "credit" | "debit"
     }
@@ -1928,6 +2099,25 @@ export const Constants = {
       ],
       subscription_status: ["active", "paused", "canceled", "expired"],
       tenant_role: ["owner", "admin", "member"],
+      ticket_category: [
+        "billing",
+        "technical",
+        "feature_request",
+        "bug_report",
+        "account",
+        "general",
+      ],
+      ticket_priority: ["low", "medium", "high", "urgent"],
+      ticket_sender_type: ["tenant_user", "platform_agent", "system"],
+      ticket_status: [
+        "open",
+        "awaiting_agent",
+        "awaiting_customer",
+        "in_progress",
+        "resolved",
+        "closed",
+        "cancelled",
+      ],
       tipo_solicitacao_titular: ["correcao", "exclusao", "exportacao"],
       transaction_type: ["credit", "debit"],
     },
