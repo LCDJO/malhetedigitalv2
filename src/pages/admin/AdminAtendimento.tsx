@@ -183,7 +183,12 @@ export default function AdminAtendimento() {
                   >
                     <CardContent className="py-3 px-4 flex items-center gap-4">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">{ticket.subject}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium text-foreground truncate">{ticket.subject}</p>
+                          {ticket.protocol && (
+                            <Badge variant="outline" className="text-[10px] font-mono shrink-0">#{ticket.protocol}</Badge>
+                          )}
+                        </div>
                         <p className="text-xs text-muted-foreground mt-0.5">
                           {CATEGORY_LABELS[ticket.category]} · {new Date(ticket.created_at).toLocaleDateString('pt-BR')}
                           · Tenant: {ticket.tenant_id.slice(0, 8)}
@@ -363,7 +368,12 @@ function AdminTicketDetail({ ticket, onBack }: { ticket: SupportTicket; onBack: 
         <CardContent className="py-4 px-4">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold text-foreground">{ticket.subject}</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-semibold text-foreground">{ticket.subject}</h2>
+                {ticket.protocol && (
+                  <Badge variant="outline" className="text-xs font-mono">#{ticket.protocol}</Badge>
+                )}
+              </div>
               <p className="text-xs text-muted-foreground mt-1">
                 {CATEGORY_LABELS[ticket.category]} · {new Date(ticket.created_at).toLocaleString('pt-BR')}
                 · Tenant: {ticket.tenant_id.slice(0, 8)}
