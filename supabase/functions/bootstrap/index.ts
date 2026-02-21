@@ -66,9 +66,19 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (password.length < 6) {
+    if (password.length < 8) {
       return new Response(
-        JSON.stringify({ error: "A senha deve ter no mínimo 6 caracteres." }),
+        JSON.stringify({ error: "A senha deve ter no mínimo 8 caracteres." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const hasUpper = /[A-Z]/.test(password);
+    const hasLower = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    if (!(hasUpper && hasLower && hasNumber)) {
+      return new Response(
+        JSON.stringify({ error: "A senha deve conter letras maiúsculas, minúsculas e números." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
