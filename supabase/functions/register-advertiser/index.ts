@@ -5,6 +5,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+function sanitizeError(msg: string): string {
+  if (msg.includes("unique") || msg.includes("duplicate key")) return "Este documento já está cadastrado.";
+  if (msg.includes("foreign key")) return "Referência inválida.";
+  if (msg.includes("row-level security")) return "Acesso negado.";
+  return "Erro ao processar solicitação. Tente novamente.";
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -13,11 +20,34 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+    // ── Auth check: require authenticated user ──
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Não autorizado." }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const { data: { user }, error: authError } = await userClient.auth.getUser();
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Não autorizado." }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
-    const { user_id, company_name, trading_name, document_type, document_number, email, phone, website, representative_name, representative_cpf, representative_phone, representative_email, representative_address } = await req.json();
+    const { company_name, trading_name, document_type, document_number, email, phone, website, representative_name, representative_cpf, representative_phone, representative_email, representative_address } = await req.json();
 
-    if (!user_id || !company_name || !document_number || !email) {
+    if (!company_name || !document_number || !email) {
       return new Response(JSON.stringify({ error: "Campos obrigatórios faltando." }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -25,7 +55,7 @@ Deno.serve(async (req) => {
     }
 
     const { data, error } = await supabaseAdmin.from("advertisers").insert({
-      user_id,
+      user_id: user.id, // Use authenticated user, not client-provided
       company_name,
       trading_name: trading_name || null,
       document_type: document_type || "cnpj",
@@ -42,7 +72,8 @@ Deno.serve(async (req) => {
     }).select().single();
 
     if (error) {
-      return new Response(JSON.stringify({ error: error.message }), {
+      console.error("register-advertiser error:", error.message);
+      return new Response(JSON.stringify({ error: sanitizeError(error.message) }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -52,7 +83,8 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
+    console.error("register-advertiser unexpected:", err.message);
+    return new Response(JSON.stringify({ error: "Erro interno do servidor." }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
