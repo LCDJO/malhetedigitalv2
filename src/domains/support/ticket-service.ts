@@ -93,10 +93,11 @@ export const TicketService = {
 
     // Update ticket status based on sender
     const newStatus: TicketStatus = dto.sender_type === 'tenant_user' ? 'awaiting_agent' : 'awaiting_customer';
-    await supabase
+    const { error: statusError } = await supabase
       .from('support_tickets')
       .update({ status: newStatus })
       .eq('id', dto.ticket_id);
+    if (statusError) console.warn('Failed to update ticket status:', statusError.message);
 
     return data as unknown as TicketMessage;
   },
