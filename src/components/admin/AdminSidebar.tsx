@@ -79,6 +79,7 @@ const complianceItems: SimpleNavItem[] = [
   { title: "Incidentes", url: "/admin/incidentes", icon: ShieldAlert },
   { title: "Termos e LGPD", url: "/admin/gestao-termos", icon: Scale },
   { title: "Controle de Aceites", url: "/admin/controle-aceites", icon: ClipboardCheck },
+  { title: "Log de Auditoria", url: "/admin/log-auditoria", icon: ScrollText },
   { title: "Configurações", url: "/admin/configuracoes", icon: Settings },
 ];
 
