@@ -17,6 +17,7 @@ export interface SupportTicket {
   priority: TicketPriority;
   status: TicketStatus;
   category: TicketCategory;
+  protocol: string | null;
   assigned_to: string | null;
   tags: string[];
   metadata: Record<string, unknown>;

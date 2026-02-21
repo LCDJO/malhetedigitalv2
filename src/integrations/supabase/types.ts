@@ -1437,6 +1437,7 @@ export type Database = {
           id: string
           metadata: Json
           priority: Database["public"]["Enums"]["ticket_priority"]
+          protocol: string | null
           resolved_at: string | null
           status: Database["public"]["Enums"]["ticket_status"]
           subject: string
@@ -1455,6 +1456,7 @@ export type Database = {
           id?: string
           metadata?: Json
           priority?: Database["public"]["Enums"]["ticket_priority"]
+          protocol?: string | null
           resolved_at?: string | null
           status?: Database["public"]["Enums"]["ticket_status"]
           subject: string
@@ -1473,6 +1475,7 @@ export type Database = {
           id?: string
           metadata?: Json
           priority?: Database["public"]["Enums"]["ticket_priority"]
+          protocol?: string | null
           resolved_at?: string | null
           status?: Database["public"]["Enums"]["ticket_status"]
           subject?: string

@@ -143,7 +143,12 @@ export default function Atendimento() {
                 <CardContent className="py-3 px-4 flex items-center gap-4">
                   <StatusIcon className="h-5 w-5 shrink-0" style={{ color: st.color }} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{ticket.subject}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-foreground truncate">{ticket.subject}</p>
+                      {ticket.protocol && (
+                        <Badge variant="outline" className="text-[10px] font-mono shrink-0">#{ticket.protocol}</Badge>
+                      )}
+                    </div>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {CATEGORY_LABELS[ticket.category]} · {new Date(ticket.created_at).toLocaleDateString('pt-BR')}
                     </p>
@@ -330,7 +335,12 @@ function TicketDetail({ ticket, userId, tenantId, onBack }: { ticket: SupportTic
         <CardContent className="py-4 px-4">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold text-foreground">{ticket.subject}</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-semibold text-foreground">{ticket.subject}</h2>
+                {ticket.protocol && (
+                  <Badge variant="outline" className="text-xs font-mono">#{ticket.protocol}</Badge>
+                )}
+              </div>
               <p className="text-xs text-muted-foreground mt-1">
                 {CATEGORY_LABELS[ticket.category]} · Criado em {new Date(ticket.created_at).toLocaleString('pt-BR')}
               </p>
