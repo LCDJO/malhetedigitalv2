@@ -3,7 +3,7 @@
  * Adapted from Gestão RH SupportTickets pattern.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +21,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useScope } from '@/contexts/ScopeContext';
 import { TicketService } from '@/domains/support/ticket-service';
 import { EvaluationService } from '@/domains/support/evaluation-service';
+import { supabase } from '@/integrations/supabase/client';
 import type { SupportTicket, TicketMessage, TicketPriority, TicketCategory } from '@/domains/support/types';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Clock }> = {
@@ -273,6 +274,19 @@ function TicketDetail({ ticket, userId, tenantId, onBack }: { ticket: SupportTic
   }, [ticket.id]);
 
   useEffect(() => { loadMessages(); }, [loadMessages]);
+
+  // Realtime subscription for live chat
+  useEffect(() => {
+    const channel = supabase
+      .channel(`ticket-msgs-${ticket.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'support_ticket_messages', filter: `ticket_id=eq.${ticket.id}` },
+        () => { loadMessages(); }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [ticket.id, loadMessages]);
 
   const handleSend = async () => {
     if (!newMsg.trim()) return;
