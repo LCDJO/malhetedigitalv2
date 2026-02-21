@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,9 +17,17 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
+  const navigate = useNavigate();
   const { profile, role, signOut } = useAuth();
   const { config: lodgeConfig } = useLodgeConfig();
   const [docDialog, setDocDialog] = useState<{ title: string; content: string; version: string } | null>(null);
+
+  // SuperAdmin should never be on tenant routes — redirect to /admin
+  useEffect(() => {
+    if (role === "superadmin") {
+      navigate("/admin", { replace: true });
+    }
+  }, [role, navigate]);
 
   const openDocument = async (table: "termos_uso" | "politicas_privacidade", title: string) => {
     const { data } = await supabase
