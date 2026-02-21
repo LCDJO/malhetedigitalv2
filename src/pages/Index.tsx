@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { getDashboardStats } from "@/services/dashboard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, UserCheck, GraduationCap, Shield, Activity } from "lucide-react";
+import { Users, UserCheck, GraduationCap, Shield, Activity, MessageSquare, ArrowRight } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
+import { Button } from "@/components/ui/button";
 import { AdSlot } from "@/components/ads/AdSlot";
 import { useLodgeConfig } from "@/hooks/useLodgeConfig";
 import { formatCurrency } from "@/components/dashboard/DashboardData";
@@ -16,6 +18,7 @@ const grauLabels: Record<string, string> = {
 };
 
 const Index = () => {
+  const navigate = useNavigate();
   const { config } = useLodgeConfig();
   const [stats, setStats] = useState({
     totalAtivos: 0,
@@ -140,6 +143,27 @@ const Index = () => {
           className="[animation-delay:240ms]"
         />
       </div>
+
+      {/* Chat ao Vivo — Acesso rápido */}
+      <section className="space-y-4">
+        <SectionHeader title="Chat ao Vivo" subtitle="Central de atendimento e suporte" />
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent className="flex items-center justify-between p-4">
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                <MessageSquare className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold">Central de Atendimento</p>
+                <p className="text-xs text-muted-foreground">Abra chamados e acompanhe o suporte da plataforma</p>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => navigate("/atendimento")} className="gap-2">
+              Acessar <ArrowRight className="h-4 w-4" />
+            </Button>
+          </CardContent>
+        </Card>
+      </section>
 
       {/* Ad slot — lodge dashboard */}
       <AdSlot slotSlug="lodge_dashboard_bottom" page="lodge_dashboard" aspectRatio="20%" />
