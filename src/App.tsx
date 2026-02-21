@@ -53,6 +53,8 @@ import AdminIntegracoesItau from "./pages/admin/AdminIntegracoesItau";
 import AdminIntegracoesStripe from "./pages/admin/AdminIntegracoesStripe";
 import AdminIntegracesTotem from "./pages/admin/AdminIntegracesTotem";
 import AdminAnunciantes from "./pages/admin/AdminAnunciantes";
+import AdminAtendimento from "./pages/admin/AdminAtendimento";
+import Atendimento from "./pages/Atendimento";
 
 import { AnuncianteLayout } from "@/components/anunciante/AnuncianteLayout";
 import AnuncianteAuth from "./pages/anunciante/AnuncianteAuth";
@@ -123,6 +125,7 @@ const App = () => (
                       <Route path="/integracoes/bancos/sicredi" element={<AdminIntegracoesSicredi />} />
                       <Route path="/integracoes/totem" element={<AdminIntegracesTotem />} />
                       <Route path="/anunciantes" element={<AdminAnunciantes />} />
+                      <Route path="/atendimento" element={<AdminAtendimento />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </AdminLayout>
@@ -169,6 +172,7 @@ const App = () => (
                       <Route path="/log-auditoria" element={<ProtectedRoute navKey="log_auditoria"><LogAuditoria /></ProtectedRoute>} />
                       <Route path="/gestao-termos" element={<ProtectedRoute navKey="gestao_termos"><GestaoTermos /></ProtectedRoute>} />
                       <Route path="/controle-aceites" element={<ProtectedRoute navKey="controle_aceites"><ControleAceites /></ProtectedRoute>} />
+                      <Route path="/atendimento" element={<ProtectedRoute navKey="atendimento"><Atendimento /></ProtectedRoute>} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </DashboardLayout>

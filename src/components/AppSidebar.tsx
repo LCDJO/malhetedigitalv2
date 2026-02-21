@@ -12,6 +12,7 @@ import {
   BookOpen,
   Stamp,
   Wallet,
+  MessageSquare,
   Settings,
   LayoutDashboard,
   Users,
@@ -87,6 +88,7 @@ const navSections: NavSection[] = [
       { title: "Tesouraria", url: "/tesouraria", icon: Wallet, navKey: "tesouraria" },
       { title: "Totem", url: "/totem", icon: Monitor, navKey: "totem" },
       { title: "Relatórios", url: "/relatorios", icon: FileBarChart, navKey: "relatorios" },
+      { title: "Atendimento", url: "/atendimento", icon: MessageSquare, navKey: "atendimento" },
     ],
   },
 

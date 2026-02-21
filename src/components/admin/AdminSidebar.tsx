@@ -10,6 +10,7 @@
 import { useState } from "react";
 import {
   LayoutDashboard,
+  MessageSquare,
   Building2,
   Users,
   CreditCard,
@@ -66,6 +67,7 @@ const gestaoItems: SimpleNavItem[] = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
   { title: "Lojas", url: "/admin/lojas", icon: Building2 },
   { title: "Planos", url: "/admin/planos", icon: CreditCard },
+  { title: "Atendimento", url: "/admin/atendimento", icon: MessageSquare },
 ];
 
 const segurancaItems: SimpleNavItem[] = [

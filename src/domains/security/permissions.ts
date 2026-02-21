@@ -34,7 +34,8 @@ export type PermissionEntity =
   | "tenants"
   | "advertisers"
   | "ad_campaigns"
-  | "ad_creatives";
+  | "ad_creatives"
+  | "support_tickets";
 
 // ========================
 // ROLE SETS
@@ -164,6 +165,12 @@ export const PERMISSION_MATRIX: PermissionMatrix = {
     approve: { appRoles: ["superadmin"] },
     manage_users: { appRoles: [] },
   },
+  support_tickets: {
+    read: { appRoles: ["superadmin", "administrador"], tenantRoles: ALL_MEMBERS },
+    write: { appRoles: ["superadmin", "administrador"], tenantRoles: ALL_MEMBERS },
+    approve: { appRoles: ["superadmin", "administrador"], tenantRoles: TENANT_ADMINS },
+    manage_users: { appRoles: ["superadmin"] },
+  },
 };
 
 // ========================
@@ -182,7 +189,8 @@ export type NavKey =
   | "log_auditoria"
   | "gestao_termos"
   | "controle_aceites"
-  | "financeiro_geral";
+  | "financeiro_geral"
+  | "atendimento";
 
 const NAV_ENTITY_MAP: Record<NavKey, PermissionEntity> = {
   dashboard: "dashboard",
@@ -197,6 +205,7 @@ const NAV_ENTITY_MAP: Record<NavKey, PermissionEntity> = {
   gestao_termos: "termos_uso",
   controle_aceites: "termos_uso",
   financeiro_geral: "member_transactions",
+  atendimento: "support_tickets",
 };
 
 /**
