@@ -22,6 +22,8 @@ import {
   ClipboardCheck,
   Megaphone,
   BarChart3,
+  DollarSign,
+  FileBarChart,
   Plug,
   Mail,
   MessageCircle,
@@ -67,6 +69,8 @@ const gestaoItems: SimpleNavItem[] = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
   { title: "Lojas", url: "/admin/lojas", icon: Building2 },
   { title: "Planos", url: "/admin/planos", icon: CreditCard },
+  { title: "Financeiro Geral", url: "/admin/financeiro-geral", icon: DollarSign },
+  { title: "Relatórios", url: "/admin/relatorios", icon: BarChart3 },
   { title: "Atendimento", url: "/admin/atendimento", icon: MessageSquare },
 ];
 
