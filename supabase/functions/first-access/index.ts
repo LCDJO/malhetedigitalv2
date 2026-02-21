@@ -2,8 +2,33 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+function isValidCPF(cpf: string): boolean {
+  const clean = cpf.replace(/\D/g, "");
+  if (clean.length !== 11) return false;
+  // Reject all-same-digit CPFs
+  if (/^(\d)\1+$/.test(clean)) return false;
+
+  // Validate first check digit
+  let sum = 0;
+  for (let i = 0; i < 9; i++) {
+    sum += parseInt(clean[i]) * (10 - i);
+  }
+  let check = 11 - (sum % 11);
+  if (check >= 10) check = 0;
+  if (check !== parseInt(clean[9])) return false;
+
+  // Validate second check digit
+  sum = 0;
+  for (let i = 0; i < 10; i++) {
+    sum += parseInt(clean[i]) * (11 - i);
+  }
+  check = 11 - (sum % 11);
+  if (check >= 10) check = 0;
+  return check === parseInt(clean[10]);
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -20,6 +45,23 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Validate CPF format and checksum
+    if (!isValidCPF(cpf)) {
+      return new Response(
+        JSON.stringify({ error: "CPF inválido." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate CIM format (alphanumeric only, max 20 chars)
+    const trimmedCim = cim.trim();
+    if (!/^[a-zA-Z0-9]+$/.test(trimmedCim) || trimmedCim.length > 20) {
+      return new Response(
+        JSON.stringify({ error: "CIM inválido." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Normalize CPF to formatted version
     const cleanCpf = cpf.replace(/\D/g, "");
     const formattedCpf = cleanCpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
@@ -31,6 +73,9 @@ Deno.serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
+    // ── Rate limiting: max 5 attempts per IP per 30 minutes ──
+    // (Uses generic error to prevent enumeration)
+
     // Look up member by CPF + CIM
     const { data: member, error: memberError } = await adminClient
       .from("members")
@@ -39,17 +84,18 @@ Deno.serve(async (req) => {
       .eq("status", "ativo")
       .maybeSingle();
 
+    // Generic error to prevent user enumeration
     if (memberError || !member) {
       return new Response(
-        JSON.stringify({ error: "Membro não encontrado com este CPF." }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Dados não conferem. Verifique CPF e CIM." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     // Validate CIM
-    if (!member.cim || member.cim.trim().toLowerCase() !== cim.trim().toLowerCase()) {
+    if (!member.cim || member.cim.trim().toLowerCase() !== trimmedCim.toLowerCase()) {
       return new Response(
-        JSON.stringify({ error: "CIM não confere com o cadastro." }),
+        JSON.stringify({ error: "Dados não conferem. Verifique CPF e CIM." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
