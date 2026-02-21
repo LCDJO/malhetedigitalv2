@@ -40,7 +40,7 @@ import AdminPlanos from "./pages/admin/AdminPlanos";
 import AdminUsuarios from "./pages/admin/AdminUsuarios";
 import AdminPermissoes from "./pages/admin/AdminPermissoes";
 import AdminConfigSuperAdmin from "./pages/admin/AdminConfigSuperAdmin";
-import AdminAuth from "./pages/admin/AdminAuth";
+
 import AdminBannerLogin from "./pages/admin/AdminBannerLogin";
 import AdminBannerAnalytics from "./pages/admin/AdminBannerAnalytics";
 import AdminIntegracoes from "./pages/admin/AdminIntegracoes";
@@ -78,7 +78,7 @@ const App = () => (
           <ScopeProvider>
             <Routes>
             <Route path="/auth" element={<Auth />} />
-            <Route path="/admin/auth" element={<AdminAuth />} />
+            
             <Route path="/anunciante/auth" element={<AnuncianteAuth />} />
             <Route path="/portal/auth" element={<PortalAuth />} />
 
@@ -103,7 +103,7 @@ const App = () => (
             <Route
               path="/admin/*"
               element={
-                <ProtectedRoute requiredRole="superadmin" portalRedirect="/admin/auth">
+                <ProtectedRoute requiredRole="superadmin" portalRedirect="/auth">
                   <AdminLayout>
                     <Routes>
                       <Route path="/" element={<AdminDashboard />} />
