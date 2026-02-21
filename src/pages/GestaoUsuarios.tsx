@@ -1,49 +1,27 @@
+/**
+ * Gestão de Usuários — Tabbed page following Gestão RH pattern
+ * Tabs: Usuários | Cargos | Permissões
+ */
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth, roleLabels, type AppRole } from "@/contexts/AuthContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { supabase } from "@/integrations/supabase/client";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import {
-  UserPlus, Search, Users, Eye,
-  ShieldCheck, ShieldOff, KeyRound, Trash2, Loader2, Crown,
-} from "lucide-react";
+import { Users, Shield, Key } from "lucide-react";
 import { useAuditLog } from "@/hooks/useAuditLog";
+import { UsersTab, type UserRow } from "@/components/iam/UsersTab";
+import { RolesOverview } from "@/components/iam/RolesOverview";
+import { PermissionMatrixView } from "@/components/iam/PermissionMatrixView";
 import { UserFormDialog } from "@/components/gestao-usuarios/UserFormDialog";
-import { UserDetailDialog } from "@/components/gestao-usuarios/UserDetailDialog";
 import { ResetPasswordDialog } from "@/components/gestao-usuarios/ResetPasswordDialog";
 import { DeleteUserDialog } from "@/components/gestao-usuarios/DeleteUserDialog";
 
-interface UserRow {
-  id: string;
-  full_name: string;
-  email: string;
-  role: AppRole | null;
-  tenant_role: string;
-  is_active: boolean;
-  created_at: string;
-  cpf?: string;
-  phone?: string;
-  address?: string;
-  birth_date?: string;
-  avatar_url?: string | null;
-}
-
 export default function GestaoUsuarios() {
   const { session } = useAuth();
-  const navigate = useNavigate();
   const { logAction } = useAuditLog();
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState<"all" | "active" | "inactive">("all");
   const [tenantId, setTenantId] = useState<string | null>(null);
 
   // Dialog states
@@ -53,7 +31,6 @@ export default function GestaoUsuarios() {
   const [editUserId, setEditUserId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const [detailUser, setDetailUser] = useState<UserRow | null>(null);
   const [resetUser, setResetUser] = useState<UserRow | null>(null);
   const [resetSaving, setResetSaving] = useState(false);
   const [deleteUser, setDeleteUser] = useState<UserRow | null>(null);
@@ -82,13 +59,9 @@ export default function GestaoUsuarios() {
         Authorization: `Bearer ${session?.access_token}`,
         apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
       };
-      if (body) {
-        headers["Content-Type"] = "application/json";
-      }
+      if (body) headers["Content-Type"] = "application/json";
       const resp = await fetch(url, {
-        method,
-        headers,
-        ...(body ? { body: JSON.stringify(body) } : {}),
+        method, headers, ...(body ? { body: JSON.stringify(body) } : {}),
       });
       const text = await resp.text();
       let data;
@@ -114,13 +87,6 @@ export default function GestaoUsuarios() {
     setFormMode("create");
     setFormInitial({});
     setEditUserId(null);
-    setFormOpen(true);
-  };
-
-  const openEdit = (user: UserRow) => {
-    setFormMode("edit");
-    setFormInitial(user);
-    setEditUserId(user.id);
     setFormOpen(true);
   };
 
@@ -159,8 +125,8 @@ export default function GestaoUsuarios() {
   const promoteToAdmin = async (user: UserRow) => {
     const { ok, data } = await apiCall("update", "PUT", { user_id: user.id, role: "administrador" });
     if (!ok) { toast.error(data.error || "Erro ao promover"); return; }
-    toast.success(`${user.full_name} agora é Administrador do Sistema`);
-    logAction({ action: "PROMOTE_ADMIN", targetTable: "user_roles", targetId: user.id, details: { email: user.email, new_role: "administrador" } });
+    toast.success(`${user.full_name} agora é Administrador`);
+    logAction({ action: "PROMOTE_ADMIN", targetTable: "user_roles", targetId: user.id, details: { email: user.email } });
     fetchUsers();
   };
 
@@ -168,7 +134,7 @@ export default function GestaoUsuarios() {
     const { ok, data } = await apiCall("update", "PUT", { user_id: user.id, is_active: !user.is_active });
     if (!ok) { toast.error(data.error || "Erro"); return; }
     toast.success(user.is_active ? "Usuário desativado" : "Usuário ativado");
-    logAction({ action: user.is_active ? "DEACTIVATE_USER" : "ACTIVATE_USER", targetTable: "profiles", targetId: user.id, details: { email: user.email } });
+    logAction({ action: user.is_active ? "DEACTIVATE_USER" : "ACTIVATE_USER", targetTable: "profiles", targetId: user.id });
     fetchUsers();
   };
 
@@ -179,12 +145,9 @@ export default function GestaoUsuarios() {
       const { ok, data } = await apiCall("reset_password", "PUT", { user_id: resetUser.id, new_password: newPassword });
       if (!ok) { toast.error(data.error || "Erro ao resetar senha"); setResetSaving(false); return; }
       toast.success(`Senha de ${resetUser.full_name} resetada`);
-      logAction({ action: "RESET_PASSWORD", targetTable: "profiles", targetId: resetUser.id, details: { email: resetUser.email } });
+      logAction({ action: "RESET_PASSWORD", targetTable: "profiles", targetId: resetUser.id });
       setResetUser(null);
-    } catch (err) {
-      console.error("Reset password error:", err);
-      toast.error("Erro inesperado ao resetar senha");
-    } finally { setResetSaving(false); }
+    } catch { toast.error("Erro inesperado"); } finally { setResetSaving(false); }
   };
 
   const handleDelete = async () => {
@@ -192,204 +155,75 @@ export default function GestaoUsuarios() {
     try {
       const resp = await apiCall("update", "PUT", { user_id: deleteUser.id, role: null });
       if (!resp.ok) { toast.error(resp.data?.error || "Erro ao remover permissão"); return; }
-      toast.success(`Permissão de administrador removida de ${deleteUser.full_name}`);
-      logAction({ action: "REMOVE_ADMIN", targetTable: "user_roles", targetId: deleteUser.id, details: { email: deleteUser.email } });
+      toast.success(`Permissão removida de ${deleteUser.full_name}`);
+      logAction({ action: "REMOVE_ADMIN", targetTable: "user_roles", targetId: deleteUser.id });
       fetchUsers();
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      console.error("Delete user error:", message);
-      toast.error(`Erro ao remover: ${message}`);
-    } finally {
-      setDeleteUser(null);
-    }
+      toast.error("Erro ao remover");
+    } finally { setDeleteUser(null); }
   };
 
   const adminCount = users.filter((u) => u.role === "administrador").length;
 
-  // Filters
-  const filtered = users.filter((u) => {
-    if (filterStatus === "active" && !u.is_active) return false;
-    if (filterStatus === "inactive" && u.is_active) return false;
-    if (search) {
-      const q = search.toLowerCase();
-      return u.full_name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
-    }
-    return true;
-  });
-
-  const countActive = users.filter((u) => u.is_active).length;
-  const countInactive = users.filter((u) => !u.is_active).length;
+  // Tenant-specific entities for permission matrix
+  const tenantEntities = [
+    "dashboard", "members", "member_transactions", "lodge_config",
+    "plano_contas", "audit_logs", "user_roles", "totem_codes", "notifications",
+  ] as const;
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+          <Users className="h-5 w-5 text-primary" />
+        </div>
         <div>
-          <h1 className="text-2xl font-serif font-bold text-foreground">Gestão de Usuários</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Gerencie os usuários e permissões desta Loja
+          <h1 className="text-2xl font-bold text-foreground">Usuários & Permissões</h1>
+          <p className="text-sm text-muted-foreground">
+            Gerencie membros, cargos e controle de acesso da Loja.
           </p>
         </div>
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => setFilterStatus("all")}>
-          <CardContent className="flex items-center gap-3 p-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <Users className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{users.length}</p>
-              <p className="text-xs text-muted-foreground">Total</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="cursor-pointer hover:border-success/50 transition-colors" onClick={() => setFilterStatus("active")}>
-          <CardContent className="flex items-center gap-3 p-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10">
-              <ShieldCheck className="h-5 w-5 text-success" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{countActive}</p>
-              <p className="text-xs text-muted-foreground">Ativos</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="cursor-pointer hover:border-destructive/50 transition-colors" onClick={() => setFilterStatus("inactive")}>
-          <CardContent className="flex items-center gap-3 p-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-destructive/10">
-              <ShieldOff className="h-5 w-5 text-destructive" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{countInactive}</p>
-              <p className="text-xs text-muted-foreground">Inativos</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Tabs following RH pattern */}
+      <Tabs defaultValue="users" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="users" className="gap-1.5">
+            <Users className="h-4 w-4" /> Usuários
+          </TabsTrigger>
+          <TabsTrigger value="roles" className="gap-1.5">
+            <Shield className="h-4 w-4" /> Cargos
+          </TabsTrigger>
+          <TabsTrigger value="permissions" className="gap-1.5">
+            <Key className="h-4 w-4" /> Permissões
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Table */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-base font-semibold">
-              <Users className="h-4 w-4 text-muted-foreground" />
-              Usuários ({filtered.length})
-              {filterStatus !== "all" && (
-                <Badge variant="outline" className="text-[10px] ml-1 cursor-pointer" onClick={() => setFilterStatus("all")}>
-                  {filterStatus === "active" ? "Ativos" : "Inativos"} ✕
-                </Badge>
-              )}
-            </CardTitle>
-            <div className="relative w-72">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Buscar por nome ou email..." value={search}
-                onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9" />
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/40">
-                <TableHead>Nome</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Cargo</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Admin</TableHead>
-                <TableHead className="text-right w-56">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                   <TableCell colSpan={6} className="text-center py-12">
-                    <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
-                  </TableCell>
-                </TableRow>
-              ) : filtered.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
-                    {tenantId ? "Nenhum usuário encontrado." : "Loja não identificada. Contate o administrador."}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filtered.map((user) => (
-                  <TableRow key={user.id} className={!user.is_active ? "opacity-60" : ""}>
-                    <TableCell className="font-medium">{user.full_name}</TableCell>
-                    <TableCell className="text-muted-foreground text-sm">{user.email}</TableCell>
-                    <TableCell>
-                      {user.role ? (
-                        <Badge variant="outline" className="text-xs border-border">
-                          {roleLabels[user.role] ?? user.role}
-                        </Badge>
-                      ) : (
-                        <span className="text-xs text-muted-foreground italic">Sem cargo</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={user.is_active ? "default" : "destructive"} className="text-[10px]">
-                        {user.is_active ? "Ativo" : "Inativo"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {user.role === "administrador" ? (
-                        <Badge variant="outline" className="text-[10px] border-primary/50 text-primary">
-                          <Crown className="h-3 w-3 mr-1" /> Admin
-                        </Badge>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <TooltipProvider delayDuration={300}>
-                        <div className="flex items-center justify-end gap-1">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setResetUser(user)}>
-                                <KeyRound className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Resetar Senha</TooltipContent>
-                          </Tooltip>
-                          {user.role !== "administrador" && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => promoteToAdmin(user)}>
-                                  <Crown className="h-4 w-4 text-amber-500" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Tornar Administrador</TooltipContent>
-                            </Tooltip>
-                          )}
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost" size="icon"
-                                className="h-8 w-8 text-destructive hover:text-destructive"
-                                disabled={user.role === "administrador" && adminCount <= 1}
-                                onClick={() => setDeleteUser(user)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              {user.role === "administrador" && adminCount <= 1
-                                ? "Último administrador — não pode remover"
-                                : "Remover permissão de admin"}
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                      </TooltipProvider>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+        <TabsContent value="users">
+          <UsersTab
+            users={users}
+            loading={loading}
+            search={search}
+            onSearchChange={setSearch}
+            isAdmin={true}
+            onOpenCreate={openCreate}
+            onResetPassword={(u) => setResetUser(u)}
+            onPromoteAdmin={promoteToAdmin}
+            onToggleActive={toggleActive}
+            onRemovePermission={(u) => setDeleteUser(u)}
+            adminCount={adminCount}
+          />
+        </TabsContent>
+
+        <TabsContent value="roles">
+          <RolesOverview mode="tenant" />
+        </TabsContent>
+
+        <TabsContent value="permissions">
+          <PermissionMatrixView mode="tenant" filterEntities={[...tenantEntities]} />
+        </TabsContent>
+      </Tabs>
 
       {/* Dialogs */}
       <UserFormDialog
@@ -399,12 +233,6 @@ export default function GestaoUsuarios() {
         initialData={formInitial}
         saving={saving}
         onSave={handleSave}
-      />
-
-      <UserDetailDialog
-        user={detailUser}
-        open={!!detailUser}
-        onOpenChange={(o) => { if (!o) setDetailUser(null); }}
       />
 
       <ResetPasswordDialog

@@ -38,6 +38,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminLojas from "./pages/admin/AdminLojas";
 import AdminPlanos from "./pages/admin/AdminPlanos";
 import AdminUsuarios from "./pages/admin/AdminUsuarios";
+import AdminPermissoes from "./pages/admin/AdminPermissoes";
 import AdminConfigSuperAdmin from "./pages/admin/AdminConfigSuperAdmin";
 import AdminAuth from "./pages/admin/AdminAuth";
 import AdminBannerLogin from "./pages/admin/AdminBannerLogin";
@@ -104,6 +105,7 @@ const App = () => (
                       <Route path="/" element={<AdminDashboard />} />
                       <Route path="/lojas" element={<AdminLojas />} />
                       <Route path="/usuarios" element={<AdminUsuarios />} />
+                      <Route path="/permissoes" element={<AdminPermissoes />} />
                       <Route path="/planos" element={<AdminPlanos />} />
                       <Route path="/banner-login" element={<AdminBannerLogin />} />
                       <Route path="/banner-analytics" element={<AdminBannerAnalytics />} />

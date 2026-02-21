@@ -70,7 +70,7 @@ const gestaoItems: SimpleNavItem[] = [
 
 const segurancaItems: SimpleNavItem[] = [
   { title: "Usuários", url: "/admin/usuarios", icon: Users },
-  { title: "Permissões", url: "/admin/log-auditoria", icon: ShieldCheck },
+  { title: "Permissões", url: "/admin/permissoes", icon: ShieldCheck },
 ];
 
 const complianceItems: SimpleNavItem[] = [
