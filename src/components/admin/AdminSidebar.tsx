@@ -65,25 +65,36 @@ interface SimpleNavItem {
   icon: typeof LayoutDashboard;
 }
 
-const gestaoItems: SimpleNavItem[] = [
+// ── GERAL ──
+const geralItems: SimpleNavItem[] = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
   { title: "Lojas", url: "/admin/lojas", icon: Building2 },
   { title: "Planos", url: "/admin/planos", icon: CreditCard },
-  { title: "Financeiro Geral", url: "/admin/financeiro-geral", icon: DollarSign },
-  { title: "Relatórios", url: "/admin/relatorios", icon: BarChart3 },
-  { title: "Atendimento", url: "/admin/atendimento", icon: MessageSquare },
 ];
 
+// ── FINANCEIRO ──
+const financeiroItems: SimpleNavItem[] = [
+  { title: "Financeiro Geral", url: "/admin/financeiro-geral", icon: DollarSign },
+  { title: "Relatórios", url: "/admin/relatorios", icon: FileBarChart },
+];
+
+// ── COMUNICAÇÃO ──
+const comunicacaoMenuItems: SimpleNavItem[] = [
+  { title: "Chat ao Vivo", url: "/admin/atendimento", icon: MessageSquare },
+];
+
+// ── SEGURANÇA ──
 const segurancaItems: SimpleNavItem[] = [
   { title: "Usuários", url: "/admin/usuarios", icon: Users },
   { title: "Permissões", url: "/admin/permissoes", icon: ShieldCheck },
+  { title: "Log de Auditoria", url: "/admin/log-auditoria", icon: ScrollText },
 ];
 
+// ── COMPLIANCE ──
 const complianceItems: SimpleNavItem[] = [
   { title: "Incidentes", url: "/admin/incidentes", icon: ShieldAlert },
   { title: "Termos e LGPD", url: "/admin/gestao-termos", icon: Scale },
   { title: "Controle de Aceites", url: "/admin/controle-aceites", icon: ClipboardCheck },
-  { title: "Log de Auditoria", url: "/admin/log-auditoria", icon: ScrollText },
   { title: "Configurações", url: "/admin/configuracoes", icon: Settings },
 ];
 
@@ -108,7 +119,7 @@ const integracaoTotem: SimpleNavItem[] = [
   { title: "Totem", url: "/admin/integracoes/totem", icon: Monitor },
 ];
 
-const adsItems: SimpleNavItem[] = [
+const marketingItems: SimpleNavItem[] = [
   { title: "Anunciantes", url: "/admin/anunciantes", icon: Megaphone },
   { title: "Banner", url: "/admin/banner-login", icon: Monitor },
   { title: "Ads Analytics", url: "/admin/banner-analytics", icon: BarChart3 },
@@ -234,10 +245,16 @@ export function AdminSidebar() {
       <Separator className="bg-sidebar-border mx-4 w-auto opacity-50" />
 
       <SidebarContent className="pt-5 px-2">
-        {/* Gestão */}
-        {renderSimpleSection("Gestão", gestaoItems)}
+        {/* Geral */}
+        {renderSimpleSection("Geral", geralItems)}
 
-        {/* Segurança — NEW: Follows RH pattern */}
+        {/* Financeiro */}
+        {renderSimpleSection("Financeiro", financeiroItems)}
+
+        {/* Comunicação */}
+        {renderSimpleSection("Comunicação", comunicacaoMenuItems)}
+
+        {/* Segurança */}
         {renderSimpleSection("Segurança", segurancaItems)}
 
         {/* Compliance */}
@@ -330,8 +347,8 @@ export function AdminSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* ADS */}
-        {renderSimpleSection("ADS", adsItems)}
+        {/* Marketing */}
+        {renderSimpleSection("Marketing", marketingItems)}
 
         {/* Voltar ao Painel */}
         <SidebarGroup className="mt-4">
