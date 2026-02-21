@@ -1,10 +1,4 @@
-export type AppRole =
-  | "administrador"
-  | "superadmin";
-
-export type PermissionAction = "read" | "write" | "approve" | "manage_users";
-
-export const roleLabels: Record<AppRole, string> = {
-  superadmin: "SuperAdmin",
-  administrador: "Administrador",
-};
+// Re-export types from shared domain
+export type { AppRole } from "@/domains/shared/types";
+export type { PermissionAction } from "@/domains/shared/types";
+export { roleLabels } from "@/domains/shared/types";
