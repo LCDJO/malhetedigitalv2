@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { getAdminStats } from "@/services/admin";
-import { Building2, Users, CreditCard, Activity, MessageSquare, ArrowRight } from "lucide-react";
+import { Building2, Users, CreditCard, Activity } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+
 
 interface Stats {
   totalTenants: number;
@@ -15,7 +14,7 @@ interface Stats {
 export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats>({ totalTenants: 0, activeTenants: 0, totalUsers: 0, totalMembers: 0 });
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+  
 
   useEffect(() => {
     async function fetchStats() {
@@ -62,23 +61,6 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* Chat ao Vivo — Acesso rápido */}
-      <Card className="border-primary/20 bg-primary/5">
-        <CardContent className="flex items-center justify-between p-4">
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-              <MessageSquare className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold">Chat ao Vivo</p>
-              <p className="text-xs text-muted-foreground">Gerencie chamados e atendimento das lojas</p>
-            </div>
-          </div>
-          <Button variant="outline" size="sm" onClick={() => navigate("/admin/atendimento")} className="gap-2">
-            Acessar <ArrowRight className="h-4 w-4" />
-          </Button>
-        </CardContent>
-      </Card>
     </div>
   );
 }
