@@ -4,8 +4,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ScopeProvider } from "@/contexts/ScopeContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { ProtectedRoute } from "@/domains/security";
 import { PortalLayout } from "@/components/portal/PortalLayout";
 import Auth from "./pages/Auth";
 import Index from "./pages/Index";
@@ -69,7 +70,8 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
+          <ScopeProvider>
+            <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/admin/auth" element={<AdminAuth />} />
             <Route path="/anunciante/auth" element={<AnuncianteAuth />} />
@@ -156,85 +158,23 @@ const App = () => (
                   <DashboardLayout>
                     <Routes>
                       <Route path="/" element={<Index />} />
-                      <Route
-                        path="/secretaria"
-                        element={
-                          <ProtectedRoute module="secretaria">
-                            <Secretaria />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/tesouraria"
-                        element={
-                          <ProtectedRoute module="tesouraria">
-                            <Tesouraria />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/totem"
-                        element={
-                          <ProtectedRoute module="totem">
-                            <TotemAdmin />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/configuracoes"
-                        element={
-                          <ProtectedRoute module="configuracoes">
-                            <Configuracoes />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/relatorios"
-                        element={
-                          <ProtectedRoute module="dashboard">
-                            <Relatorios />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/gestao-usuarios"
-                        element={
-                          <ProtectedRoute module="configuracoes">
-                            <GestaoUsuarios />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/log-auditoria"
-                        element={
-                          <ProtectedRoute module="configuracoes">
-                            <LogAuditoria />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/gestao-termos"
-                        element={
-                          <ProtectedRoute module="configuracoes">
-                            <GestaoTermos />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/controle-aceites"
-                        element={
-                          <ProtectedRoute module="configuracoes">
-                            <ControleAceites />
-                          </ProtectedRoute>
-                        }
-                      />
+                      <Route path="/secretaria" element={<ProtectedRoute module="secretaria"><Secretaria /></ProtectedRoute>} />
+                      <Route path="/tesouraria" element={<ProtectedRoute module="tesouraria"><Tesouraria /></ProtectedRoute>} />
+                      <Route path="/totem" element={<ProtectedRoute module="totem"><TotemAdmin /></ProtectedRoute>} />
+                      <Route path="/configuracoes" element={<ProtectedRoute module="configuracoes"><Configuracoes /></ProtectedRoute>} />
+                      <Route path="/relatorios" element={<ProtectedRoute module="dashboard"><Relatorios /></ProtectedRoute>} />
+                      <Route path="/gestao-usuarios" element={<ProtectedRoute module="configuracoes"><GestaoUsuarios /></ProtectedRoute>} />
+                      <Route path="/log-auditoria" element={<ProtectedRoute module="configuracoes"><LogAuditoria /></ProtectedRoute>} />
+                      <Route path="/gestao-termos" element={<ProtectedRoute module="configuracoes"><GestaoTermos /></ProtectedRoute>} />
+                      <Route path="/controle-aceites" element={<ProtectedRoute module="configuracoes"><ControleAceites /></ProtectedRoute>} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </DashboardLayout>
                 </ProtectedRoute>
               }
             />
-          </Routes>
+            </Routes>
+          </ScopeProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
