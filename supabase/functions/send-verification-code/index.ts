@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 function generateCode(): string {
@@ -16,17 +16,69 @@ Deno.serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const resendApiKey = Deno.env.get("RESEND_API_KEY")!;
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
-    const { user_id, email } = await req.json();
+    // ── Authentication check ──
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Não autenticado." }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    if (!user_id || !email) {
-      return new Response(JSON.stringify({ error: "user_id e email são obrigatórios." }), {
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(
+      authHeader.replace("Bearer ", "")
+    );
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Token inválido." }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const userId = claimsData.claims.sub as string;
+    const userEmail = claimsData.claims.email as string;
+
+    const { email } = await req.json();
+
+    if (!email) {
+      return new Response(JSON.stringify({ error: "Email é obrigatório." }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Only allow sending to the authenticated user's own email
+    if (email !== userEmail) {
+      return new Response(JSON.stringify({ error: "Só é possível enviar código para seu próprio e-mail." }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+
+    // ── Rate limiting: 1 code per 60 seconds ──
+    const { data: recentCodes } = await supabaseAdmin
+      .from("email_verification_codes")
+      .select("created_at")
+      .eq("email", email)
+      .eq("used", false)
+      .gte("created_at", new Date(Date.now() - 60000).toISOString())
+      .limit(1);
+
+    if (recentCodes && recentCodes.length > 0) {
+      return new Response(
+        JSON.stringify({ error: "Aguarde 60 segundos antes de solicitar um novo código." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Invalidar códigos anteriores não usados
@@ -43,7 +95,7 @@ Deno.serve(async (req) => {
     const { error: insertError } = await supabaseAdmin
       .from("email_verification_codes")
       .insert({
-        user_id,
+        user_id: userId,
         email,
         code,
         expires_at: expiresAt,
