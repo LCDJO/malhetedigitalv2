@@ -135,7 +135,7 @@ export function TabDadosLoja({ config, canWrite, onChange, onLogoUpload }: Props
                 placeholder="Ex: Alta Floresta"
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="potencia">Potência / Obediência *</Label>
               {potencias.length > 0 ? (
                 <Select
@@ -161,35 +161,6 @@ export function TabDadosLoja({ config, canWrite, onChange, onLogoUpload }: Props
                   onChange={(e) => onChange("potencia", e.target.value)}
                   disabled={!canWrite}
                   placeholder="Ex: Grande Oriente do Brasil (GOB)"
-                />
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="rito">Rito *</Label>
-              {ritos.length > 0 ? (
-                <Select
-                  value={config.rito}
-                  onValueChange={(v) => onChange("rito", v)}
-                  disabled={!canWrite}
-                >
-                  <SelectTrigger id="rito">
-                    <SelectValue placeholder="Selecione o rito" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ritos.map((r) => (
-                      <SelectItem key={r.id} value={r.nome}>
-                        {r.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Input
-                  id="rito"
-                  value={config.rito}
-                  onChange={(e) => onChange("rito", e.target.value)}
-                  disabled={!canWrite}
-                  placeholder="Ex: Rito Escocês Antigo e Aceito"
                 />
               )}
             </div>
