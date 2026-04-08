@@ -380,7 +380,7 @@ export default function Auth() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label>Potência Maçônica *</Label>
-                    <Select value={potencia} onValueChange={setPotencia}>
+                    <Select value={potencia} onValueChange={(v) => { setPotencia(v); setRito(""); }}>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione a Potência" />
                       </SelectTrigger>
@@ -395,16 +395,20 @@ export default function Auth() {
                   </div>
                   <div className="space-y-1.5">
                     <Label>Rito *</Label>
-                    <Select value={rito} onValueChange={setRito}>
+                    <Select value={rito} onValueChange={setRito} disabled={!potencia}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione o Rito" />
+                        <SelectValue placeholder={potencia ? "Selecione o Rito" : "Selecione a Potência primeiro"} />
                       </SelectTrigger>
                       <SelectContent>
-                        {ritosList.map((r) => (
-                          <SelectItem key={r.id} value={r.nome}>
-                            {r.nome}
-                          </SelectItem>
-                        ))}
+                        {(() => {
+                          const selectedPot = potenciasList.find(p => p.nome === potencia);
+                          const filteredRitos = selectedPot ? (potenciaRitosMap[selectedPot.id] || []) : [];
+                          return filteredRitos.length > 0
+                            ? filteredRitos.map((r) => (
+                                <SelectItem key={r.id} value={r.nome}>{r.nome}</SelectItem>
+                              ))
+                            : <SelectItem value="__none" disabled>Nenhum rito disponível</SelectItem>;
+                        })()}
                       </SelectContent>
                     </Select>
                   </div>
