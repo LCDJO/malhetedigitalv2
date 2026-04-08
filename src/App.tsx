@@ -40,6 +40,7 @@ import AdminPlanos from "./pages/admin/AdminPlanos";
 import AdminUsuarios from "./pages/admin/AdminUsuarios";
 import AdminPermissoes from "./pages/admin/AdminPermissoes";
 import AdminConfigSuperAdmin from "./pages/admin/AdminConfigSuperAdmin";
+import AdminPotenciasRitos from "./pages/admin/AdminPotenciasRitos";
 
 import AdminBannerLogin from "./pages/admin/AdminBannerLogin";
 import AdminBannerAnalytics from "./pages/admin/AdminBannerAnalytics";
@@ -111,6 +112,7 @@ const App = () => (
                       <Route path="/usuarios" element={<AdminUsuarios />} />
                       <Route path="/permissoes" element={<AdminPermissoes />} />
                       <Route path="/planos" element={<AdminPlanos />} />
+                      <Route path="/potencias-ritos" element={<AdminPotenciasRitos />} />
                       <Route path="/banner-login" element={<AdminBannerLogin />} />
                       <Route path="/banner-analytics" element={<AdminBannerAnalytics />} />
                       <Route path="/incidentes" element={<Incidentes />} />

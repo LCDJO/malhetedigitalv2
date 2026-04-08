@@ -69,6 +69,7 @@ interface SimpleNavItem {
 const geralItems: SimpleNavItem[] = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
   { title: "Lojas", url: "/admin/lojas", icon: Building2 },
+  { title: "Potências & Ritos", url: "/admin/potencias-ritos", icon: Shield },
   { title: "Planos", url: "/admin/planos", icon: CreditCard },
 ];
 
