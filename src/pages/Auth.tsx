@@ -62,6 +62,14 @@ export default function Auth() {
       setNeedsBootstrap(data?.needs_bootstrap ?? false);
     }).catch(() => setNeedsBootstrap(false));
 
+    // Fetch catalogs
+    supabase.from("potencias" as any).select("id, nome, sigla").eq("ativo", true).order("nome").then(({ data }) => {
+      if (data) setPotenciasList(data as any);
+    });
+    supabase.from("ritos" as any).select("id, nome").eq("ativo", true).order("nome").then(({ data }) => {
+      if (data) setRitosList(data as any);
+    });
+
     supabase
       .from("login_banners")
       .select("id, tipo, media_url, duracao_segundos, pagina, data_fim, grupo")
