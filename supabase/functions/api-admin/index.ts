@@ -379,6 +379,80 @@ Deno.serve(async (req) => {
       return json({ success: true });
     }
 
+    // ─── LIST REGRAS ───
+    if (req.method === "GET" && action === "list_regras") {
+      const { data, error } = await supabase
+        .from("regras")
+        .select("*, potencias(id, nome, sigla)")
+        .order("created_at", { ascending: false });
+      if (error) return err(error.message, 500);
+      return json(data);
+    }
+
+    // ─── CREATE REGRA ───
+    if (req.method === "POST" && action === "create_regra") {
+      const body = await req.json();
+      if (!body.nome?.trim()) return err("nome is required");
+      if (!body.tipo) return err("tipo is required");
+      if (!body.entidade) return err("entidade is required");
+      const { data, error } = await supabase.from("regras").insert({
+        nome: body.nome.trim(),
+        descricao: body.descricao?.trim() || null,
+        tipo: body.tipo,
+        entidade: body.entidade,
+        regra_json: body.regra_json || {},
+        potencia_id: body.potencia_id || null,
+      }).select("id").single();
+      if (error) return err(error.message, 500);
+
+      await serviceClient.from("audit_log").insert({
+        user_id: userId,
+        action: "CREATE_REGRA",
+        target_table: "regras",
+        target_id: data.id,
+        details: { nome: body.nome, via: "api-admin" },
+      });
+
+      return json({ id: data.id }, 201);
+    }
+
+    // ─── UPDATE REGRA ───
+    if (req.method === "PUT" && action === "update_regra") {
+      const body = await req.json();
+      if (!body.id) return err("Missing id");
+      const { id, ...rest } = body;
+      const { error } = await supabase.from("regras").update(rest).eq("id", id);
+      if (error) return err(error.message, 500);
+
+      await serviceClient.from("audit_log").insert({
+        user_id: userId,
+        action: "UPDATE_REGRA",
+        target_table: "regras",
+        target_id: id,
+        details: { via: "api-admin" },
+      });
+
+      return json({ success: true });
+    }
+
+    // ─── DELETE REGRA ───
+    if (req.method === "DELETE" && action === "delete_regra") {
+      const id = url.searchParams.get("id");
+      if (!id) return err("Missing id");
+      const { error } = await supabase.from("regras").update({ ativo: false }).eq("id", id);
+      if (error) return err(error.message, 500);
+
+      await serviceClient.from("audit_log").insert({
+        user_id: userId,
+        action: "DELETE_REGRA",
+        target_table: "regras",
+        target_id: id,
+        details: { via: "api-admin" },
+      });
+
+      return json({ success: true });
+    }
+
     return err("Unknown action", 404);
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Internal error";
