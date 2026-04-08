@@ -41,6 +41,7 @@ export default function Auth() {
   const [lodgeName, setLodgeName] = useState("");
   const [lodgeNumber, setLodgeNumber] = useState("");
   const [potencia, setPotencia] = useState("");
+  const [rito, setRito] = useState("");
   const [orient, setOrient] = useState("");
   const [cep, setCep] = useState("");
   const [rua, setRua] = useState("");
@@ -50,6 +51,10 @@ export default function Auth() {
   const [cidade, setCidade] = useState("");
   const [estado, setEstado] = useState("");
   const [telefone, setTelefone] = useState("");
+
+  // Catalogs from DB
+  const [potenciasList, setPotenciasList] = useState<{ id: string; nome: string; sigla: string }[]>([]);
+  const [ritosList, setRitosList] = useState<{ id: string; nome: string }[]>([]);
 
   // Check if bootstrap is needed + fetch banners
   useEffect(() => {
