@@ -55,6 +55,7 @@ export default function Auth() {
   // Catalogs from DB
   const [potenciasList, setPotenciasList] = useState<{ id: string; nome: string; sigla: string }[]>([]);
   const [ritosList, setRitosList] = useState<{ id: string; nome: string }[]>([]);
+  const [potenciaRitosMap, setPotenciaRitosMap] = useState<Record<string, { id: string; nome: string }[]>>({});
 
   // Check if bootstrap is needed + fetch banners
   useEffect(() => {
@@ -66,8 +67,17 @@ export default function Auth() {
     supabase.from("potencias" as any).select("id, nome, sigla").eq("ativo", true).order("nome").then(({ data }) => {
       if (data) setPotenciasList(data as any);
     });
-    supabase.from("ritos" as any).select("id, nome").eq("ativo", true).order("nome").then(({ data }) => {
-      if (data) setRitosList(data as any);
+
+    // Fetch potencia_ritos combinations
+    supabase.from("potencia_ritos" as any).select("potencia_id, rito_id, ritos:rito_id(id, nome)").eq("ativo", true).then(({ data }) => {
+      if (data) {
+        const map: Record<string, { id: string; nome: string }[]> = {};
+        (data as any[]).forEach((r: any) => {
+          if (!map[r.potencia_id]) map[r.potencia_id] = [];
+          if (r.ritos) map[r.potencia_id].push(r.ritos);
+        });
+        setPotenciaRitosMap(map);
+      }
     });
 
     supabase
@@ -370,7 +380,7 @@ export default function Auth() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label>Potência Maçônica *</Label>
-                    <Select value={potencia} onValueChange={setPotencia}>
+                    <Select value={potencia} onValueChange={(v) => { setPotencia(v); setRito(""); }}>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione a Potência" />
                       </SelectTrigger>
@@ -385,16 +395,20 @@ export default function Auth() {
                   </div>
                   <div className="space-y-1.5">
                     <Label>Rito *</Label>
-                    <Select value={rito} onValueChange={setRito}>
+                    <Select value={rito} onValueChange={setRito} disabled={!potencia}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione o Rito" />
+                        <SelectValue placeholder={potencia ? "Selecione o Rito" : "Selecione a Potência primeiro"} />
                       </SelectTrigger>
                       <SelectContent>
-                        {ritosList.map((r) => (
-                          <SelectItem key={r.id} value={r.nome}>
-                            {r.nome}
-                          </SelectItem>
-                        ))}
+                        {(() => {
+                          const selectedPot = potenciasList.find(p => p.nome === potencia);
+                          const filteredRitos = selectedPot ? (potenciaRitosMap[selectedPot.id] || []) : [];
+                          return filteredRitos.length > 0
+                            ? filteredRitos.map((r) => (
+                                <SelectItem key={r.id} value={r.nome}>{r.nome}</SelectItem>
+                              ))
+                            : <SelectItem value="__none" disabled>Nenhum rito disponível</SelectItem>;
+                        })()}
                       </SelectContent>
                     </Select>
                   </div>

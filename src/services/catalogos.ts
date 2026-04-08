@@ -33,3 +33,14 @@ export async function fetchRitos(): Promise<RitoOption[]> {
   if (error) throw new Error(error.message);
   return (data ?? []) as RitoOption[];
 }
+
+/** Fetch ritos allowed for a specific potencia via potencia_ritos */
+export async function fetchRitosByPotencia(potenciaId: string): Promise<RitoOption[]> {
+  const { data, error } = await supabase
+    .from("potencia_ritos" as any)
+    .select("rito_id, ritos:rito_id(id, nome, descricao)")
+    .eq("potencia_id", potenciaId)
+    .eq("ativo", true);
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as any[]).map((r: any) => r.ritos).filter(Boolean);
+}

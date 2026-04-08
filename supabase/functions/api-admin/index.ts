@@ -347,6 +347,38 @@ Deno.serve(async (req) => {
       return json({ success: true });
     }
 
+    // ─── LIST POTENCIA_RITOS ───
+    if (req.method === "GET" && action === "list_potencia_ritos") {
+      const { data, error } = await supabase
+        .from("potencia_ritos")
+        .select("id, potencia_id, rito_id, ativo, created_at, potencias(id, nome, sigla), ritos(id, nome)")
+        .order("created_at", { ascending: false });
+      if (error) return err(error.message, 500);
+      return json(data);
+    }
+
+    // ─── CREATE POTENCIA_RITO ───
+    if (req.method === "POST" && action === "create_potencia_rito") {
+      const body = await req.json();
+      if (!body.potencia_id || !body.rito_id) return err("potencia_id and rito_id are required");
+      const { data, error } = await supabase
+        .from("potencia_ritos")
+        .insert({ potencia_id: body.potencia_id, rito_id: body.rito_id })
+        .select("id")
+        .single();
+      if (error) return err(error.message, 500);
+      return json({ id: data.id }, 201);
+    }
+
+    // ─── DELETE POTENCIA_RITO ───
+    if (req.method === "DELETE" && action === "delete_potencia_rito") {
+      const id = url.searchParams.get("id");
+      if (!id) return err("Missing id");
+      const { error } = await supabase.from("potencia_ritos").delete().eq("id", id);
+      if (error) return err(error.message, 500);
+      return json({ success: true });
+    }
+
     return err("Unknown action", 404);
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Internal error";

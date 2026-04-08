@@ -1155,6 +1155,45 @@ export type Database = {
           },
         ]
       }
+      potencia_ritos: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          potencia_id: string
+          rito_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          potencia_id: string
+          rito_id: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          potencia_id?: string
+          rito_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "potencia_ritos_potencia_id_fkey"
+            columns: ["potencia_id"]
+            isOneToOne: false
+            referencedRelation: "potencias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "potencia_ritos_rito_id_fkey"
+            columns: ["rito_id"]
+            isOneToOne: false
+            referencedRelation: "ritos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       potencias: {
         Row: {
           ativo: boolean

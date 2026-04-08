@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import {
   listPotencias, createPotencia, updatePotencia, deletePotencia,
   listRitos, createRito, updateRito, deleteRito,
-  type Potencia, type Rito,
+  listPotenciaRitos, createPotenciaRito, deletePotenciaRito,
+  type Potencia, type Rito, type PotenciaRito,
 } from "@/services/admin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,15 +14,17 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Loader2, Shield, BookOpen } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Pencil, Trash2, Loader2, Shield, BookOpen, Link2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function AdminPotenciasRitos() {
   const [potencias, setPotencias] = useState<Potencia[]>([]);
   const [ritos, setRitos] = useState<Rito[]>([]);
+  const [combos, setCombos] = useState<PotenciaRito[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Dialog state
+  // Dialog state for potencia/rito
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogType, setDialogType] = useState<"potencia" | "rito">("potencia");
   const [editingItem, setEditingItem] = useState<Potencia | Rito | null>(null);
@@ -30,12 +33,18 @@ export default function AdminPotenciasRitos() {
   const [formDescricao, setFormDescricao] = useState("");
   const [saving, setSaving] = useState(false);
 
+  // Combo dialog state
+  const [comboDialogOpen, setComboDialogOpen] = useState(false);
+  const [comboPotenciaId, setComboPotenciaId] = useState("");
+  const [comboRitoId, setComboRitoId] = useState("");
+
   const fetchAll = async () => {
     setLoading(true);
     try {
-      const [p, r] = await Promise.all([listPotencias(), listRitos()]);
+      const [p, r, c] = await Promise.all([listPotencias(), listRitos(), listPotenciaRitos()]);
       setPotencias(p);
       setRitos(r);
+      setCombos(c);
     } catch {
       toast.error("Erro ao carregar dados.");
     } finally {
@@ -105,6 +114,34 @@ export default function AdminPotenciasRitos() {
     }
   };
 
+  const handleAddCombo = async () => {
+    if (!comboPotenciaId || !comboRitoId) { toast.error("Selecione potência e rito."); return; }
+    setSaving(true);
+    try {
+      await createPotenciaRito({ potencia_id: comboPotenciaId, rito_id: comboRitoId });
+      toast.success("Combinação criada.");
+      setComboDialogOpen(false);
+      setComboPotenciaId("");
+      setComboRitoId("");
+      fetchAll();
+    } catch (err: any) {
+      toast.error(err.message?.includes("duplicate") ? "Esta combinação já existe." : (err.message || "Erro ao criar."));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteCombo = async (id: string) => {
+    if (!confirm("Remover esta combinação?")) return;
+    try {
+      await deletePotenciaRito(id);
+      toast.success("Combinação removida.");
+      fetchAll();
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao remover.");
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -113,12 +150,15 @@ export default function AdminPotenciasRitos() {
     );
   }
 
+  const activePotencias = potencias.filter(p => p.ativo);
+  const activeRitos = ritos.filter(r => r.ativo);
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-serif font-bold tracking-tight">Potências & Ritos</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Gerencie as potências maçônicas e ritos disponíveis para seleção pelas Lojas.
+          Gerencie as potências maçônicas, ritos e suas combinações válidas.
         </p>
       </div>
 
@@ -129,6 +169,9 @@ export default function AdminPotenciasRitos() {
           </TabsTrigger>
           <TabsTrigger value="ritos" className="gap-1.5">
             <BookOpen className="h-3.5 w-3.5" /> Ritos
+          </TabsTrigger>
+          <TabsTrigger value="combinacoes" className="gap-1.5">
+            <Link2 className="h-3.5 w-3.5" /> Combinações
           </TabsTrigger>
         </TabsList>
 
@@ -243,9 +286,57 @@ export default function AdminPotenciasRitos() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* ── COMBINAÇÕES ── */}
+        <TabsContent value="combinacoes">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-3">
+              <CardTitle className="text-lg">Combinações Potência ↔ Rito</CardTitle>
+              <Button size="sm" className="gap-1.5" onClick={() => { setComboPotenciaId(""); setComboRitoId(""); setComboDialogOpen(true); }}>
+                <Plus className="h-3.5 w-3.5" /> Nova Combinação
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                Defina quais Ritos são permitidos para cada Potência. Apenas combinações ativas serão exibidas no cadastro de Lojas.
+              </p>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Potência</TableHead>
+                    <TableHead>Rito</TableHead>
+                    <TableHead className="w-[80px]">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {combos.map((c) => (
+                    <TableRow key={c.id}>
+                      <TableCell className="font-medium">
+                        {c.potencias ? `${c.potencias.sigla ? c.potencias.sigla + " — " : ""}${c.potencias.nome}` : c.potencia_id}
+                      </TableCell>
+                      <TableCell>{c.ritos?.nome || c.rito_id}</TableCell>
+                      <TableCell>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDeleteCombo(c.id)}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {combos.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
+                        Nenhuma combinação cadastrada.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
-      {/* ── DIALOG CREATE/EDIT ── */}
+      {/* ── DIALOG CREATE/EDIT POTENCIA/RITO ── */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -276,6 +367,52 @@ export default function AdminPotenciasRitos() {
             <Button onClick={handleSave} disabled={saving}>
               {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── DIALOG ADD COMBO ── */}
+      <Dialog open={comboDialogOpen} onOpenChange={setComboDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nova Combinação</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Potência *</Label>
+              <Select value={comboPotenciaId} onValueChange={setComboPotenciaId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a Potência" />
+                </SelectTrigger>
+                <SelectContent>
+                  {activePotencias.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.sigla ? `${p.sigla} — ${p.nome}` : p.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Rito *</Label>
+              <Select value={comboRitoId} onValueChange={setComboRitoId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o Rito" />
+                </SelectTrigger>
+                <SelectContent>
+                  {activeRitos.map((r) => (
+                    <SelectItem key={r.id} value={r.id}>{r.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setComboDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleAddCombo} disabled={saving}>
+              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Adicionar
             </Button>
           </DialogFooter>
         </DialogContent>
