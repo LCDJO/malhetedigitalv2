@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Building2, Upload, Loader2 } from "lucide-react";
-import { fetchPotencias, fetchRitos, type PotenciaOption, type RitoOption } from "@/services/catalogos";
+import { fetchPotencias, type PotenciaOption } from "@/services/catalogos";
 
 export interface DadosLojaConfig {
   lodge_name: string;
@@ -34,11 +34,9 @@ export function TabDadosLoja({ config, canWrite, onChange, onLogoUpload }: Props
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [potencias, setPotencias] = useState<PotenciaOption[]>([]);
-  const [ritos, setRitos] = useState<RitoOption[]>([]);
 
   useEffect(() => {
     fetchPotencias().then(setPotencias).catch(() => {});
-    fetchRitos().then(setRitos).catch(() => {});
   }, []);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
