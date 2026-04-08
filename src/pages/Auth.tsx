@@ -200,7 +200,7 @@ export default function Auth() {
     e.preventDefault();
 
     // Validate lodge fields
-    if (!lodgeName.trim() || !lodgeNumber.trim() || !potencia || !orient.trim()) {
+    if (!lodgeName.trim() || !lodgeNumber.trim() || !potencia || !rito || !orient.trim()) {
       toast.error("Preencha todas as informações obrigatórias da Loja.");
       return;
     }
@@ -224,6 +224,7 @@ export default function Auth() {
         lodge_name: lodgeName.trim(),
         lodge_number: lodgeNumber.trim(),
         potencia,
+        rito,
         orient: orient.trim(),
         cep: cep.trim(),
         rua: rua.trim(),
