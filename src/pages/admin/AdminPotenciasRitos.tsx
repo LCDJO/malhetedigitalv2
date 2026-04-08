@@ -338,6 +338,11 @@ export default function AdminPotenciasRitos() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* ── REGRAS ── */}
+        <TabsContent value="regras">
+          <RegrasTab />
+        </TabsContent>
       </Tabs>
 
       {/* ── DIALOG CREATE/EDIT POTENCIA/RITO ── */}
