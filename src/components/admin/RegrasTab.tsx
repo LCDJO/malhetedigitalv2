@@ -239,10 +239,10 @@ export default function RegrasTab() {
             </div>
             <div className="space-y-2">
               <Label>Potência (opcional — vazio = global)</Label>
-              <Select value={potenciaId} onValueChange={setPotenciaId}>
+              <Select value={potenciaId || "__global__"} onValueChange={(v) => setPotenciaId(v === "__global__" ? "" : v)}>
                 <SelectTrigger><SelectValue placeholder="Global (todas)" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Global (todas)</SelectItem>
+                  <SelectItem value="__global__">Global (todas)</SelectItem>
                   {potencias.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.sigla ? `${p.sigla} — ${p.nome}` : p.nome}
