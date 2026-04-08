@@ -174,6 +174,9 @@ export default function AdminPotenciasRitos() {
           <TabsTrigger value="combinacoes" className="gap-1.5">
             <Link2 className="h-3.5 w-3.5" /> Combinações
           </TabsTrigger>
+          <TabsTrigger value="regras" className="gap-1.5">
+            <Brain className="h-3.5 w-3.5" /> Regras
+          </TabsTrigger>
         </TabsList>
 
         {/* ── POTÊNCIAS ── */}
