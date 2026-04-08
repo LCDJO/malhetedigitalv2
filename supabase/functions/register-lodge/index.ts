@@ -19,10 +19,10 @@ serve(async (req) => {
 
     const body = await req.json();
     const {
-      // Lodge info
       lodge_name,
       lodge_number,
       potencia,
+      rito,
       orient,
       cep,
       rua,
@@ -32,7 +32,6 @@ serve(async (req) => {
       cidade,
       estado,
       telefone,
-      // Admin user info
       full_name,
       email,
       password,
@@ -94,7 +93,8 @@ serve(async (req) => {
         name: lodge_name.trim(),
         slug,
         lodge_number: lodge_number.trim(),
-        potencia: potencia.trim(),
+        potencia: potencia?.trim() || "",
+        rito: rito?.trim() || "",
         orient: orient.trim(),
         endereco,
         telefone: telefone?.trim() || null,

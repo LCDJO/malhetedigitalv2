@@ -116,3 +116,79 @@ export async function deletePlan(id: string): Promise<void> {
     method: "DELETE", headers,
   });
 }
+
+// ═══════════════════════════════════
+// POTÊNCIAS
+// ═══════════════════════════════════
+
+export interface Potencia {
+  id: string;
+  nome: string;
+  sigla: string;
+  ativo: boolean;
+  created_at: string;
+}
+
+export async function listPotencias(): Promise<Potencia[]> {
+  const headers = await getHeaders();
+  return request<Potencia[]>(`${API_BASE}?action=list_potencias`, { method: "GET", headers });
+}
+
+export async function createPotencia(payload: { nome: string; sigla?: string }): Promise<{ id: string }> {
+  const headers = await getHeaders();
+  return request<{ id: string }>(`${API_BASE}?action=create_potencia`, {
+    method: "POST", headers, body: JSON.stringify(payload),
+  });
+}
+
+export async function updatePotencia(id: string, payload: Record<string, unknown>): Promise<void> {
+  const headers = await getHeaders();
+  await request<{ success: boolean }>(`${API_BASE}?action=update_potencia`, {
+    method: "PUT", headers, body: JSON.stringify({ id, ...payload }),
+  });
+}
+
+export async function deletePotencia(id: string): Promise<void> {
+  const headers = await getHeaders();
+  await request<{ success: boolean }>(`${API_BASE}?action=delete_potencia&id=${id}`, {
+    method: "DELETE", headers,
+  });
+}
+
+// ═══════════════════════════════════
+// RITOS
+// ═══════════════════════════════════
+
+export interface Rito {
+  id: string;
+  nome: string;
+  descricao: string;
+  ativo: boolean;
+  created_at: string;
+}
+
+export async function listRitos(): Promise<Rito[]> {
+  const headers = await getHeaders();
+  return request<Rito[]>(`${API_BASE}?action=list_ritos`, { method: "GET", headers });
+}
+
+export async function createRito(payload: { nome: string; descricao?: string }): Promise<{ id: string }> {
+  const headers = await getHeaders();
+  return request<{ id: string }>(`${API_BASE}?action=create_rito`, {
+    method: "POST", headers, body: JSON.stringify(payload),
+  });
+}
+
+export async function updateRito(id: string, payload: Record<string, unknown>): Promise<void> {
+  const headers = await getHeaders();
+  await request<{ success: boolean }>(`${API_BASE}?action=update_rito`, {
+    method: "PUT", headers, body: JSON.stringify({ id, ...payload }),
+  });
+}
+
+export async function deleteRito(id: string): Promise<void> {
+  const headers = await getHeaders();
+  await request<{ success: boolean }>(`${API_BASE}?action=delete_rito&id=${id}`, {
+    method: "DELETE", headers,
+  });
+}

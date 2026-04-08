@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Building2, Upload, Loader2 } from "lucide-react";
+import { fetchPotencias, type PotenciaOption } from "@/services/catalogos";
 
 export interface DadosLojaConfig {
   lodge_name: string;
@@ -31,6 +33,11 @@ interface Props {
 export function TabDadosLoja({ config, canWrite, onChange, onLogoUpload }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [potencias, setPotencias] = useState<PotenciaOption[]>([]);
+
+  useEffect(() => {
+    fetchPotencias().then(setPotencias).catch(() => {});
+  }, []);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -128,13 +135,32 @@ export function TabDadosLoja({ config, canWrite, onChange, onLogoUpload }: Props
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="potencia">Potência / Obediência *</Label>
-              <Input
-                id="potencia"
-                value={config.potencia}
-                onChange={(e) => onChange("potencia", e.target.value)}
-                disabled={!canWrite}
-                placeholder="Ex: Grande Oriente do Brasil (GOB)"
-              />
+              {potencias.length > 0 ? (
+                <Select
+                  value={config.potencia}
+                  onValueChange={(v) => onChange("potencia", v)}
+                  disabled={!canWrite}
+                >
+                  <SelectTrigger id="potencia">
+                    <SelectValue placeholder="Selecione a potência" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {potencias.map((p) => (
+                      <SelectItem key={p.id} value={p.nome}>
+                        {p.sigla ? `${p.sigla} — ${p.nome}` : p.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  id="potencia"
+                  value={config.potencia}
+                  onChange={(e) => onChange("potencia", e.target.value)}
+                  disabled={!canWrite}
+                  placeholder="Ex: Grande Oriente do Brasil (GOB)"
+                />
+              )}
             </div>
           </div>
         </div>

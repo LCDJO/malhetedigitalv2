@@ -15,12 +15,7 @@ import BootstrapWizard from "@/components/BootstrapWizard";
 
 type AuthView = "login" | "signup" | "forgot" | "reset";
 
-const POTENCIAS = [
-  "Grande Oriente do Brasil (GOB)",
-  "Grande Loja (GL)",
-  "Confederação Maçônica do Brasil (COMAB)",
-  "Outra",
-];
+// Potencias and ritos are fetched from the database
 
 const ESTADOS = [
   "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO",
@@ -46,6 +41,7 @@ export default function Auth() {
   const [lodgeName, setLodgeName] = useState("");
   const [lodgeNumber, setLodgeNumber] = useState("");
   const [potencia, setPotencia] = useState("");
+  const [rito, setRito] = useState("");
   const [orient, setOrient] = useState("");
   const [cep, setCep] = useState("");
   const [rua, setRua] = useState("");
@@ -56,11 +52,23 @@ export default function Auth() {
   const [estado, setEstado] = useState("");
   const [telefone, setTelefone] = useState("");
 
+  // Catalogs from DB
+  const [potenciasList, setPotenciasList] = useState<{ id: string; nome: string; sigla: string }[]>([]);
+  const [ritosList, setRitosList] = useState<{ id: string; nome: string }[]>([]);
+
   // Check if bootstrap is needed + fetch banners
   useEffect(() => {
     supabase.functions.invoke("bootstrap", { method: "GET" }).then(({ data }) => {
       setNeedsBootstrap(data?.needs_bootstrap ?? false);
     }).catch(() => setNeedsBootstrap(false));
+
+    // Fetch catalogs
+    supabase.from("potencias" as any).select("id, nome, sigla").eq("ativo", true).order("nome").then(({ data }) => {
+      if (data) setPotenciasList(data as any);
+    });
+    supabase.from("ritos" as any).select("id, nome").eq("ativo", true).order("nome").then(({ data }) => {
+      if (data) setRitosList(data as any);
+    });
 
     supabase
       .from("login_banners")
@@ -192,7 +200,7 @@ export default function Auth() {
     e.preventDefault();
 
     // Validate lodge fields
-    if (!lodgeName.trim() || !lodgeNumber.trim() || !potencia || !orient.trim()) {
+    if (!lodgeName.trim() || !lodgeNumber.trim() || !potencia || !rito || !orient.trim()) {
       toast.error("Preencha todas as informações obrigatórias da Loja.");
       return;
     }
@@ -216,6 +224,7 @@ export default function Auth() {
         lodge_name: lodgeName.trim(),
         lodge_number: lodgeNumber.trim(),
         potencia,
+        rito,
         orient: orient.trim(),
         cep: cep.trim(),
         rua: rua.trim(),
@@ -366,22 +375,40 @@ export default function Auth() {
                         <SelectValue placeholder="Selecione a Potência" />
                       </SelectTrigger>
                       <SelectContent>
-                        {POTENCIAS.map((p) => (
-                          <SelectItem key={p} value={p}>{p}</SelectItem>
+                        {potenciasList.map((p) => (
+                          <SelectItem key={p.id} value={p.nome}>
+                            {p.sigla ? `${p.sigla} — ${p.nome}` : p.nome}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="orient">Oriente *</Label>
-                    <Input
-                      id="orient"
-                      value={orient}
-                      onChange={(e) => setOrient(e.target.value)}
-                      placeholder="Ex: Manaus"
-                      maxLength={100}
-                    />
+                    <Label>Rito *</Label>
+                    <Select value={rito} onValueChange={setRito}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o Rito" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ritosList.map((r) => (
+                          <SelectItem key={r.id} value={r.nome}>
+                            {r.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="orient">Oriente *</Label>
+                  <Input
+                    id="orient"
+                    value={orient}
+                    onChange={(e) => setOrient(e.target.value)}
+                    placeholder="Ex: Manaus"
+                    maxLength={100}
+                  />
                 </div>
 
                 <Separator />
