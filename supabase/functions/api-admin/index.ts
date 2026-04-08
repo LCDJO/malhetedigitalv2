@@ -24,10 +24,9 @@ async function authenticate(req: Request) {
     Deno.env.get("SUPABASE_ANON_KEY")!,
     { global: { headers: { Authorization: authHeader } } }
   );
-  const token = authHeader.replace("Bearer ", "");
-  const { data, error } = await supabase.auth.getClaims(token);
-  if (error || !data?.claims) throw new Error("Unauthorized");
-  return { userId: data.claims.sub as string, supabase };
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) throw new Error("Unauthorized");
+  return { userId: user.id, supabase };
 }
 
 async function requireSuperAdmin(supabase: ReturnType<typeof createClient>, userId: string) {
