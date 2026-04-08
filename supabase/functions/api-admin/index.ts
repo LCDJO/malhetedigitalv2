@@ -277,6 +277,76 @@ Deno.serve(async (req) => {
       return json({ success: true });
     }
 
+    // ─── LIST POTENCIAS ───
+    if (req.method === "GET" && action === "list_potencias") {
+      const { data, error } = await supabase.from("potencias").select("*").order("nome");
+      if (error) return err(error.message, 500);
+      return json(data);
+    }
+
+    // ─── CREATE POTENCIA ───
+    if (req.method === "POST" && action === "create_potencia") {
+      const body = await req.json();
+      if (!body.nome?.trim()) return err("nome is required");
+      const { data, error } = await supabase.from("potencias").insert({ nome: body.nome.trim(), sigla: body.sigla?.trim() || "" }).select("id").single();
+      if (error) return err(error.message, 500);
+      return json({ id: data.id }, 201);
+    }
+
+    // ─── UPDATE POTENCIA ───
+    if (req.method === "PUT" && action === "update_potencia") {
+      const body = await req.json();
+      if (!body.id) return err("Missing id");
+      const { id, ...rest } = body;
+      const { error } = await supabase.from("potencias").update(rest).eq("id", id);
+      if (error) return err(error.message, 500);
+      return json({ success: true });
+    }
+
+    // ─── DELETE POTENCIA ───
+    if (req.method === "DELETE" && action === "delete_potencia") {
+      const id = url.searchParams.get("id");
+      if (!id) return err("Missing id");
+      const { error } = await supabase.from("potencias").update({ ativo: false }).eq("id", id);
+      if (error) return err(error.message, 500);
+      return json({ success: true });
+    }
+
+    // ─── LIST RITOS ───
+    if (req.method === "GET" && action === "list_ritos") {
+      const { data, error } = await supabase.from("ritos").select("*").order("nome");
+      if (error) return err(error.message, 500);
+      return json(data);
+    }
+
+    // ─── CREATE RITO ───
+    if (req.method === "POST" && action === "create_rito") {
+      const body = await req.json();
+      if (!body.nome?.trim()) return err("nome is required");
+      const { data, error } = await supabase.from("ritos").insert({ nome: body.nome.trim(), descricao: body.descricao?.trim() || "" }).select("id").single();
+      if (error) return err(error.message, 500);
+      return json({ id: data.id }, 201);
+    }
+
+    // ─── UPDATE RITO ───
+    if (req.method === "PUT" && action === "update_rito") {
+      const body = await req.json();
+      if (!body.id) return err("Missing id");
+      const { id, ...rest } = body;
+      const { error } = await supabase.from("ritos").update(rest).eq("id", id);
+      if (error) return err(error.message, 500);
+      return json({ success: true });
+    }
+
+    // ─── DELETE RITO ───
+    if (req.method === "DELETE" && action === "delete_rito") {
+      const id = url.searchParams.get("id");
+      if (!id) return err("Missing id");
+      const { error } = await supabase.from("ritos").update({ ativo: false }).eq("id", id);
+      if (error) return err(error.message, 500);
+      return json({ success: true });
+    }
+
     return err("Unknown action", 404);
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Internal error";
