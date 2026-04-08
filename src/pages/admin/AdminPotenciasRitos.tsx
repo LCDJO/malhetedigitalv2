@@ -5,6 +5,7 @@ import {
   listPotenciaRitos, createPotenciaRito, deletePotenciaRito,
   type Potencia, type Rito, type PotenciaRito,
 } from "@/services/admin";
+import RegrasTab from "@/components/admin/RegrasTab";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, Loader2, Shield, BookOpen, Link2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Shield, BookOpen, Link2, Brain } from "lucide-react";
 import { toast } from "sonner";
 
 export default function AdminPotenciasRitos() {
