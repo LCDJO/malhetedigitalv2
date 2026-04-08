@@ -16,7 +16,6 @@ export interface DadosLojaConfig {
   lodge_number: string;
   orient: string;
   potencia: string;
-  rito: string;
   endereco: string;
   email_institucional: string;
   telefone: string;
