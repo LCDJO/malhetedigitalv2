@@ -15,12 +15,7 @@ import BootstrapWizard from "@/components/BootstrapWizard";
 
 type AuthView = "login" | "signup" | "forgot" | "reset";
 
-const POTENCIAS = [
-  "Grande Oriente do Brasil (GOB)",
-  "Grande Loja (GL)",
-  "Confederação Maçônica do Brasil (COMAB)",
-  "Outra",
-];
+// Potencias and ritos are fetched from the database
 
 const ESTADOS = [
   "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO",
