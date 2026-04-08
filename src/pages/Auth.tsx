@@ -374,22 +374,40 @@ export default function Auth() {
                         <SelectValue placeholder="Selecione a Potência" />
                       </SelectTrigger>
                       <SelectContent>
-                        {POTENCIAS.map((p) => (
-                          <SelectItem key={p} value={p}>{p}</SelectItem>
+                        {potenciasList.map((p) => (
+                          <SelectItem key={p.id} value={p.nome}>
+                            {p.sigla ? `${p.sigla} — ${p.nome}` : p.nome}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="orient">Oriente *</Label>
-                    <Input
-                      id="orient"
-                      value={orient}
-                      onChange={(e) => setOrient(e.target.value)}
-                      placeholder="Ex: Manaus"
-                      maxLength={100}
-                    />
+                    <Label>Rito *</Label>
+                    <Select value={rito} onValueChange={setRito}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o Rito" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ritosList.map((r) => (
+                          <SelectItem key={r.id} value={r.nome}>
+                            {r.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="orient">Oriente *</Label>
+                  <Input
+                    id="orient"
+                    value={orient}
+                    onChange={(e) => setOrient(e.target.value)}
+                    placeholder="Ex: Manaus"
+                    maxLength={100}
+                  />
                 </div>
 
                 <Separator />
