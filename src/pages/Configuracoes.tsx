@@ -38,6 +38,7 @@ const defaultConfig: LodgeConfig = {
   lodge_number: "",
   orient: "",
   potencia: "",
+  rito: "",
   endereco: "",
   email_institucional: "",
   telefone: "",
