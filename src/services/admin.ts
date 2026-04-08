@@ -192,3 +192,36 @@ export async function deleteRito(id: string): Promise<void> {
     method: "DELETE", headers,
   });
 }
+
+// ═══════════════════════════════════
+// POTÊNCIA ↔ RITO (Combinações)
+// ═══════════════════════════════════
+
+export interface PotenciaRito {
+  id: string;
+  potencia_id: string;
+  rito_id: string;
+  ativo: boolean;
+  created_at: string;
+  potencias?: { id: string; nome: string; sigla: string };
+  ritos?: { id: string; nome: string };
+}
+
+export async function listPotenciaRitos(): Promise<PotenciaRito[]> {
+  const headers = await getHeaders();
+  return request<PotenciaRito[]>(`${API_BASE}?action=list_potencia_ritos`, { method: "GET", headers });
+}
+
+export async function createPotenciaRito(payload: { potencia_id: string; rito_id: string }): Promise<{ id: string }> {
+  const headers = await getHeaders();
+  return request<{ id: string }>(`${API_BASE}?action=create_potencia_rito`, {
+    method: "POST", headers, body: JSON.stringify(payload),
+  });
+}
+
+export async function deletePotenciaRito(id: string): Promise<void> {
+  const headers = await getHeaders();
+  await request<{ success: boolean }>(`${API_BASE}?action=delete_potencia_rito&id=${id}`, {
+    method: "DELETE", headers,
+  });
+}
