@@ -1155,6 +1155,30 @@ export type Database = {
           },
         ]
       }
+      potencias: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          nome: string
+          sigla: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome: string
+          sigla?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome?: string
+          sigla?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           address: string | null
@@ -1231,6 +1255,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      ritos: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          descricao: string | null
+          id: string
+          nome: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+        }
+        Relationships: []
       }
       solicitacoes_titular: {
         Row: {
