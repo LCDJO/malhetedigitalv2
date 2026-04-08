@@ -1295,6 +1295,53 @@ export type Database = {
           },
         ]
       }
+      regras: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          descricao: string | null
+          entidade: string
+          id: string
+          nome: string
+          potencia_id: string | null
+          regra_json: Json
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          entidade?: string
+          id?: string
+          nome: string
+          potencia_id?: string | null
+          regra_json?: Json
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          entidade?: string
+          id?: string
+          nome?: string
+          potencia_id?: string | null
+          regra_json?: Json
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "regras_potencia_id_fkey"
+            columns: ["potencia_id"]
+            isOneToOne: false
+            referencedRelation: "potencias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ritos: {
         Row: {
           ativo: boolean
