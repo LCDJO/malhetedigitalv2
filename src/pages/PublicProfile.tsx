@@ -1,5 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export default function PublicProfile() {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const { user: currentUser } = useAuth();
   const queryClient = useQueryClient();
 
@@ -205,7 +207,12 @@ export default function PublicProfile() {
                         </>
                       )}
                     </Button>
-                    <Button size="sm" variant="secondary" disabled={!currentUser}>
+                    <Button 
+                      size="sm" 
+                      variant="secondary" 
+                      disabled={!currentUser}
+                      onClick={() => navigate(`/portal/mensagens?u=${profile.id}`)}
+                    >
                       <MessageSquare className="mr-2 h-4 w-4" />
                       Mensagem
                     </Button>

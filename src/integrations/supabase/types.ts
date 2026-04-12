@@ -980,6 +980,51 @@ export type Database = {
           },
         ]
       }
+      messages: {
+        Row: {
+          content: string | null
+          created_at: string
+          id: string
+          image_url: string | null
+          receiver_id: string
+          sender_id: string
+          status: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          receiver_id: string
+          sender_id: string
+          status?: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          receiver_id?: string
+          sender_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string
@@ -1364,6 +1409,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          access_level: number | null
           address: string | null
           avatar_url: string | null
           bio: string | null
@@ -1373,11 +1419,13 @@ export type Database = {
           full_name: string
           id: string
           is_active: boolean
+          masonic_status: string | null
           phone: string | null
           slug: string | null
           updated_at: string
         }
         Insert: {
+          access_level?: number | null
           address?: string | null
           avatar_url?: string | null
           bio?: string | null
@@ -1387,11 +1435,13 @@ export type Database = {
           full_name: string
           id: string
           is_active?: boolean
+          masonic_status?: string | null
           phone?: string | null
           slug?: string | null
           updated_at?: string
         }
         Update: {
+          access_level?: number | null
           address?: string | null
           avatar_url?: string | null
           bio?: string | null
@@ -1401,6 +1451,7 @@ export type Database = {
           full_name?: string
           id?: string
           is_active?: boolean
+          masonic_status?: string | null
           phone?: string | null
           slug?: string | null
           updated_at?: string
@@ -1562,6 +1613,47 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stories: {
+        Row: {
+          content_text: string | null
+          content_type: string
+          content_url: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          privacy: string
+          user_id: string
+        }
+        Insert: {
+          content_text?: string | null
+          content_type?: string
+          content_url?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          privacy?: string
+          user_id: string
+        }
+        Update: {
+          content_text?: string | null
+          content_type?: string
+          content_url?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          privacy?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stories_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
