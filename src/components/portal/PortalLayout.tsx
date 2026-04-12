@@ -21,6 +21,7 @@ import {
   LayoutDashboard,
   Compass,
   FileText,
+  Share2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PortalFooter } from "./PortalFooter";
@@ -50,6 +51,7 @@ const degreeLabels: Record<string, string> = {
 
 const navItems: NavItem[] = [
   { to: "/portal", icon: LayoutDashboard, label: "Dashboard", end: true },
+  { to: "/portal/rede-social", icon: Share2, label: "Rede Social" },
   { to: "/portal/perfil", icon: User, label: "Meu Perfil" },
   { to: "/portal/jornada", icon: Compass, label: "Minha Jornada" },
   {
