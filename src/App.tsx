@@ -8,6 +8,7 @@ import { ScopeProvider } from "@/contexts/ScopeContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { ProtectedRoute } from "@/domains/security";
 import { PortalLayout } from "@/components/portal/PortalLayout";
+import { SubdomainRedirect } from "@/components/SubdomainRedirect";
 import Auth from "./pages/Auth";
 import Index from "./pages/Index";
 import Secretaria from "./pages/Secretaria";
