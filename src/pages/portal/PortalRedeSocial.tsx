@@ -148,32 +148,12 @@ export default function PortalRedeSocial() {
             )}
           </TabsContent>
 
-          <TabsContent value="explorar" className="mt-0">
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <Skeleton key={i} className="aspect-square rounded-xl" />
-              ))}
-            </div>
-            <div className="text-center py-10">
-              <p className="text-muted-foreground text-sm">Em breve: Explore publicações de toda a Ordem.</p>
-            </div>
+          <TabsContent value="explorar" className="mt-0 focus-visible:outline-none">
+            <SocialExplore />
           </TabsContent>
 
-          <TabsContent value="mensagens" className="mt-0">
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center gap-4 p-4 bg-white dark:bg-slate-900 rounded-xl shadow-sm">
-                  <Skeleton className="h-12 w-12 rounded-full" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-3 w-full" />
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="text-center py-10">
-              <p className="text-muted-foreground text-sm">Em breve: Mensagens diretas entre Irmãos.</p>
-            </div>
+          <TabsContent value="mensagens" className="mt-0 focus-visible:outline-none">
+            <SocialMessages />
           </TabsContent>
         </Tabs>
       </div>
