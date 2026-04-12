@@ -4,21 +4,50 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePortalMemberContext } from "@/components/portal/PortalLayout";
 import { PostCard } from "@/components/portal/PostCard";
 import { CreatePost } from "@/components/portal/CreatePost";
-import { Loader2, Users, Search } from "lucide-react";
+import { Loader2, Users, Search, Compass, MessageCircle, LayoutGrid } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+
+function PostSkeleton() {
+  return (
+    <Card className="mb-6 border-none shadow-sm overflow-hidden bg-white dark:bg-slate-900">
+      <CardHeader className="flex flex-row items-center justify-between p-3">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-9 w-9 rounded-full" />
+          <div className="flex flex-col gap-2">
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-2 w-16" />
+          </div>
+        </div>
+      </CardHeader>
+      <Skeleton className="aspect-square w-full" />
+      <CardContent className="p-3">
+        <div className="flex gap-4 mb-3">
+          <Skeleton className="h-6 w-6 rounded-full" />
+          <Skeleton className="h-6 w-6 rounded-full" />
+          <Skeleton className="h-6 w-6 rounded-full" />
+        </div>
+        <Skeleton className="h-4 w-32 mb-2" />
+        <Skeleton className="h-3 w-full" />
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function PortalRedeSocial() {
   const { user } = useAuth();
   const member = usePortalMemberContext();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") || "feed";
 
   const { data: posts, isLoading } = useQuery({
     queryKey: ["social-feed", user?.id],
     queryFn: async () => {
-      // Get IDs of people I follow
       const { data: following } = await supabase
         .from("follows")
         .select("following_id")
@@ -27,7 +56,6 @@ export default function PortalRedeSocial() {
       const followingIds = following?.map(f => f.following_id) || [];
       const authorIds = [user?.id, ...followingIds].filter(Boolean);
 
-      // Fetch posts from me and people I follow
       const { data, error } = await supabase
         .from("posts")
         .select(`
@@ -45,7 +73,6 @@ export default function PortalRedeSocial() {
 
       if (error) throw error;
 
-      // Transform data to include counts and user interaction status
       return data.map(post => ({
         ...post,
         likes_count: post.post_likes?.length || 0,
@@ -53,7 +80,7 @@ export default function PortalRedeSocial() {
         user_has_liked: post.post_likes?.some((like: any) => like.user_id === user?.id)
       }));
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && activeTab === "feed",
   });
 
   const { data: suggestedProfiles } = useQuery({
@@ -75,30 +102,78 @@ export default function PortalRedeSocial() {
     <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-8">
       {/* Left / Center: Feed */}
       <div className="flex-1 space-y-6">
-        <header className="mb-8">
+        <header className="mb-6">
           <h1 className="text-2xl font-serif font-bold text-foreground">Malhete Digital</h1>
           <p className="text-muted-foreground text-sm">Rede Social Maçônica</p>
         </header>
 
-        <CreatePost profile={member} currentUser={user} />
+        <Tabs value={activeTab} onValueChange={(val) => setSearchParams({ tab: val })} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 bg-slate-100 dark:bg-slate-800/50 p-1 mb-6">
+            <TabsTrigger value="feed" className="gap-2">
+              <LayoutGrid className="h-4 w-4" />
+              Feed
+            </TabsTrigger>
+            <TabsTrigger value="explorar" className="gap-2">
+              <Compass className="h-4 w-4" />
+              Explorar
+            </TabsTrigger>
+            <TabsTrigger value="mensagens" className="gap-2">
+              <MessageCircle className="h-4 w-4" />
+              Mensagens
+            </TabsTrigger>
+          </TabsList>
 
-        {isLoading ? (
-          <div className="flex justify-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : posts && posts.length > 0 ? (
-          <div className="max-w-xl mx-auto">
-            {posts.map((post) => (
-              <PostCard key={post.id} post={post} currentUserId={user?.id} />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-xl border border-dashed">
-            <Users className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-            <h3 className="text-lg font-bold">Seu feed está vazio</h3>
-            <p className="text-muted-foreground">Siga outros irmãos para ver suas publicações aqui.</p>
-          </div>
-        )}
+          <TabsContent value="feed" className="space-y-6 mt-0">
+            <CreatePost profile={member} currentUser={user} />
+
+            {isLoading ? (
+              <div className="max-w-xl mx-auto space-y-6">
+                <PostSkeleton />
+                <PostSkeleton />
+              </div>
+            ) : posts && posts.length > 0 ? (
+              <div className="max-w-xl mx-auto">
+                {posts.map((post) => (
+                  <PostCard key={post.id} post={post} currentUserId={user?.id} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-xl border border-dashed">
+                <Users className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                <h3 className="text-lg font-bold">Seu feed está vazio</h3>
+                <p className="text-muted-foreground">Siga outros irmãos para ver suas publicações aqui.</p>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="explorar" className="mt-0">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Skeleton key={i} className="aspect-square rounded-xl" />
+              ))}
+            </div>
+            <div className="text-center py-10">
+              <p className="text-muted-foreground text-sm">Em breve: Explore publicações de toda a Ordem.</p>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="mensagens" className="mt-0">
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center gap-4 p-4 bg-white dark:bg-slate-900 rounded-xl shadow-sm">
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="text-center py-10">
+              <p className="text-muted-foreground text-sm">Em breve: Mensagens diretas entre Irmãos.</p>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Right Sidebar: Suggestions & Search */}
