@@ -209,7 +209,7 @@ export default function PortalMensagens() {
               </div>
             </div>
 
-            <ScrollArea className="flex-1 p-4" viewportRef={scrollRef}>
+            <div className="flex-1 p-4 overflow-y-auto" ref={scrollRef}>
               <div className="space-y-4">
                 {isLoadingMessages ? (
                   <div className="flex justify-center p-8">
