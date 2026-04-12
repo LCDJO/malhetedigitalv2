@@ -1,5 +1,6 @@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { DomainManagement } from "@/components/admin/config/DomainManagement";
+import { SaaSGeneralConfig } from "@/components/admin/config/SaaSGeneralConfig";
 import { Settings, Globe, Shield, Activity } from "lucide-react";
 
 export default function AdminConfigSuperAdmin() {
