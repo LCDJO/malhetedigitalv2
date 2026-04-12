@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Building2, User, ShieldCheck, ChevronRight } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Building2, User, ShieldCheck, ChevronRight, LayoutDashboard } from "lucide-react";
 
 const Landing = () => {
   const navigate = useNavigate();
