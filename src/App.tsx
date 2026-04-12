@@ -167,7 +167,7 @@ const App = () => (
 
             {/* Painel Administrativo */}
             <Route
-              path="/*"
+              path="/dashboard/*"
               element={
                 <ProtectedRoute>
                   <DashboardLayout>
@@ -191,6 +191,8 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route path="/" element={<Landing />} />
+            <Route path="*" element={<NotFound />} />
             </Routes>
           </ScopeProvider>
         </AuthProvider>
