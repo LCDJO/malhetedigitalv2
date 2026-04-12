@@ -214,9 +214,36 @@ export default function PortalCadastro() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
             <div className="space-y-1.5">
+              <Label>Nome de Usuário (@slug)</Label>
+              <Input 
+                value={form.slug} 
+                onChange={(e) => setForm((prev) => ({ ...prev, slug: e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, '') }))} 
+                placeholder="nome.exemplo" 
+              />
+              <p className="text-[10px] text-muted-foreground">Seu perfil será: malhete.com/@{form.slug || "usuario"}</p>
+            </div>
+            <div className="space-y-1.5">
               <Label>E-mail</Label>
               <Input value={form.email} onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))} placeholder="seuemail@exemplo.com" />
             </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label>Biografia (Bio)</Label>
+              <Textarea 
+                value={form.bio} 
+                onChange={(e) => setForm((prev) => ({ ...prev, bio: e.target.value }))} 
+                placeholder="Conte um pouco sobre sua trajetória na Ordem..." 
+                className="min-h-[100px]"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Telefone Celular</Label>
+              <Input value={form.phone} onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))} placeholder="(00) 00000-0000" />
+            </div>
+            <div className="space-y-1.5 sm:col-span-1">
+              <Label>Endereço</Label>
+              <Input value={form.address} onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))} placeholder="Rua, número, bairro, cidade" />
+            </div>
+          </div>
             <div className="space-y-1.5">
               <Label>Telefone Celular</Label>
               <Input value={form.phone} onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))} placeholder="(00) 00000-0000" />
