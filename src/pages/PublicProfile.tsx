@@ -77,6 +77,32 @@ export default function PublicProfile() {
     enabled: !!slug,
   });
 
+  const { data: commonFollowers } = useQuery({
+    queryKey: ["common-followers", profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return [];
+      
+      const { data: followData, error: followError } = await supabase
+        .from("follows")
+        .select("follower_id")
+        .eq("following_id", profile.id)
+        .limit(10);
+
+      if (followError) throw followError;
+      if (!followData || followData.length === 0) return [];
+
+      const followerIds = followData.map((f: any) => f.follower_id);
+      const { data: profilesData, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, full_name, avatar_url, slug")
+        .in("id", followerIds);
+
+      if (profilesError) throw profilesError;
+      return profilesData || [];
+    },
+    enabled: !!profile?.id,
+  });
+
   const { data: posts, isLoading: isLoadingPosts } = useQuery({
     queryKey: ["public-profile-posts", profile?.id],
     queryFn: async () => {
