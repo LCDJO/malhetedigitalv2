@@ -5,6 +5,7 @@ import { Heart, MessageCircle, Send, Bookmark, MoreHorizontal } from "lucide-rea
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Link } from "react-router-dom";
 
 interface PostCardProps {
   post: any;
@@ -36,7 +37,7 @@ export const PostCard = ({ post, currentUserId }: PostCardProps) => {
     <div className="bg-surface border-y md:border md:rounded-xl border-border overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between p-3 md:p-4">
-        <div className="flex items-center gap-3">
+        <Link to={`/@${profile?.slug}`} className="flex items-center gap-3 group">
           <Avatar className="h-8 w-8 md:h-10 md:w-10 border-2 border-highlight p-[2px] bg-background">
             <AvatarImage src={profile?.avatar_url} />
             <AvatarFallback className="bg-muted text-[10px] font-bold">
@@ -44,10 +45,10 @@ export const PostCard = ({ post, currentUserId }: PostCardProps) => {
             </AvatarFallback>
           </Avatar>
           <div className="flex flex-col">
-            <span className="text-sm font-bold leading-none">{profile?.full_name}</span>
+            <span className="text-sm font-bold leading-none group-hover:underline">{profile?.full_name}</span>
             <span className="text-[12px] text-muted-foreground leading-tight">@{profile?.slug}</span>
           </div>
-        </div>
+        </Link>
         <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
           <MoreHorizontal className="h-5 w-5" />
         </Button>
@@ -105,7 +106,7 @@ export const PostCard = ({ post, currentUserId }: PostCardProps) => {
 
         {/* Caption */}
         <div className="text-sm">
-          <span className="font-bold mr-2">@{profile?.slug}</span>
+          <Link to={`/@${profile?.slug}`} className="font-bold mr-2 hover:underline">@{profile?.slug}</Link>
           {post.caption}
         </div>
 

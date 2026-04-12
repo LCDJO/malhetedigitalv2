@@ -3,22 +3,25 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, ArrowLeft, MessageSquare, UserPlus, UserCheck, Heart, MessageCircle } from "lucide-react";
+import { Loader2, ArrowLeft, MessageSquare, UserPlus, UserCheck, Heart, MessageCircle, Grid, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState } from "react";
+import { StoryViewer } from "@/components/social/StoryViewer";
 
 export default function PublicProfile() {
   const { slug } = useParams();
   const { user: currentUser } = useAuth();
   const queryClient = useQueryClient();
+  const [showStories, setShowStories] = useState(false);
 
   const { data: profile, isLoading, error } = useQuery({
     queryKey: ["public-profile", slug],
     queryFn: async () => {
       if (!slug) return null;
       
-      // Get profile
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("id, full_name, avatar_url, bio, slug")
@@ -28,14 +31,12 @@ export default function PublicProfile() {
       if (profileError) throw profileError;
       if (!profileData) return null;
 
-      // Get tenant (Lodge) info
       const { data: tenantUsers } = await supabase
         .from("tenant_users")
         .select("tenant_id, tenants(name, potencia, rito)")
         .eq("user_id", profileData.id)
         .maybeSingle();
 
-      // Get counts
       const { count: followersCount } = await supabase
         .from("follows")
         .select("*", { count: 'exact', head: true })
@@ -51,7 +52,6 @@ export default function PublicProfile() {
         .select("*", { count: 'exact', head: true })
         .eq("user_id", profileData.id);
 
-      // Check if following
       let isFollowing = false;
       if (currentUser) {
         const { data: followData } = await supabase
@@ -155,7 +155,6 @@ export default function PublicProfile() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header Mobile Nav */}
       <header className="sticky top-0 z-10 bg-white border-b px-4 py-3 flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
           <Link to="/">
@@ -166,20 +165,28 @@ export default function PublicProfile() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-8">
-        {/* Profile Info Section */}
         <section className="flex flex-col md:flex-row gap-8 items-center md:items-start mb-12">
-          <Avatar className="h-24 w-24 md:h-40 md:w-40 border-2 border-slate-100 ring-2 ring-primary/10">
-            {profile.avatar_url ? (
-              <AvatarImage src={profile.avatar_url} alt={profile.full_name} className="object-cover" />
-            ) : null}
-            <AvatarFallback className="bg-slate-100 text-slate-400 text-4xl">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
+          <div 
+            className="cursor-pointer relative"
+            onClick={() => setShowStories(true)}
+          >
+            <div className="p-1 rounded-full instagram-gradient">
+              <div className="p-1 bg-white rounded-full">
+                <Avatar className="h-28 w-28 md:h-44 md:w-44 border-2 border-white ring-2 ring-transparent">
+                  {profile.avatar_url ? (
+                    <AvatarImage src={profile.avatar_url} alt={profile.full_name} className="object-cover" />
+                  ) : null}
+                  <AvatarFallback className="bg-slate-100 text-slate-400 text-4xl">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
+            </div>
+          </div>
 
           <div className="flex-1 text-center md:text-left">
             <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
-              <h2 className="text-2xl font-light">{profile.slug}</h2>
+              <h2 className="text-2xl font-light">@{profile.slug}</h2>
               <div className="flex gap-2 justify-center">
                 {currentUser?.id === profile.id ? (
                   <Button variant="outline" size="sm" asChild>
@@ -215,17 +222,17 @@ export default function PublicProfile() {
             </div>
 
             <div className="flex justify-center md:justify-start gap-8 mb-6">
-              <div>
-                <span className="font-bold">{profile.postsCount}</span>{" "}
-                <span className="text-slate-500">publicações</span>
+              <div className="flex flex-col md:flex-row md:gap-1 items-center">
+                <span className="font-bold">{profile.postsCount}</span>
+                <span className="text-slate-500 text-sm">publicações</span>
               </div>
-              <div>
-                <span className="font-bold">{profile.followersCount}</span>{" "}
-                <span className="text-slate-500">seguidores</span>
+              <div className="flex flex-col md:flex-row md:gap-1 items-center">
+                <span className="font-bold">{profile.followersCount}</span>
+                <span className="text-slate-500 text-sm">seguidores</span>
               </div>
-              <div>
-                <span className="font-bold">{profile.followingCount}</span>{" "}
-                <span className="text-slate-500">seguindo</span>
+              <div className="flex flex-col md:flex-row md:gap-1 items-center">
+                <span className="font-bold">{profile.followingCount}</span>
+                <span className="text-slate-500 text-sm">seguindo</span>
               </div>
             </div>
 
@@ -241,67 +248,86 @@ export default function PublicProfile() {
           </div>
         </section>
 
-        {/* Profile Tabs (Instagram style) */}
-        <div className="border-t">
-          <div className="flex justify-center gap-12 -mt-px">
-            <button className="flex items-center gap-2 border-t border-slate-900 py-4 text-xs font-bold uppercase tracking-widest">
-              <div className="grid grid-cols-2 grid-rows-2 gap-0.5 w-3 h-3 border border-slate-900">
-                <div className="bg-slate-900"></div>
-                <div className="bg-slate-900"></div>
-                <div className="bg-slate-900"></div>
-                <div className="bg-slate-900"></div>
-              </div>
+        <Tabs defaultValue="posts" className="w-full">
+          <TabsList className="w-full justify-center bg-transparent border-t rounded-none h-auto p-0 gap-12">
+            <TabsTrigger 
+              value="posts" 
+              className="data-[state=active]:border-t data-[state=active]:border-slate-900 rounded-none bg-transparent px-0 py-4 text-xs font-bold uppercase tracking-widest gap-2 flex items-center"
+            >
+              <Grid className="h-3 w-3" />
               Publicações
-            </button>
-          </div>
-        </div>
-
-        {/* Posts Grid */}
-        {isLoadingPosts ? (
-          <div className="flex justify-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-slate-200" />
-          </div>
-        ) : posts && posts.length > 0 ? (
-          <div className="grid grid-cols-3 gap-1 md:gap-8 py-4">
-            {posts.map((post: any) => (
-              <div key={post.id} className="relative aspect-square bg-slate-100 group cursor-pointer overflow-hidden">
-                {post.post_images?.[0]?.image_url && (
-                  <img 
-                    src={post.post_images[0].image_url} 
-                    alt={post.caption} 
-                    className="object-cover w-full h-full transition-transform group-hover:scale-105"
-                  />
-                )}
-                {/* Overlay on hover */}
-                <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-6 text-white font-bold">
-                  <div className="flex items-center gap-1">
-                    <Heart className="h-6 w-6 fill-white" />
-                    <span>{post.post_likes?.[0]?.count || 0}</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="stories" 
+              className="data-[state=active]:border-t data-[state=active]:border-slate-900 rounded-none bg-transparent px-0 py-4 text-xs font-bold uppercase tracking-widest gap-2 flex items-center"
+            >
+              <Clock className="h-3 w-3" />
+              Stories salvos
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="posts" className="mt-0">
+            {isLoadingPosts ? (
+              <div className="flex justify-center py-20">
+                <Loader2 className="h-8 w-8 animate-spin text-slate-200" />
+              </div>
+            ) : posts && posts.length > 0 ? (
+              <div className="grid grid-cols-3 gap-1 md:gap-8 py-4">
+                {posts.map((post: any) => (
+                  <div key={post.id} className="relative aspect-square bg-slate-100 group cursor-pointer overflow-hidden">
+                    {post.post_images?.[0]?.image_url && (
+                      <img 
+                        src={post.post_images[0].image_url} 
+                        alt={post.caption} 
+                        className="object-cover w-full h-full transition-transform group-hover:scale-105"
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-6 text-white font-bold">
+                      <div className="flex items-center gap-1">
+                        <Heart className="h-6 w-6 fill-white" />
+                        <span>{post.post_likes?.[0]?.count || 0}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <MessageCircle className="h-6 w-6 fill-white" />
+                        <span>{post.post_comments?.[0]?.count || 0}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <MessageCircle className="h-6 w-6 fill-white" />
-                    <span>{post.post_comments?.[0]?.count || 0}</span>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-20 space-y-4">
+                <div className="flex justify-center">
+                  <div className="rounded-full border-2 border-slate-900 p-4">
+                    <Grid className="h-8 w-8 text-slate-900" />
                   </div>
                 </div>
+                <h3 className="text-2xl font-bold">Nenhuma publicação ainda</h3>
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-20 space-y-4">
-            <div className="flex justify-center">
-              <div className="rounded-full border-2 border-slate-900 p-4">
-                <div className="grid grid-cols-2 grid-rows-2 gap-0.5 w-8 h-8 border-2 border-slate-900">
-                  <div className="bg-white"></div>
-                  <div className="bg-white"></div>
-                  <div className="bg-white"></div>
-                  <div className="bg-white"></div>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="stories" className="mt-0">
+            <div className="text-center py-20 space-y-4">
+              <div className="flex justify-center">
+                <div className="rounded-full border-2 border-slate-900 p-4">
+                  <Clock className="h-8 w-8 text-slate-900" />
                 </div>
               </div>
+              <h3 className="text-2xl font-bold">Ainda não há Stories salvos</h3>
+              <p className="text-muted-foreground">Os Stories destacados aparecerão aqui no futuro.</p>
             </div>
-            <h3 className="text-2xl font-bold">Nenhuma publicação ainda</h3>
-          </div>
-        )}
+          </TabsContent>
+        </Tabs>
       </main>
+
+      {showStories && (
+        <StoryViewer 
+          isOpen={showStories} 
+          onClose={() => setShowStories(false)} 
+          profile={profile}
+        />
+      )}
     </div>
   );
 }
