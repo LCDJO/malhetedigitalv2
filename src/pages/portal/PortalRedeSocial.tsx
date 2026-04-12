@@ -236,6 +236,10 @@ export default function PortalRedeSocial() {
                 )}
               </TabsContent>
 
+              <TabsContent value="reels" className="mt-0 focus-visible:outline-none">
+                <ReelsFeed />
+              </TabsContent>
+
               <TabsContent value="explorar" className="mt-0 focus-visible:outline-none">
                 <SocialExplore />
               </TabsContent>
