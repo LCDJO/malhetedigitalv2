@@ -35,8 +35,8 @@ export default function AdminConfigSuperAdmin() {
           <DomainManagement />
         </TabsContent>
 
-        <TabsContent value="geral" className="py-12 text-center text-muted-foreground">
-          Configurações gerais serão exibidas aqui.
+        <TabsContent value="geral">
+          <SaaSGeneralConfig />
         </TabsContent>
         
         <TabsContent value="seguranca" className="py-12 text-center text-muted-foreground">
