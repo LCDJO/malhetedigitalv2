@@ -122,30 +122,47 @@ const Landing = () => {
           </div>
         </section>
 
-        {/* Features Grid */}
+        {/* Deliverables Section */}
         <section className="py-20 bg-muted/30">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="bg-card p-8 rounded-2xl border shadow-sm">
-                <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-6">
-                  <Building2 className="h-6 w-6 text-primary" />
+          <div className="max-w-3xl mx-auto px-4">
+            <h2 className="text-3xl font-serif font-bold text-center mb-10 flex items-center justify-center gap-3">
+              <span>📦</span> ENTREGÁVEIS
+            </h2>
+            <div className="bg-card p-8 rounded-2xl border shadow-sm space-y-8">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 text-lg font-medium">
+                  <div className="h-2 w-2 rounded-full bg-primary" />
+                  APIs REST completas
                 </div>
-                <h3 className="text-xl font-bold mb-3">Gestão Administrativa</h3>
-                <p className="text-muted-foreground">Secretaria, Tesouraria e Chancelaria integradas para total controle da Loja.</p>
+                <div className="flex items-center gap-3 text-lg font-medium">
+                  <div className="h-2 w-2 rounded-full bg-primary" />
+                  Estrutura frontend (React / Next.js)
+                </div>
               </div>
-              <div className="bg-card p-8 rounded-2xl border shadow-sm">
-                <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-6">
-                  <User className="h-6 w-6 text-primary" />
+
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 text-lg font-bold text-primary">
+                  <div className="h-2 w-2 rounded-full bg-primary" />
+                  Sistema funcional com:
                 </div>
-                <h3 className="text-xl font-bold mb-3">Portal do Irmão</h3>
-                <p className="text-muted-foreground">Acesso fácil para que cada Irmão gerencie seu cadastro, financeiro e documentos.</p>
-              </div>
-              <div className="bg-card p-8 rounded-2xl border shadow-sm">
-                <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-6">
-                  <ShieldCheck className="h-6 w-6 text-primary" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-8">
+                  <div className="flex items-center gap-3 bg-muted/50 p-4 rounded-xl border">
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                    <span>criação de perfil com slug</span>
+                  </div>
+                  <div className="flex items-center gap-3 bg-muted/50 p-4 rounded-xl border">
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                    <span>feed</span>
+                  </div>
+                  <div className="flex items-center gap-3 bg-muted/50 p-4 rounded-xl border">
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                    <span>stories</span>
+                  </div>
+                  <div className="flex items-center gap-3 bg-muted/50 p-4 rounded-xl border">
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                    <span>mensagens</span>
+                  </div>
                 </div>
-                <h3 className="text-xl font-bold mb-3">Segurança e LGPD</h3>
-                <p className="text-muted-foreground">Dados criptografados e conformidade total com a Lei Geral de Proteção de Dados.</p>
               </div>
             </div>
           </div>
