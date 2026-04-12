@@ -15,6 +15,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SocialExplore } from "@/components/portal/SocialExplore";
 import { SocialMessages } from "@/components/portal/SocialMessages";
 import { SocialStories } from "@/components/portal/SocialStories";
+import { ReelsFeed } from "@/components/portal/ReelsFeed";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSocialStore } from "@/hooks/useSocialStore";
 import { useEffect } from "react";
