@@ -6,6 +6,7 @@ import { PostCard } from "@/components/portal/PostCard";
 import { CreatePost } from "@/components/portal/CreatePost";
 import { Loader2, Users, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link } from "react-router-dom";
