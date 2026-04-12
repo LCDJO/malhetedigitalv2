@@ -245,7 +245,6 @@ export default function PortalCadastro() {
               <Input value={form.address} onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))} placeholder="Rua, número, bairro, cidade" />
             </div>
           </div>
-          </div>
 
           <div className="mb-6">
             <Button onClick={handleSalvar} disabled={saving || uploading || !isDirty} className="gap-1.5">
