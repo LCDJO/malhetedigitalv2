@@ -60,6 +60,7 @@ import AdminAtendimento from "./pages/admin/AdminAtendimento";
 import Atendimento from "./pages/Atendimento";
 import Chancelaria from "./pages/Chancelaria";
 import FinanceiroGeral from "./pages/FinanceiroGeral";
+import PublicProfile from "./pages/PublicProfile";
 
 import { AnuncianteLayout } from "@/components/anunciante/AnuncianteLayout";
 import AnuncianteAuth from "./pages/anunciante/AnuncianteAuth";
@@ -191,6 +192,7 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route path="/:slug" element={<PublicProfile />} />
             <Route path="/" element={<Auth />} />
             <Route path="*" element={<NotFound />} />
             </Routes>

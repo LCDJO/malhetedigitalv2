@@ -1229,6 +1229,7 @@ export type Database = {
           id: string
           is_active: boolean
           phone: string | null
+          slug: string | null
           updated_at: string
         }
         Insert: {
@@ -1241,6 +1242,7 @@ export type Database = {
           id: string
           is_active?: boolean
           phone?: string | null
+          slug?: string | null
           updated_at?: string
         }
         Update: {
@@ -1253,6 +1255,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           phone?: string | null
+          slug?: string | null
           updated_at?: string
         }
         Relationships: []
