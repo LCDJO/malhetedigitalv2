@@ -18,6 +18,8 @@ export interface PortalMember {
   elevation_date: string | null;
   exaltation_date: string | null;
   master_installed: boolean;
+  slug?: string | null;
+  bio?: string | null;
 }
 
 interface UsePortalMemberReturn {
@@ -34,29 +36,43 @@ export function usePortalMember(): UsePortalMemberReturn {
 
   useEffect(() => {
     const fetchMember = async () => {
-      if (!user?.email) {
+      if (!user?.email || !user?.id) {
         setNotFound(true);
         setLoading(false);
         return;
       }
 
-      const { data } = await supabase
+      // 1. Get member data
+      const { data: memberData } = await supabase
         .from("members")
         .select("id, full_name, email, phone, cpf, cim, address, avatar_url, birth_date, degree, status, initiation_date, elevation_date, exaltation_date, master_installed")
         .eq("email", user.email)
         .eq("status", "ativo")
         .maybeSingle();
 
-      if (!data) {
+      if (!memberData) {
         setNotFound(true);
-      } else {
-        setMember(data);
+        setLoading(false);
+        return;
       }
+
+      // 2. Get profile data for slug/bio
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("slug, bio")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      setMember({
+        ...memberData,
+        slug: profileData?.slug,
+        bio: profileData?.bio
+      });
       setLoading(false);
     };
 
     fetchMember();
-  }, [user?.email]);
+  }, [user?.email, user?.id]);
 
   return { member, loading, notFound };
 }
