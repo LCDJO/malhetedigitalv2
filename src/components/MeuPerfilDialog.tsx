@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuditLog } from "@/hooks/useAuditLog";
 import { toast } from "sonner";
-import { Loader2, Save, User } from "lucide-react";
+import { Loader2, Save, User, Globe } from "lucide-react";
 
 interface MeuPerfilDialogProps {
   open: boolean;
@@ -22,6 +22,7 @@ interface ProfileData {
   address: string;
   birth_date: string;
   avatar_url: string | null;
+  slug: string;
 }
 
 export function MeuPerfilDialog({ open, onOpenChange }: MeuPerfilDialogProps) {
@@ -36,6 +37,7 @@ export function MeuPerfilDialog({ open, onOpenChange }: MeuPerfilDialogProps) {
     address: "",
     birth_date: "",
     avatar_url: null,
+    slug: "",
   });
 
   useEffect(() => {
@@ -43,7 +45,7 @@ export function MeuPerfilDialog({ open, onOpenChange }: MeuPerfilDialogProps) {
     setLoading(true);
     supabase
       .from("profiles")
-      .select("full_name, phone, cpf, address, birth_date, avatar_url")
+      .select("full_name, phone, cpf, address, birth_date, avatar_url, slug")
       .eq("id", user.id)
       .maybeSingle()
       .then(({ data }) => {
@@ -55,6 +57,7 @@ export function MeuPerfilDialog({ open, onOpenChange }: MeuPerfilDialogProps) {
             address: data.address ?? "",
             birth_date: data.birth_date ?? "",
             avatar_url: data.avatar_url,
+            slug: data.slug ?? "",
           });
         }
         setLoading(false);
@@ -68,6 +71,8 @@ export function MeuPerfilDialog({ open, onOpenChange }: MeuPerfilDialogProps) {
       return;
     }
 
+    const cleanSlug = form.slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, "");
+
     setSaving(true);
     const { error } = await supabase
       .from("profiles")
@@ -77,6 +82,7 @@ export function MeuPerfilDialog({ open, onOpenChange }: MeuPerfilDialogProps) {
         cpf: form.cpf.trim() || null,
         address: form.address.trim() || null,
         birth_date: form.birth_date || null,
+        slug: cleanSlug || null,
       })
       .eq("id", user.id);
 
@@ -129,14 +135,42 @@ export function MeuPerfilDialog({ open, onOpenChange }: MeuPerfilDialogProps) {
             </div>
 
             <div className="space-y-3">
-              <div>
-                <Label htmlFor="profile-name">Nome completo *</Label>
-                <Input
-                  id="profile-name"
-                  value={form.full_name}
-                  onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))}
-                  placeholder="Seu nome completo"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="profile-name">Nome completo *</Label>
+                  <Input
+                    id="profile-name"
+                    value={form.full_name}
+                    onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))}
+                    placeholder="Seu nome completo"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="profile-slug">Seu Identificador (URL) / Publico</Label>
+                  <div className="relative">
+                    <Input
+                      id="profile-slug"
+                      value={form.slug}
+                      onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") }))}
+                      placeholder="seu-identificador"
+                      className="pr-10"
+                    />
+                    {form.slug && (
+                      <a
+                        href={`/${form.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
+                        title="Ver Perfil Público"
+                      >
+                        <Globe className="h-4 w-4" />
+                      </a>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    Isso define seu link: {window.location.origin}/{form.slug || "seu-slug"}
+                  </p>
+                </div>
               </div>
               <div>
                 <Label htmlFor="profile-cpf">CPF</Label>
