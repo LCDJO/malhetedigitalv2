@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 const SUBDOMAIN_ROUTES: Record<string, string> = {
   business: "/anunciante/auth",
   bussiness: "/anunciante/auth",
+  irmao: "/portal/auth",
 };
 
 export function SubdomainRedirect() {
