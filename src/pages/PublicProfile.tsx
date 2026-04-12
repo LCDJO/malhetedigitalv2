@@ -207,7 +207,12 @@ export default function PublicProfile() {
                         </>
                       )}
                     </Button>
-                    <Button size="sm" variant="secondary" disabled={!currentUser}>
+                    <Button 
+                      size="sm" 
+                      variant="secondary" 
+                      disabled={!currentUser}
+                      onClick={() => navigate(`/portal/mensagens?u=${profile.id}`)}
+                    >
                       <MessageSquare className="mr-2 h-4 w-4" />
                       Mensagem
                     </Button>
