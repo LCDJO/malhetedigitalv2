@@ -75,6 +75,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <SubdomainRedirect />
         <AuthProvider>
           <ScopeProvider>
             <Routes>
