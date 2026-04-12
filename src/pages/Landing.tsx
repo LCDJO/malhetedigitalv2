@@ -89,22 +89,35 @@ const Landing = () => {
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button 
-                size="lg" 
-                onClick={() => navigate("/auth")} 
-                className="w-full sm:w-auto px-8 h-14 text-lg font-semibold gap-2 shadow-lg shadow-primary/20"
-              >
-                Acessar Painel da Loja
-                <ChevronRight className="h-5 w-5" />
-              </Button>
-              <Button 
-                variant="outline" 
-                size="lg" 
-                onClick={() => navigate("/portal/auth")} 
-                className="w-full sm:w-auto px-8 h-14 text-lg font-semibold gap-2 border-2"
-              >
-                Acessar Portal do Irmão
-              </Button>
+              {user ? (
+                <Button 
+                  size="lg" 
+                  onClick={() => navigate(getDashboardPath())} 
+                  className="w-full sm:w-auto px-10 h-14 text-lg font-semibold gap-3 shadow-lg shadow-primary/20"
+                >
+                  Continuar para o Dashboard
+                  <ChevronRight className="h-5 w-5" />
+                </Button>
+              ) : (
+                <>
+                  <Button 
+                    size="lg" 
+                    onClick={() => navigate("/auth")} 
+                    className="w-full sm:w-auto px-8 h-14 text-lg font-semibold gap-2 shadow-lg shadow-primary/20"
+                  >
+                    Login de Loja
+                    <ChevronRight className="h-5 w-5" />
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="lg" 
+                    onClick={() => navigate("/portal/auth")} 
+                    className="w-full sm:w-auto px-8 h-14 text-lg font-semibold gap-2 border-2"
+                  >
+                    Portal do Irmão
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </section>
