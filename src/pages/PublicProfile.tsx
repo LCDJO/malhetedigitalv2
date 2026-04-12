@@ -164,7 +164,7 @@ export default function PublicProfile() {
             <ArrowLeft className="h-6 w-6" />
           </Link>
         </Button>
-        <h1 className="font-bold text-lg">@{profile.slug}</h1>
+        <h1 className="font-bold text-lg">{profile.slug}</h1>
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-8">
