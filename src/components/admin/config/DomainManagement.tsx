@@ -1,7 +1,9 @@
 import React from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Globe, ArrowRight, Server, Share2, CornerDownRight, ExternalLink } from "lucide-react";
+import { Globe, ArrowRight, Server, Share2, CornerDownRight, ExternalLink, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface DomainNode {
   name: string;
@@ -9,40 +11,6 @@ interface DomainNode {
   type: "CNAME" | "A" | "AAAA" | "NS";
   subdomains?: DomainNode[];
 }
-
-const domains: DomainNode[] = [
-  {
-    name: "malhetedigital.com.br",
-    target: "76.76.21.21 (Vercel Anycast IP)",
-    type: "A",
-    subdomains: [
-      {
-        name: "admin.malhetedigital.com.br",
-        type: "CNAME",
-        target: "cname.vercel-dns.com",
-        subdomains: [
-          { name: "api.admin.malhetedigital.com.br", type: "CNAME", target: "api-gateway-v2.aws.com" },
-          { name: "auth.admin.malhetedigital.com.br", type: "CNAME", target: "cognito.aws.com" },
-        ],
-      },
-      {
-        name: "portal.malhetedigital.com.br",
-        type: "CNAME",
-        target: "cname.vercel-dns.com",
-      },
-      {
-        name: "loja.malhetedigital.com.br",
-        type: "CNAME",
-        target: "shops.myshopify.com",
-      },
-      {
-        name: "cdn.malhetedigital.com.br",
-        type: "CNAME",
-        target: "cloudflare-worker-1.net",
-      },
-    ],
-  },
-];
 
 const DomainNodeView: React.FC<{ node: DomainNode; level: number; isLast: boolean }> = ({ node, level, isLast }) => {
   return (
@@ -107,6 +75,58 @@ const DomainNodeView: React.FC<{ node: DomainNode; level: number; isLast: boolea
 };
 
 export function DomainManagement() {
+  const { data: tenants, isLoading } = useQuery({
+    queryKey: ["tenants-domains"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tenants")
+        .select("name, slug")
+        .eq("is_active", true);
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const domains: DomainNode[] = [
+    {
+      name: "malhetedigital.com.br",
+      target: "76.76.21.21 (Vercel Anycast IP)",
+      type: "A",
+      subdomains: [
+        {
+          name: "painel.malhetedigital.com.br",
+          type: "CNAME",
+          target: "cname.vercel-dns.com",
+          subdomains: [
+            { name: "api.malhetedigital.com.br", type: "CNAME", target: "supabase.co" },
+            { name: "auth.malhetedigital.com.br", type: "CNAME", target: "auth.supabase.co" },
+          ],
+        },
+        {
+          name: "irmao.malhetedigital.com.br",
+          type: "CNAME",
+          target: "cname.vercel-dns.com",
+        },
+        {
+          name: "business.malhetedigital.com.br",
+          type: "CNAME",
+          target: "cname.vercel-dns.com",
+        },
+        {
+          name: "Wildcard (*.malhetedigital.com.br)",
+          type: "CNAME",
+          target: "cname.vercel-dns.com",
+          subdomains: tenants?.map(t => ({
+            name: `${t.slug}.malhetedigital.com.br`,
+            type: "CNAME" as const,
+            target: "tenant-router.malhetedigital.com.br"
+          })) || []
+        }
+      ],
+    },
+  ];
+
   return (
     <Card className="border shadow-md bg-card/50 backdrop-blur-sm">
       <CardHeader className="border-b bg-muted/20 pb-4">
@@ -114,7 +134,7 @@ export function DomainManagement() {
           <div>
             <CardTitle className="text-2xl font-serif">Gestão de Domínios</CardTitle>
             <CardDescription className="text-sm">
-              Mapeamento de infraestrutura DNS e direcionamento de tráfego.
+              Mapeamento de infraestrutura DNS e direcionamento de tráfego real.
             </CardDescription>
           </div>
           <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 px-3 py-1">
@@ -123,23 +143,29 @@ export function DomainManagement() {
         </div>
       </CardHeader>
       <CardContent className="pt-8 pb-4">
-        <div className="max-w-4xl mx-auto space-y-6">
-          <div className="flex items-center gap-3 mb-6 p-4 rounded-xl bg-accent/5 border border-accent/20 text-accent-foreground text-sm">
-            <CornerDownRight className="h-4 w-4 shrink-0" />
-            <p>Os subdomínios abaixo são provisionados automaticamente via wildcard ou apontamentos manuais.</p>
+        {isLoading ? (
+          <div className="flex justify-center items-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
+        ) : (
+          <div className="max-w-4xl mx-auto space-y-6">
+            <div className="flex items-center gap-3 mb-6 p-4 rounded-xl bg-accent/5 border border-accent/20 text-accent-foreground text-sm">
+              <CornerDownRight className="h-4 w-4 shrink-0" />
+              <p>Os subdomínios abaixo refletem a infraestrutura real do SaaS e os tenants ativos.</p>
+            </div>
 
-          <div className="relative pl-4 space-y-2">
-            {domains.map((domain, index) => (
-              <DomainNodeView 
-                key={index} 
-                node={domain} 
-                level={0} 
-                isLast={index === domains.length - 1} 
-              />
-            ))}
+            <div className="relative pl-4 space-y-2">
+              {domains.map((domain, index) => (
+                <DomainNodeView 
+                  key={index} 
+                  node={domain} 
+                  level={0} 
+                  isLast={index === domains.length - 1} 
+                />
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </CardContent>
     </Card>
   );
