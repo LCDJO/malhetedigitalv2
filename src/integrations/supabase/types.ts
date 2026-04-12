@@ -1374,6 +1374,7 @@ export type Database = {
           created_at: string
           id: string
           media_url: string | null
+          post_type: string
           privacy_level: string | null
           updated_at: string
           user_id: string
@@ -1383,6 +1384,7 @@ export type Database = {
           created_at?: string
           id?: string
           media_url?: string | null
+          post_type?: string
           privacy_level?: string | null
           updated_at?: string
           user_id: string
@@ -1392,6 +1394,7 @@ export type Database = {
           created_at?: string
           id?: string
           media_url?: string | null
+          post_type?: string
           privacy_level?: string | null
           updated_at?: string
           user_id?: string
