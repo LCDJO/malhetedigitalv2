@@ -475,6 +475,17 @@ export default function PortalAuth() {
               >
                 {loading ? "Entrando..." : "Entrar"}
               </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleGoogleLogin}
+                className="w-full h-8 text-xs font-semibold flex items-center justify-center gap-2 border-[#dbdbdb] hover:bg-[#fafafa]"
+                disabled={loading}
+              >
+                <Chrome className="h-4 w-4 text-[#4285F4]" />
+                Entrar com Google
+              </Button>
               
               <div className="relative my-4">
                 <div className="absolute inset-0 flex items-center">
