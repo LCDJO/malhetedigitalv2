@@ -52,7 +52,7 @@ function AccessDenied() {
           Você não tem permissão para acessar esta página.
           Contate o administrador da sua Loja.
         </p>
-        <Button variant="outline" size="sm" className="gap-1.5 mt-2" onClick={() => navigate("/")}>
+        <Button variant="outline" size="sm" className="gap-1.5 mt-2" onClick={() => navigate("/dashboard")}>
           <ArrowLeft className="h-3.5 w-3.5" />
           Voltar ao Dashboard
         </Button>
