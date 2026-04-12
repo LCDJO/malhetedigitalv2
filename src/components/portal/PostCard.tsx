@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Heart, MessageCircle, Share2, MoreHorizontal, Send } from "lucide-react";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Heart, MessageCircle, Share2, MoreHorizontal, Send, Bookmark } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface PostCardProps {
   post: any;
@@ -23,6 +24,7 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
   const [likesCount, setLikesCount] = useState(post.likes_count || 0);
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
+  const [showHeartAnimation, setShowHeartAnimation] = useState(false);
 
   const { data: comments, isLoading: loadingComments } = useQuery({
     queryKey: ["post-comments", post.id],
@@ -54,6 +56,10 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
       }
     },
     onMutate: () => {
+      if (!isLiked) {
+        setShowHeartAnimation(true);
+        setTimeout(() => setShowHeartAnimation(false), 800);
+      }
       setIsLiked(!isLiked);
       setLikesCount(prev => isLiked ? prev - 1 : prev + 1);
     },
@@ -66,6 +72,15 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
       queryClient.invalidateQueries({ queryKey: ["social-feed"] });
     }
   });
+
+  const handleDoubleTap = () => {
+    if (!isLiked) {
+      likeMutation.mutate();
+    } else {
+      setShowHeartAnimation(true);
+      setTimeout(() => setShowHeartAnimation(false), 800);
+    }
+  };
 
   const commentMutation = useMutation({
     mutationFn: async (text: string) => {
@@ -83,7 +98,6 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
       setCommentText("");
       queryClient.invalidateQueries({ queryKey: ["post-comments", post.id] });
       queryClient.invalidateQueries({ queryKey: ["social-feed"] });
-      toast.success("Comentário enviado");
     },
     onError: () => {
       toast.error("Erro ao enviar comentário");
@@ -99,114 +113,162 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
     .slice(0, 2);
 
   return (
-    <Card className="mb-6 border-none shadow-sm overflow-hidden bg-white dark:bg-slate-900">
-      <CardHeader className="flex flex-row items-center justify-between p-3">
-        <div className="flex items-center gap-3">
-          <Link to={`/${post.profiles?.slug}`}>
-            <Avatar className="h-9 w-9 border">
-              <AvatarImage src={post.profiles?.avatar_url} />
-              <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">{initials}</AvatarFallback>
-            </Avatar>
-          </Link>
-          <div className="flex flex-col">
-            <Link to={`/${post.profiles?.slug}`} className="text-sm font-bold hover:underline">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+    >
+      <Card className="mb-6 border-none shadow-sm overflow-hidden bg-white dark:bg-slate-900 transition-all hover:shadow-md">
+        <CardHeader className="flex flex-row items-center justify-between p-3">
+          <div className="flex items-center gap-3">
+            <Link to={`/${post.profiles?.slug}`}>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Avatar className="h-9 w-9 border ring-1 ring-slate-100 dark:ring-slate-800 ring-offset-2">
+                  <AvatarImage src={post.profiles?.avatar_url} />
+                  <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">{initials}</AvatarFallback>
+                </Avatar>
+              </motion.div>
+            </Link>
+            <div className="flex flex-col">
+              <Link to={`/${post.profiles?.slug}`} className="text-sm font-bold hover:underline leading-none mb-1">
+                {post.profiles?.full_name}
+              </Link>
+              <span className="text-[10px] text-muted-foreground">
+                {formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: ptBR })}
+              </span>
+            </div>
+          </div>
+          <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-slate-50 dark:hover:bg-slate-800">
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </CardHeader>
+
+        <div 
+          className="relative aspect-square bg-slate-100 dark:bg-slate-800 overflow-hidden cursor-pointer"
+          onDoubleClick={handleDoubleTap}
+        >
+          {post.post_images?.[0]?.image_url && (
+            <motion.img 
+              src={post.post_images[0].image_url} 
+              alt="Post content" 
+              className="w-full h-full object-cover"
+              whileHover={{ scale: 1.02 }}
+              transition={{ duration: 0.5 }}
+            />
+          )}
+          <AnimatePresence>
+            {showHeartAnimation && (
+              <motion.div
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1.2, opacity: 1 }}
+                exit={{ scale: 0, opacity: 0 }}
+                className="absolute inset-0 flex items-center justify-center pointer-events-none"
+              >
+                <Heart className="h-24 w-24 fill-white text-white drop-shadow-lg" />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        <CardContent className="p-3">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-4">
+              <motion.button 
+                whileTap={{ scale: 1.4 }}
+                onClick={() => likeMutation.mutate()}
+                className="transition-colors"
+              >
+                <Heart className={isLiked ? "h-6 w-6 fill-red-500 text-red-500" : "h-6 w-6 hover:text-slate-500"} />
+              </motion.button>
+              <motion.button 
+                whileTap={{ scale: 1.2 }}
+                onClick={() => setShowComments(!showComments)}
+              >
+                <MessageCircle className="h-6 w-6 hover:text-slate-500" />
+              </motion.button>
+              <motion.button whileTap={{ scale: 1.2 }}>
+                <Share2 className="h-6 w-6 hover:text-slate-500" />
+              </motion.button>
+            </div>
+            <motion.button whileTap={{ scale: 1.2 }}>
+              <Bookmark className="h-6 w-6 hover:text-slate-500" />
+            </motion.button>
+          </div>
+          
+          <div className="font-bold text-sm mb-2">
+            {likesCount.toLocaleString()} {likesCount === 1 ? "curtida" : "curtidas"}
+          </div>
+          
+          <div className="text-sm">
+            <Link to={`/${post.profiles?.slug}`} className="font-bold mr-2 hover:underline">
               {post.profiles?.full_name}
             </Link>
-            <span className="text-[10px] text-muted-foreground">
-              {formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: ptBR })}
-            </span>
+            <span className="text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{post.caption}</span>
           </div>
-        </div>
-        <Button variant="ghost" size="icon" className="h-8 w-8">
-          <MoreHorizontal className="h-4 w-4" />
-        </Button>
-      </CardHeader>
 
-      <div className="relative aspect-square bg-slate-100 dark:bg-slate-800">
-        {post.post_images?.[0]?.image_url && (
-          <img 
-            src={post.post_images[0].image_url} 
-            alt="Post content" 
-            className="w-full h-full object-cover"
-          />
-        )}
-      </div>
+          <AnimatePresence>
+            {(showComments || post.comments_count > 0) && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mt-3 border-t dark:border-slate-800 pt-3 overflow-hidden"
+              >
+                {!showComments && post.comments_count > 0 && (
+                  <button 
+                    onClick={() => setShowComments(true)}
+                    className="text-xs text-muted-foreground hover:underline mb-2"
+                  >
+                    Ver todos os {post.comments_count} comentários
+                  </button>
+                )}
 
-      <CardContent className="p-3">
-        <div className="flex items-center gap-4 mb-3">
-          <button 
-            onClick={() => likeMutation.mutate()}
-            className="transition-transform active:scale-125"
-          >
-            <Heart className={isLiked ? "h-6 w-6 fill-red-500 text-red-500" : "h-6 w-6"} />
-          </button>
-          <button onClick={() => setShowComments(!showComments)}>
-            <MessageCircle className="h-6 w-6" />
-          </button>
-          <button>
-            <Share2 className="h-6 w-6" />
-          </button>
-        </div>
-        <div className="font-bold text-sm mb-2">
-          {likesCount} {likesCount === 1 ? "curtida" : "curtidas"}
-        </div>
-        <div className="text-sm">
-          <Link to={`/${post.profiles?.slug}`} className="font-bold mr-2 hover:underline">
-            {post.profiles?.full_name}
-          </Link>
-          <span className="text-slate-700 dark:text-slate-300">{post.caption}</span>
-        </div>
-      </CardContent>
+                {showComments && (
+                  <div className="space-y-3 mb-4 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                    {loadingComments ? (
+                      <div className="space-y-2">
+                        <Skeleton className="h-3 w-full" />
+                        <Skeleton className="h-3 w-3/4" />
+                      </div>
+                    ) : comments?.map((comment: any) => (
+                      <motion.div 
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        key={comment.id} 
+                        className="text-sm flex gap-2"
+                      >
+                        <span className="font-bold">
+                          {comment.profiles?.full_name?.split(" ")[0]}
+                        </span>
+                        <span className="text-slate-600 dark:text-slate-400">{comment.content}</span>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
 
-      {(showComments || post.comments_count > 0) && (
-        <div className="px-3 pb-3 border-t dark:border-slate-800 pt-3">
-          {!showComments && post.comments_count > 0 && (
-            <button 
-              onClick={() => setShowComments(true)}
-              className="text-xs text-muted-foreground hover:underline mb-2"
-            >
-              Ver todos os {post.comments_count} comentários
-            </button>
-          )}
-
-          {showComments && (
-            <div className="space-y-3 mb-4 max-h-60 overflow-y-auto pr-2">
-              {loadingComments ? (
-                <div className="space-y-2">
-                  <Skeleton className="h-3 w-full" />
-                  <Skeleton className="h-3 w-3/4" />
+                <div className="flex gap-2 items-center">
+                  <Input 
+                    placeholder="Adicione um comentário..." 
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    className="h-9 text-xs bg-slate-50 dark:bg-slate-800/50 border-none focus-visible:ring-1 focus-visible:ring-primary/20"
+                    onKeyDown={(e) => e.key === "Enter" && commentMutation.mutate(commentText)}
+                  />
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="text-primary text-xs font-bold h-9 hover:bg-transparent"
+                    onClick={() => commentMutation.mutate(commentText)}
+                    disabled={!commentText.trim() || commentMutation.isPending}
+                  >
+                    Publicar
+                  </Button>
                 </div>
-              ) : comments?.map((comment: any) => (
-                <div key={comment.id} className="text-sm">
-                  <span className="font-bold mr-2">
-                    {comment.profiles?.full_name?.split(" ")[0]}
-                  </span>
-                  <span className="text-slate-600 dark:text-slate-400">{comment.content}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="flex gap-2">
-            <Input 
-              placeholder="Adicione um comentário..." 
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              className="h-8 text-xs bg-slate-50 dark:bg-slate-800 border-none"
-              onKeyDown={(e) => e.key === "Enter" && commentMutation.mutate(commentText)}
-            />
-            <Button 
-              size="icon" 
-              variant="ghost" 
-              className="h-8 w-8 text-primary"
-              onClick={() => commentMutation.mutate(commentText)}
-              disabled={!commentText.trim() || commentMutation.isPending}
-            >
-              <Send className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      )}
-    </Card>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
