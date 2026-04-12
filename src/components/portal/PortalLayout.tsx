@@ -22,6 +22,7 @@ import {
   Compass,
   FileText,
   Share2,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PortalFooter } from "./PortalFooter";
