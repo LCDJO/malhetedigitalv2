@@ -1,5 +1,6 @@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { DomainManagement } from "@/components/admin/config/DomainManagement";
+import { SaaSGeneralConfig } from "@/components/admin/config/SaaSGeneralConfig";
 import { Settings, Globe, Shield, Activity } from "lucide-react";
 
 export default function AdminConfigSuperAdmin() {
@@ -34,8 +35,8 @@ export default function AdminConfigSuperAdmin() {
           <DomainManagement />
         </TabsContent>
 
-        <TabsContent value="geral" className="py-12 text-center text-muted-foreground">
-          Configurações gerais serão exibidas aqui.
+        <TabsContent value="geral">
+          <SaaSGeneralConfig />
         </TabsContent>
         
         <TabsContent value="seguranca" className="py-12 text-center text-muted-foreground">
