@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export default function PublicProfile() {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const { user: currentUser } = useAuth();
   const queryClient = useQueryClient();
 
