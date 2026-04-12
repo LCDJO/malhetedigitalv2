@@ -12,6 +12,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link, useSearchParams } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { SocialExplore } from "@/components/portal/SocialExplore";
+import { SocialMessages } from "@/components/portal/SocialMessages";
 
 function PostSkeleton() {
   return (
