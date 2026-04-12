@@ -76,7 +76,10 @@ export function AnuncianteLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     supabase
       .from("advertisers")
       .select("*")
