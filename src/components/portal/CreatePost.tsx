@@ -3,10 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ImagePlus, X, Loader2 } from "lucide-react";
+import { ImagePlus, X, Loader2, Send, Smile, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
 
 export function CreatePost({ profile, currentUser }: { profile: any; currentUser: any }) {
   const queryClient = useQueryClient();
@@ -21,7 +22,6 @@ export function CreatePost({ profile, currentUser }: { profile: any; currentUser
       
       setIsUploading(true);
       try {
-        // 1. Create Post
         const { data: post, error: postError } = await supabase
           .from("posts")
           .insert({
@@ -34,7 +34,6 @@ export function CreatePost({ profile, currentUser }: { profile: any; currentUser
 
         if (postError) throw postError;
 
-        // 2. Upload images and link to post
         for (let i = 0; i < images.length; i++) {
           const file = images[i];
           const fileExt = file.name.split('.').pop();
@@ -72,7 +71,7 @@ export function CreatePost({ profile, currentUser }: { profile: any; currentUser
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const selectedFiles = Array.from(e.target.files);
-      setImages(prev => [...prev, ...selectedFiles].slice(0, 5)); // limit to 5 images
+      setImages(prev => [...prev, ...selectedFiles].slice(0, 5));
     }
   };
 
@@ -88,71 +87,120 @@ export function CreatePost({ profile, currentUser }: { profile: any; currentUser
     .slice(0, 2);
 
   return (
-    <Card className="mb-8 border shadow-sm">
-      <CardContent className="p-4 space-y-4">
-        <div className="flex gap-3">
-          <Avatar className="h-10 w-10 border">
-            <AvatarImage src={profile?.avatar_url} />
-            <AvatarFallback className="bg-primary/10 text-primary font-bold">{initials}</AvatarFallback>
-          </Avatar>
-          <Textarea 
-            placeholder="O que está acontecendo na Ordem hoje?" 
-            value={caption}
-            onChange={(e) => setCaption(e.target.value)}
-            className="flex-1 min-h-[100px] border-none focus-visible:ring-0 resize-none text-base"
-          />
-        </div>
-
-        {images.length > 0 && (
-          <div className="flex gap-2 overflow-x-auto pb-2">
-            {images.map((img, index) => (
-              <div key={index} className="relative w-24 h-24 shrink-0 rounded-lg overflow-hidden border">
-                <img 
-                  src={URL.createObjectURL(img)} 
-                  alt="Preview" 
-                  className="w-full h-full object-cover" 
-                />
-                <button 
-                  onClick={() => removeImage(index)}
-                  className="absolute top-1 right-1 bg-black/50 rounded-full p-1 text-white hover:bg-black/70"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            ))}
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <Card className="mb-8 border-none shadow-sm bg-white dark:bg-slate-900 overflow-hidden rounded-2xl">
+        <CardContent className="p-5 space-y-4">
+          <div className="flex gap-4">
+            <Avatar className="h-11 w-11 border-2 border-slate-50 dark:border-slate-800 shadow-sm">
+              <AvatarImage src={profile?.avatar_url} />
+              <AvatarFallback className="bg-primary/5 text-primary font-bold text-xs">{initials}</AvatarFallback>
+            </Avatar>
+            <div className="flex-1 space-y-4">
+              <Textarea 
+                placeholder="No que você está pensando hoje, meu Irmão?" 
+                value={caption}
+                onChange={(e) => setCaption(e.target.value)}
+                className="min-h-[100px] border-none focus-visible:ring-0 resize-none text-base bg-transparent p-0 placeholder:text-slate-400 dark:placeholder:text-slate-600"
+              />
+              
+              <AnimatePresence>
+                {images.length > 0 && (
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide"
+                  >
+                    {images.map((img, index) => (
+                      <motion.div 
+                        layout
+                        key={index} 
+                        className="relative w-28 h-28 shrink-0 rounded-xl overflow-hidden shadow-sm group"
+                      >
+                        <img 
+                          src={URL.createObjectURL(img)} 
+                          alt="Preview" 
+                          className="w-full h-full object-cover transition-transform group-hover:scale-105" 
+                        />
+                        <button 
+                          onClick={() => removeImage(index)}
+                          className="absolute top-1.5 right-1.5 bg-black/40 backdrop-blur-md rounded-full p-1 text-white hover:bg-black/60 transition-colors"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </motion.div>
+                    ))}
+                    <button 
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-28 h-28 shrink-0 rounded-xl border-2 border-dashed border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center text-slate-400 hover:text-primary hover:border-primary/30 transition-all bg-slate-50/50 dark:bg-slate-800/20"
+                    >
+                      <ImagePlus className="h-6 w-6 mb-1" />
+                      <span className="text-[10px] font-bold">Adicionar</span>
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
-        )}
 
-        <div className="flex items-center justify-between pt-2 border-t">
-          <div className="flex gap-2">
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              onChange={handleImageSelect} 
-              multiple 
-              accept="image/*" 
-              className="hidden" 
-            />
+          <div className="flex items-center justify-between pt-4 border-t dark:border-slate-800">
+            <div className="flex gap-1">
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleImageSelect} 
+                multiple 
+                accept="image/*" 
+                className="hidden" 
+              />
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => fileInputRef.current?.click()}
+                className="text-slate-500 hover:text-primary hover:bg-primary/5 rounded-full px-4 h-9 font-medium"
+              >
+                <ImagePlus className="mr-2 h-4 w-4" />
+                Mídia
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-slate-500 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded-full px-4 h-9 font-medium hidden sm:flex"
+              >
+                <Smile className="mr-2 h-4 w-4" />
+                Humor
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-slate-500 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-full px-4 h-9 font-medium hidden sm:flex"
+              >
+                <MapPin className="mr-2 h-4 w-4" />
+                Local
+              </Button>
+            </div>
             <Button 
-              variant="ghost" 
               size="sm" 
-              onClick={() => fileInputRef.current?.click()}
-              className="text-primary hover:text-primary hover:bg-primary/5"
+              onClick={() => createPostMutation.mutate()}
+              disabled={(!caption.trim() && images.length === 0) || isUploading}
+              className="px-6 rounded-full font-bold shadow-sm h-9 bg-primary hover:opacity-90"
             >
-              <ImagePlus className="mr-2 h-4 w-4" />
-              Fotos
+              {isUploading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  Publicar
+                  <Send className="ml-2 h-3.5 w-3.5" />
+                </>
+              )}
             </Button>
           </div>
-          <Button 
-            size="sm" 
-            onClick={() => createPostMutation.mutate()}
-            disabled={(!caption.trim() && images.length === 0) || isUploading}
-            className="px-6"
-          >
-            {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Publicar"}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }

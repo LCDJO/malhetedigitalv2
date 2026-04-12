@@ -125,6 +125,13 @@
   .admin-section-title {
     @apply text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground;
   }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
 
 /* Portal do Irmão — dark premium theme */
