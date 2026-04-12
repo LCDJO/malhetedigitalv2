@@ -280,7 +280,7 @@ export default function PortalRedeSocial() {
                   </Avatar>
                   <div className="min-w-0">
                     <p className="text-xs font-bold truncate leading-none mb-1.5 hover:underline">{profile.full_name}</p>
-                    <p className="text-[10px] text-muted-foreground truncate font-medium">@{profile.slug}</p>
+                    <p className="text-[10px] text-muted-foreground truncate font-medium">{profile.slug}</p>
                   </div>
                 </Link>
                 <Button variant="secondary" size="sm" className="text-xs font-bold h-8 px-4 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-primary/10 hover:text-primary transition-all" asChild>
