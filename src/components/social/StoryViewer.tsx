@@ -57,24 +57,31 @@ export const StoryViewer = ({ isOpen, onClose, profile }: StoryViewerProps) => {
     }
   };
 
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientY);
+    setIsPaused(true);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientY);
+  };
+
+  const onTouchEnd = () => {
+    setIsPaused(false);
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isUpSwipe = distance > minSwipeDistance;
+    const isDownSwipe = distance < -minSwipeDistance;
+    
+    if (isDownSwipe) {
+      onClose();
+    }
+  };
+
   useEffect(() => {
     if (!isOpen || isPaused) return;
-
-    const duration = currentStory.duration;
-    const interval = 50; // update every 50ms
-    const step = (interval / duration) * 100;
-
-    const timer = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(timer);
-          nextStory();
-          return 100;
-        }
-        return prev + step;
-      });
-    }, interval);
-
+...
     return () => clearInterval(timer);
   }, [isOpen, currentStoryIndex, isPaused, currentStory.duration]);
 
@@ -143,8 +150,9 @@ export const StoryViewer = ({ isOpen, onClose, profile }: StoryViewerProps) => {
           className="w-full h-full cursor-pointer flex items-center justify-center bg-black"
           onMouseDown={() => setIsPaused(true)}
           onMouseUp={() => setIsPaused(false)}
-          onTouchStart={() => setIsPaused(true)}
-          onTouchEnd={() => setIsPaused(false)}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
         >
           <img 
             src={currentStory.image_url} 
