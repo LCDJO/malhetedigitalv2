@@ -245,14 +245,6 @@ export default function PortalCadastro() {
               <Input value={form.address} onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))} placeholder="Rua, número, bairro, cidade" />
             </div>
           </div>
-            <div className="space-y-1.5">
-              <Label>Telefone Celular</Label>
-              <Input value={form.phone} onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))} placeholder="(00) 00000-0000" />
-            </div>
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label>Endereço</Label>
-              <Input value={form.address} onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))} placeholder="Rua, número, bairro, cidade" />
-            </div>
           </div>
 
           <div className="mb-6">
