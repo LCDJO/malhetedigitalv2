@@ -122,51 +122,95 @@ const Landing = () => {
           </div>
         </section>
 
-        {/* Deliverables Section */}
-        <section className="py-20 bg-muted/30">
-          <div className="max-w-3xl mx-auto px-4">
-            <h2 className="text-3xl font-serif font-bold text-center mb-10 flex items-center justify-center gap-3">
-              <span>📦</span> ENTREGÁVEIS
-            </h2>
-            <div className="bg-card p-8 rounded-2xl border shadow-sm space-y-8">
+      {/* Features Section */}
+      <section className="py-20 bg-muted/30">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Notificações */}
+            <div className="bg-card p-8 rounded-2xl border shadow-sm space-y-6 hover:shadow-md transition-shadow">
+              <h3 className="text-2xl font-serif font-bold flex items-center gap-3">
+                <span>🔔</span> NOTIFICAÇÕES
+              </h3>
               <div className="space-y-4">
-                <div className="flex items-center gap-3 text-lg font-medium">
-                  <div className="h-2 w-2 rounded-full bg-primary" />
-                  APIs REST completas
-                </div>
-                <div className="flex items-center gap-3 text-lg font-medium">
-                  <div className="h-2 w-2 rounded-full bg-primary" />
-                  Estrutura frontend (React / Next.js)
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 text-lg font-bold text-primary">
-                  <div className="h-2 w-2 rounded-full bg-primary" />
-                  Sistema funcional com:
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-8">
-                  <div className="flex items-center gap-3 bg-muted/50 p-4 rounded-xl border">
-                    <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                    <span>criação de perfil com slug</span>
-                  </div>
-                  <div className="flex items-center gap-3 bg-muted/50 p-4 rounded-xl border">
-                    <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                    <span>feed</span>
-                  </div>
-                  <div className="flex items-center gap-3 bg-muted/50 p-4 rounded-xl border">
-                    <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                    <span>stories</span>
-                  </div>
-                  <div className="flex items-center gap-3 bg-muted/50 p-4 rounded-xl border">
-                    <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                    <span>mensagens</span>
-                  </div>
+                <div className="space-y-3">
+                  <h4 className="text-base font-bold text-primary flex items-center gap-2">
+                    <span>📌</span> Dropdown ou tela
+                  </h4>
+                  <ul className="space-y-3 pl-2">
+                    <li className="flex items-center gap-3 text-muted-foreground">
+                      <div className="h-1.5 w-1.5 rounded-full bg-primary/40" />
+                      "João curtiu seu post"
+                    </li>
+                    <li className="flex items-center gap-3 text-muted-foreground">
+                      <div className="h-1.5 w-1.5 rounded-full bg-primary/40" />
+                      "Carlos começou a te seguir"
+                    </li>
+                  </ul>
                 </div>
               </div>
             </div>
+
+            {/* Autenticação */}
+            <div className="bg-card p-8 rounded-2xl border shadow-sm space-y-6 hover:shadow-md transition-shadow">
+              <h3 className="text-2xl font-serif font-bold flex items-center gap-3">
+                <span>🔐</span> AUTENTICAÇÃO
+              </h3>
+              <div className="space-y-6">
+                <div className="space-y-3">
+                  <h4 className="text-base font-bold text-primary flex items-center gap-2">
+                    <span>📌</span> Fluxo
+                  </h4>
+                  <ul className="space-y-2 pl-2">
+                    <li className="flex items-center gap-3 text-muted-foreground">
+                      <div className="h-1.5 w-1.5 rounded-full bg-primary/40" />
+                      Login
+                    </li>
+                    <li className="flex items-center gap-3 text-muted-foreground">
+                      <div className="h-1.5 w-1.5 rounded-full bg-primary/40" />
+                      Cadastro
+                    </li>
+                    <li className="flex items-center gap-3 text-muted-foreground">
+                      <div className="h-1.5 w-1.5 rounded-full bg-primary/40" />
+                      Refresh token automático
+                    </li>
+                  </ul>
+                </div>
+                <div className="space-y-3">
+                  <h4 className="text-base font-bold text-primary flex items-center gap-2">
+                    <span>⚙️</span> Persistência
+                  </h4>
+                  <p className="text-muted-foreground pl-6">Zustand + localStorage</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Performance */}
+            <div className="bg-card p-8 rounded-2xl border shadow-sm space-y-6 hover:shadow-md transition-shadow">
+              <h3 className="text-2xl font-serif font-bold flex items-center gap-3">
+                <span>⚡</span> PERFORMANCE
+              </h3>
+              <ul className="space-y-3 pl-2">
+                <li className="flex items-center gap-3 text-muted-foreground">
+                  <div className="h-1.5 w-1.5 rounded-full bg-primary/40" />
+                  SSR + Streaming (Next.js)
+                </li>
+                <li className="flex items-center gap-3 text-muted-foreground">
+                  <div className="h-1.5 w-1.5 rounded-full bg-primary/40" />
+                  Image optimization (next/image)
+                </li>
+                <li className="flex items-center gap-3 text-muted-foreground">
+                  <div className="h-1.5 w-1.5 rounded-full bg-primary/40" />
+                  Code splitting automático
+                </li>
+                <li className="flex items-center gap-3 text-muted-foreground">
+                  <div className="h-1.5 w-1.5 rounded-full bg-primary/40" />
+                  Prefetch rotas
+                </li>
+              </ul>
+            </div>
           </div>
-        </section>
+        </div>
+      </section>
       </main>
 
       {/* Footer */}
