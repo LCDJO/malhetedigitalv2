@@ -125,25 +125,44 @@ const Landing = () => {
         {/* Deliverables Section */}
         <section className="py-20 bg-muted/30">
           <div className="max-w-3xl mx-auto px-4">
-            <h2 className="text-3xl font-serif font-bold text-center mb-10 flex items-center justify-center gap-3 uppercase">
-              <span>📦</span> Estrutura de Pastas
+            <h2 className="text-3xl font-serif font-bold text-center mb-10 flex items-center justify-center gap-3">
+              <span>📦</span> ENTREGÁVEIS
             </h2>
-            <div className="bg-card p-8 rounded-2xl border shadow-sm font-mono text-sm space-y-2">
-              <div className="flex items-center gap-2 text-primary font-bold mb-4">
-                <div className="h-2 w-2 rounded-full bg-primary" />
-                Arquitetura do Sistema
+            <div className="bg-card p-8 rounded-2xl border shadow-sm space-y-8">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 text-lg font-medium">
+                  <div className="h-2 w-2 rounded-full bg-primary" />
+                  APIs REST completas
+                </div>
+                <div className="flex items-center gap-3 text-lg font-medium">
+                  <div className="h-2 w-2 rounded-full bg-primary" />
+                  Estrutura frontend (React / Next.js)
+                </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2">
-                {[
-                  "/app", "/feed", "/explore", "/messages", "/create", "/@slug",
-                  "/components", "/ui", "/post", "/story", "/chat",
-                  "/services", "/store", "/hooks", "/types"
-                ].map((path) => (
-                  <div key={path} className="flex items-center gap-2 py-1 px-3 bg-muted/30 rounded border border-transparent hover:border-primary/20 hover:bg-muted/50 transition-colors">
-                    <span className="text-primary/60">dir:</span>
-                    <span className="font-medium">{path}</span>
+
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 text-lg font-bold text-primary">
+                  <div className="h-2 w-2 rounded-full bg-primary" />
+                  Sistema funcional com:
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-8">
+                  <div className="flex items-center gap-3 bg-muted/50 p-4 rounded-xl border">
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                    <span>criação de perfil com slug</span>
                   </div>
-                ))}
+                  <div className="flex items-center gap-3 bg-muted/50 p-4 rounded-xl border">
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                    <span>feed</span>
+                  </div>
+                  <div className="flex items-center gap-3 bg-muted/50 p-4 rounded-xl border">
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                    <span>stories</span>
+                  </div>
+                  <div className="flex items-center gap-3 bg-muted/50 p-4 rounded-xl border">
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                    <span>mensagens</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
