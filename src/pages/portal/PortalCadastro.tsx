@@ -221,7 +221,7 @@ export default function PortalCadastro() {
                 onChange={(e) => setForm((prev) => ({ ...prev, slug: e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, '') }))} 
                 placeholder="nome.exemplo" 
               />
-              <p className="text-[10px] text-muted-foreground">Temos que separar o perfil público do perfil cadastrado para acesso a loja. separados! Link: malhetedigital.com.br/{form.slug || "usuario"}</p>
+              <p className="text-[10px] text-muted-foreground">Permita edição do nome público que será exibido. Link: malhetedigital.com.br/{form.slug || "usuario"}</p>
             </div>
             <div className="space-y-1.5">
               <Label>E-mail</Label>
