@@ -3,12 +3,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuditLog } from "@/hooks/useAuditLog";
 import { toast } from "sonner";
-import { Loader2, Save, User, Globe } from "lucide-react";
+import { Loader2, Save, User, Globe, Users } from "lucide-react";
 
 interface MeuPerfilDialogProps {
   open: boolean;
@@ -23,6 +24,7 @@ interface ProfileData {
   birth_date: string;
   avatar_url: string | null;
   slug: string;
+  show_suggestions: boolean;
 }
 
 export function MeuPerfilDialog({ open, onOpenChange }: MeuPerfilDialogProps) {
@@ -38,6 +40,7 @@ export function MeuPerfilDialog({ open, onOpenChange }: MeuPerfilDialogProps) {
     birth_date: "",
     avatar_url: null,
     slug: "",
+    show_suggestions: true,
   });
 
   useEffect(() => {
@@ -45,7 +48,7 @@ export function MeuPerfilDialog({ open, onOpenChange }: MeuPerfilDialogProps) {
     setLoading(true);
     supabase
       .from("profiles")
-      .select("full_name, phone, cpf, address, birth_date, avatar_url, slug")
+      .select("full_name, phone, cpf, address, birth_date, avatar_url, slug, show_suggestions")
       .eq("id", user.id)
       .maybeSingle()
       .then(({ data }) => {
@@ -58,6 +61,7 @@ export function MeuPerfilDialog({ open, onOpenChange }: MeuPerfilDialogProps) {
             birth_date: data.birth_date ?? "",
             avatar_url: data.avatar_url,
             slug: data.slug ?? "",
+            show_suggestions: data.show_suggestions ?? true,
           });
         }
         setLoading(false);
@@ -83,6 +87,7 @@ export function MeuPerfilDialog({ open, onOpenChange }: MeuPerfilDialogProps) {
         address: form.address.trim() || null,
         birth_date: form.birth_date || null,
         slug: cleanSlug || null,
+        show_suggestions: form.show_suggestions,
       })
       .eq("id", user.id);
 
@@ -206,6 +211,22 @@ export function MeuPerfilDialog({ open, onOpenChange }: MeuPerfilDialogProps) {
                   value={form.address}
                   onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
                   placeholder="Seu endereço"
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/50">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-primary" />
+                    <Label className="text-sm font-medium">Mostrar sugestões</Label>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Sugestões de contas baseadas em localização e fraternidade
+                  </p>
+                </div>
+                <Switch
+                  checked={form.show_suggestions}
+                  onCheckedChange={(checked) => setForm((f) => ({ ...f, show_suggestions: checked }))}
                 />
               </div>
             </div>
