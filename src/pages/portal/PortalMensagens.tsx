@@ -14,6 +14,8 @@ import { ptBR } from "date-fns/locale";
 
 export default function PortalMensagens() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const targetUserId = searchParams.get("u");
   const [selectedContact, setSelectedContact] = useState<any>(null);
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
