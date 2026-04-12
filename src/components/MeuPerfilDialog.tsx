@@ -168,7 +168,7 @@ export function MeuPerfilDialog({ open, onOpenChange }: MeuPerfilDialogProps) {
                     )}
                   </div>
                   <p className="text-[10px] text-muted-foreground mt-1">
-                    Isso define seu link: {window.location.origin}/{form.slug || "seu-slug"}
+                    Temos que separar o perfil público do perfil cadastrado para acesso a loja. separados! Link: {window.location.origin}/{form.slug || "seu-slug"}
                   </p>
                 </div>
               </div>
