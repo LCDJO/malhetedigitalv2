@@ -108,7 +108,7 @@ export function SocialExplore() {
                 </Avatar>
                 <div className="min-w-0">
                   <p className="text-sm font-bold truncate group-hover:text-primary transition-colors">{profile.full_name}</p>
-                  <p className="text-[10px] text-muted-foreground truncate">@{profile.slug}</p>
+                  <p className="text-[10px] text-muted-foreground truncate">{profile.slug}</p>
                 </div>
               </Link>
             ))}

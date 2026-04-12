@@ -215,7 +215,7 @@ export default function PortalCadastro() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
             <div className="space-y-1.5">
-              <Label>Nome de Usuário (@slug)</Label>
+              <Label>Nome de Usuário (Slug)</Label>
               <Input 
                 value={form.slug} 
                 onChange={(e) => setForm((prev) => ({ ...prev, slug: e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, '') }))} 
