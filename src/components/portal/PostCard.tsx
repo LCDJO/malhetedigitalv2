@@ -116,8 +116,11 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
         throw new Error("Não autorizado");
       }
 
+      if (!window.confirm("Tem certeza que deseja deletar esta postagem?")) {
+        return;
+      }
+
       // First delete comments and likes (due to foreign keys)
-      // Actually, if we have ON DELETE CASCADE we don't need this, but let's be safe.
       const { error: commentsError } = await supabase.from("post_comments").delete().eq("post_id", post.id);
       if (commentsError) throw commentsError;
 
