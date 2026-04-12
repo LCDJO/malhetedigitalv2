@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePortalMemberContext } from "@/components/portal/PortalLayout";
 import { PostCard } from "@/components/portal/PostCard";
 import { CreatePost } from "@/components/portal/CreatePost";
+import { StoriesBar } from "@/components/portal/StoriesBar";
 import { Loader2, Users, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
