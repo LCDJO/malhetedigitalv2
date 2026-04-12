@@ -259,8 +259,9 @@ export function AdminSidebar() {
         {/* Segurança */}
         {renderSimpleSection("Segurança", segurancaItems)}
 
-        {/* Compliance */}
-        {renderSimpleSection("Compliance", complianceItems)}
+        {/* Parametrizações */}
+        {renderSimpleSection("Parametrizações", parametrizaçõesItems)}
+
 
         {/* Integrações */}
         <SidebarGroup className="mt-1">
