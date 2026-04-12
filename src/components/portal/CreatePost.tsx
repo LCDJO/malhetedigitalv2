@@ -74,12 +74,20 @@ export function CreatePost({ profile, currentUser }: { profile: any; currentUser
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const selectedFiles = Array.from(e.target.files);
-      setImages(prev => [...prev, ...selectedFiles].slice(0, 5));
+      const containsVideo = selectedFiles.some(f => f.type.startsWith('video/'));
+      if (containsVideo) {
+        setPostType('reel');
+        setImages([selectedFiles.find(f => f.type.startsWith('video/'))!].slice(0, 1));
+      } else {
+        setPostType('post');
+        setImages(prev => [...prev, ...selectedFiles].slice(0, 5));
+      }
     }
   };
 
   const removeImage = (index: number) => {
     setImages(prev => prev.filter((_, i) => i !== index));
+    if (images.length === 1) setPostType('post');
   };
 
   const initials = profile?.full_name
