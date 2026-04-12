@@ -189,7 +189,7 @@ export default function PublicProfile() {
 
           <div className="flex-1 w-full">
             <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
-              <h2 className="text-xl md:text-2xl font-light">@{profile.slug}</h2>
+              <h2 className="text-xl md:text-2xl font-light">{profile.slug}</h2>
               <div className="flex gap-2">
                 {currentUser?.id === profile.id ? (
                   <Button variant="outline" size="sm" className="hidden md:flex font-semibold" asChild>
