@@ -5,6 +5,7 @@ const SUBDOMAIN_ROUTES: Record<string, string> = {
   business: "/anunciante/auth",
   bussiness: "/anunciante/auth",
   irmao: "/portal/auth",
+  painel: "/auth",
 };
 
 export function SubdomainRedirect() {
