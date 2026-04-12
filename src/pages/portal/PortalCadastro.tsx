@@ -49,8 +49,10 @@ export default function PortalCadastro() {
       phone: member.phone ?? "",
       address: member.address ?? "",
       avatar_url: member.avatar_url ?? "",
+      slug: member.slug ?? "",
+      bio: member.bio ?? "",
     });
-  }, [member.id, member.email, member.phone, member.address, member.avatar_url]);
+  }, [member.id, member.email, member.phone, member.address, member.avatar_url, member.slug, member.bio]);
 
   const isDirty = useMemo(() => {
     const normalize = (value: string | null | undefined) => (value ?? "").trim();
@@ -58,9 +60,11 @@ export default function PortalCadastro() {
       normalize(form.email) !== normalize(member.email) ||
       normalize(form.phone) !== normalize(member.phone) ||
       normalize(form.address) !== normalize(member.address) ||
-      normalize(form.avatar_url) !== normalize(member.avatar_url)
+      normalize(form.avatar_url) !== normalize(member.avatar_url) ||
+      normalize(form.slug) !== normalize(member.slug) ||
+      normalize(form.bio) !== normalize(member.bio)
     );
-  }, [form, member.email, member.phone, member.address, member.avatar_url]);
+  }, [form, member.email, member.phone, member.address, member.avatar_url, member.slug, member.bio]);
 
   const initials = member.full_name
     .split(" ")
@@ -103,19 +107,53 @@ export default function PortalCadastro() {
   const handleSalvar = async () => {
     setSaving(true);
     const email = form.email.trim().toLowerCase();
-    const payload = {
+    
+    // Member update payload
+    const memberPayload = {
       email: email || null,
       phone: form.phone.trim() || null,
       address: form.address.trim() || null,
       avatar_url: form.avatar_url.trim() || null,
     };
 
-    const { error } = await supabase.from("members").update(payload).eq("id", member.id);
+    // Profile update payload
+    const profilePayload = {
+      slug: form.slug.trim().toLowerCase() || null,
+      bio: form.bio.trim() || null,
+      avatar_url: form.avatar_url.trim() || null,
+    };
 
-    if (error) {
-      toast.error(error.message || "Erro ao atualizar cadastro.");
+    // 1. Validate slug uniqueness if changed
+    if (form.slug.trim() && form.slug.trim().toLowerCase() !== member.slug) {
+      const { data: existingSlug } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("slug", form.slug.trim().toLowerCase())
+        .maybeSingle();
+      
+      if (existingSlug && existingSlug.id !== user?.id) {
+        toast.error("Este nome de usuário (slug) já está sendo usado.");
+        setSaving(false);
+        return;
+      }
+    }
+
+    // 2. Update Member table
+    const { error: memberError } = await supabase.from("members").update(memberPayload).eq("id", member.id);
+    if (memberError) {
+      toast.error(memberError.message || "Erro ao atualizar dados do membro.");
       setSaving(false);
       return;
+    }
+
+    // 3. Update Profile table
+    if (user?.id) {
+      const { error: profileError } = await supabase.from("profiles").update(profilePayload).eq("id", user.id);
+      if (profileError) {
+        toast.error(profileError.message || "Erro ao atualizar perfil social.");
+        setSaving(false);
+        return;
+      }
     }
 
     if (email && user?.email && email !== user.email.toLowerCase()) {
@@ -130,7 +168,7 @@ export default function PortalCadastro() {
     }
 
     toast.success("Dados atualizados com sucesso.");
-    logAction({ action: "UPDATE_OWN_PROFILE", targetTable: "members", targetId: member.id, details: { email: payload.email, phone: payload.phone } });
+    logAction({ action: "UPDATE_OWN_PROFILE", targetTable: "members", targetId: member.id, details: { email: memberPayload.email, phone: memberPayload.phone, slug: profilePayload.slug } });
     setSaving(false);
   };
 
