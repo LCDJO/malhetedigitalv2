@@ -191,7 +191,7 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            <Route path="/" element={<Landing />} />
+            <Route path="/" element={<Auth />} />
             <Route path="*" element={<NotFound />} />
             </Routes>
           </ScopeProvider>
