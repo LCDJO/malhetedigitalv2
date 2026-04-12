@@ -117,6 +117,25 @@ export default function PortalMensagens() {
   }, [user?.id, selectedContact?.id]);
 
   useEffect(() => {
+    if (targetUserId && chats) {
+      const chat = chats.find(c => c.contact.id === targetUserId);
+      if (chat) {
+        setSelectedContact(chat.contact);
+      } else {
+        // If no chat exists yet, we should fetch the profile of targetUserId
+        (async () => {
+          const { data } = await supabase
+            .from("profiles")
+            .select("id, full_name, avatar_url, slug")
+            .eq("id", targetUserId)
+            .maybeSingle();
+          if (data) setSelectedContact(data);
+        })();
+      }
+    }
+  }, [targetUserId, chats]);
+
+  useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
