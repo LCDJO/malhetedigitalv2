@@ -77,6 +77,35 @@ export default function PublicProfile() {
     enabled: !!slug,
   });
 
+  const { data: commonFollowers } = useQuery({
+    queryKey: ["common-followers", profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return [];
+      
+      const { data: followData, error: followError } = await supabase
+        .from("follows")
+        .select("follower_id")
+        .eq("following_id", profile.id)
+        .limit(10);
+
+      if (followError) throw followError;
+      if (!followData || followData.length === 0) return [];
+
+      const followerIds = followData.map((f: any) => f.follower_id);
+      const { data: profilesData, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, full_name, avatar_url, slug")
+        .in("id", followerIds);
+
+      if (profilesError) throw profilesError;
+      
+      // Randomize results to get different photos on refresh
+      const shuffled = (profilesData || []).sort(() => Math.random() - 0.5);
+      return shuffled;
+    },
+    enabled: !!profile?.id,
+  });
+
   const { data: posts, isLoading: isLoadingPosts } = useQuery({
     queryKey: ["public-profile-posts", profile?.id],
     queryFn: async () => {
@@ -247,7 +276,38 @@ export default function PublicProfile() {
                   {profile.lodge.name} | {profile.lodge.potencia} | {profile.lodge.rito}
                 </p>
               )}
-              {profile.bio && <p className="text-sm whitespace-pre-line">{profile.bio}</p>}
+              {profile.bio && <p className="text-sm whitespace-pre-line mb-3">{profile.bio}</p>}
+              
+              {commonFollowers && commonFollowers.length > 0 && (
+                <div className="flex flex-col gap-1.5 pt-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-muted-foreground">
+                      Seguido por
+                    </span>
+                    <div className="flex -space-x-2">
+                      {commonFollowers.slice(0, 3).map((follower: any) => (
+                        <Avatar key={follower.id} className="h-6 w-6 border-2 border-white ring-1 ring-slate-50">
+                          <AvatarImage src={follower.avatar_url} />
+                          <AvatarFallback className="text-[8px] bg-slate-50">
+                            {follower.full_name?.substring(0, 1)}
+                          </AvatarFallback>
+                        </Avatar>
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground leading-tight">
+                    {commonFollowers.slice(0, 2).map((f: any, i: number) => (
+                      <span key={f.id}>
+                        <span className="font-bold text-foreground">{f.full_name.split(' ')[0]}</span>
+                        {i === 0 && commonFollowers.length > 1 ? ', ' : ''}
+                      </span>
+                    ))}
+                    {profile.followersCount > 2 && (
+                      <> e outras <span className="font-bold text-foreground">{profile.followersCount - 2} {profile.followersCount - 2 === 1 ? 'pessoa' : 'pessoas'}</span></>
+                    )}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </section>
