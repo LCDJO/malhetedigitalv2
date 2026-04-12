@@ -71,7 +71,7 @@ export function ProtectedRoute({ children, module, portalRedirect, requiredRole 
             Esta área requer permissão de <span className="font-semibold text-foreground">SuperAdmin</span>.
           </p>
         </div>
-        <Button variant="outline" size="sm" className="gap-1.5 mt-2" onClick={() => navigate("/")}>
+        <Button variant="outline" size="sm" className="gap-1.5 mt-2" onClick={() => navigate("/dashboard")}>
           <ArrowLeft className="h-3.5 w-3.5" />
           Voltar ao Dashboard
         </Button>
@@ -95,7 +95,7 @@ export function ProtectedRoute({ children, module, portalRedirect, requiredRole 
             Se você acredita que deveria ter acesso, entre em contato com o Administrador da Loja.
           </p>
         </div>
-        <Button variant="outline" size="sm" className="gap-1.5 mt-2" onClick={() => navigate("/")}>
+        <Button variant="outline" size="sm" className="gap-1.5 mt-2" onClick={() => navigate("/dashboard")}>
           <ArrowLeft className="h-3.5 w-3.5" />
           Voltar ao Dashboard
         </Button>

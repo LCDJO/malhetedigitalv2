@@ -147,11 +147,11 @@ export default function Auth() {
       }
 
       const getRedirectPath = () => {
-        if (!role) return "/";
+        if (!role) return "/dashboard";
         switch (role) {
           case "superadmin": return "/admin";
-          case "administrador": return "/";
-          default: return "/";
+          case "administrador": return "/dashboard";
+          default: return "/dashboard";
         }
       };
 

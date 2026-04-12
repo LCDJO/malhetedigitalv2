@@ -76,7 +76,7 @@ const navSections: NavSection[] = [
   {
     label: "Overview",
     items: [
-      { title: "Dashboard", url: "/", icon: LayoutDashboard, navKey: "dashboard" },
+      { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, navKey: "dashboard" },
     ],
   },
 
@@ -84,13 +84,13 @@ const navSections: NavSection[] = [
   {
     label: "Operação",
     items: [
-      { title: "Secretaria", url: "/secretaria", icon: BookOpen, navKey: "secretaria" },
-      { title: "Chancelaria", url: "/chancelaria", icon: Stamp, navKey: "chancelaria" },
-      { title: "Tesouraria", url: "/tesouraria", icon: Wallet, navKey: "tesouraria" },
-      { title: "Financeiro Geral", url: "/financeiro-geral", icon: DollarSign, navKey: "financeiro_geral" },
-      { title: "Totem", url: "/totem", icon: Monitor, navKey: "totem" },
-      { title: "Relatórios", url: "/relatorios", icon: FileBarChart, navKey: "relatorios" },
-      { title: "Atendimento", url: "/atendimento", icon: MessageSquare, navKey: "atendimento" },
+      { title: "Secretaria", url: "/dashboard/secretaria", icon: BookOpen, navKey: "secretaria" },
+      { title: "Chancelaria", url: "/dashboard/chancelaria", icon: Stamp, navKey: "chancelaria" },
+      { title: "Tesouraria", url: "/dashboard/tesouraria", icon: Wallet, navKey: "tesouraria" },
+      { title: "Financeiro Geral", url: "/dashboard/financeiro-geral", icon: DollarSign, navKey: "financeiro_geral" },
+      { title: "Totem", url: "/dashboard/totem", icon: Monitor, navKey: "totem" },
+      { title: "Relatórios", url: "/dashboard/relatorios", icon: FileBarChart, navKey: "relatorios" },
+      { title: "Atendimento", url: "/dashboard/atendimento", icon: MessageSquare, navKey: "atendimento" },
     ],
   },
 
@@ -98,9 +98,9 @@ const navSections: NavSection[] = [
   {
     label: "Configurações",
     items: [
-      { title: "Usuários & Permissões", url: "/gestao-usuarios", icon: Users, navKey: "gestao_usuarios" },
-      { title: "Log de Auditoria", url: "/log-auditoria", icon: ScrollText, navKey: "log_auditoria" },
-      { title: "Preferências", url: "/configuracoes", icon: Settings, navKey: "configuracoes" },
+      { title: "Usuários & Permissões", url: "/dashboard/gestao-usuarios", icon: Users, navKey: "gestao_usuarios" },
+      { title: "Log de Auditoria", url: "/dashboard/log-auditoria", icon: ScrollText, navKey: "log_auditoria" },
+      { title: "Preferências", url: "/dashboard/configuracoes", icon: Settings, navKey: "configuracoes" },
     ],
   },
 
@@ -108,8 +108,8 @@ const navSections: NavSection[] = [
   {
     label: "Compliance",
     items: [
-      { title: "Termos e LGPD", url: "/gestao-termos", icon: Scale, navKey: "gestao_termos" },
-      { title: "Controle de Aceites", url: "/controle-aceites", icon: ClipboardCheck, navKey: "controle_aceites" },
+      { title: "Termos e LGPD", url: "/dashboard/gestao-terms", icon: Scale, navKey: "gestao_termos" },
+      { title: "Controle de Aceites", url: "/dashboard/controle-aceites", icon: ClipboardCheck, navKey: "controle_aceites" },
     ],
   },
 ];
@@ -171,7 +171,7 @@ export function AppSidebar() {
                     <SidebarMenuButton asChild tooltip={item.title}>
                       <NavLink
                         to={item.url}
-                        end={item.url === "/"}
+                        end={item.url === "/dashboard"}
                         className="text-sidebar-foreground/65 hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground transition-all duration-150 rounded-md"
                         activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold shadow-sm"
                       >

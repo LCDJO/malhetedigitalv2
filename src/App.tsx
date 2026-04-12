@@ -11,6 +11,7 @@ import { PortalLayout } from "@/components/portal/PortalLayout";
 import { SubdomainRedirect } from "@/components/SubdomainRedirect";
 import Auth from "./pages/Auth";
 import Index from "./pages/Index";
+import Landing from "./pages/Landing";
 import Secretaria from "./pages/Secretaria";
 import Tesouraria from "./pages/Tesouraria";
 
@@ -166,7 +167,7 @@ const App = () => (
 
             {/* Painel Administrativo */}
             <Route
-              path="/*"
+              path="/dashboard/*"
               element={
                 <ProtectedRoute>
                   <DashboardLayout>
@@ -190,6 +191,8 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route path="/" element={<Landing />} />
+            <Route path="*" element={<NotFound />} />
             </Routes>
           </ScopeProvider>
         </AuthProvider>
