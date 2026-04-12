@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
-const SUBDOMAIN_ROUTES: Record<string, string> = {
+export const SUBDOMAIN_ROUTES: Record<string, string> = {
   business: "/anunciante/auth",
   irmao: "/portal/auth",
   painel: "/auth",

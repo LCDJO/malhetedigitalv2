@@ -1,14 +1,16 @@
 import React from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Globe, ArrowRight, Server, Share2, CornerDownRight, ExternalLink, Loader2 } from "lucide-react";
+import { Globe, ArrowRight, Server, Share2, CornerDownRight, ExternalLink, Loader2, Route } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { SUBDOMAIN_ROUTES } from "../../SubdomainRedirect";
 
 interface DomainNode {
   name: string;
   target: string;
   type: "CNAME" | "A" | "AAAA" | "NS";
+  route?: string;
   subdomains?: DomainNode[];
 }
 
@@ -40,10 +42,18 @@ const DomainNodeView: React.FC<{ node: DomainNode; level: number; isLast: boolea
                   {node.type}
                 </Badge>
               </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <ArrowRight className="h-3 w-3" />
-                <Server className="h-3 w-3" />
-                <span className="font-mono">{node.target}</span>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1.5">
+                  <ArrowRight className="h-3 w-3" />
+                  <Server className="h-3 w-3" />
+                  <span className="font-mono">{node.target}</span>
+                </div>
+                {node.route && (
+                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-primary/5 text-primary border border-primary/10">
+                    <Route className="h-3 w-3" />
+                    <span className="font-medium">Redireciona para: {node.route}</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -98,6 +108,7 @@ export function DomainManagement() {
           name: "painel.malhetedigital.com.br",
           type: "CNAME",
           target: "cname.vercel-dns.com",
+          route: SUBDOMAIN_ROUTES.painel,
           subdomains: [
             { name: "api.malhetedigital.com.br", type: "CNAME", target: "supabase.co" },
             { name: "auth.malhetedigital.com.br", type: "CNAME", target: "auth.supabase.co" },
@@ -107,11 +118,13 @@ export function DomainManagement() {
           name: "irmao.malhetedigital.com.br",
           type: "CNAME",
           target: "cname.vercel-dns.com",
+          route: SUBDOMAIN_ROUTES.irmao,
         },
         {
           name: "business.malhetedigital.com.br",
           type: "CNAME",
           target: "cname.vercel-dns.com",
+          route: SUBDOMAIN_ROUTES.business,
         },
         {
           name: "Wildcard (*.malhetedigital.com.br)",
