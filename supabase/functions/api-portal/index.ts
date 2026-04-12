@@ -26,7 +26,7 @@ async function authenticate(req: Request) {
   );
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) throw new Error("Unauthorized");
-  return { userId: user.id, supabase };
+  return { userId: user.id, email: user.email, supabase };
 }
 
 Deno.serve(async (req) => {
