@@ -98,7 +98,10 @@ export default function PublicProfile() {
         .in("id", followerIds);
 
       if (profilesError) throw profilesError;
-      return profilesData || [];
+      
+      // Randomize results to get different photos on refresh
+      const shuffled = (profilesData || []).sort(() => Math.random() - 0.5);
+      return shuffled;
     },
     enabled: !!profile?.id,
   });
