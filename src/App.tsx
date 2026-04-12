@@ -154,6 +154,9 @@ const App = () => (
                     <Routes>
                       <Route path="/" element={<PortalDashboard />} />
                       <Route path="/rede-social" element={<PortalRedeSocial />} />
+                      <Route path="/explorar" element={<PortalRedeSocial />} />
+                      <Route path="/criar" element={<PortalRedeSocial />} />
+                      <Route path="/mensagens" element={<PortalRedeSocial />} />
                       <Route path="/perfil" element={<PortalCadastro />} />
                       <Route path="/jornada" element={<PortalJornada />} />
                       <Route path="/minha-loja" element={<PortalMinhaLoja />} />
