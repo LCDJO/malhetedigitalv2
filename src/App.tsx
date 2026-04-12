@@ -153,6 +153,7 @@ const App = () => (
                   <PortalLayout>
                     <Routes>
                       <Route path="/" element={<PortalDashboard />} />
+                      <Route path="/rede-social" element={<PortalRedeSocial />} />
                       <Route path="/perfil" element={<PortalCadastro />} />
                       <Route path="/jornada" element={<PortalJornada />} />
                       <Route path="/minha-loja" element={<PortalMinhaLoja />} />
