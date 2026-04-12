@@ -124,7 +124,7 @@ export function DomainManagement() {
       </CardHeader>
       <CardContent className="pt-8 pb-4">
         <div className="max-w-4xl mx-auto space-y-6">
-          <div className="flex items-center gap-3 mb-6 p-4 rounded-xl bg-amber-500/5 border border-amber-500/20 text-amber-600 text-sm">
+          <div className="flex items-center gap-3 mb-6 p-4 rounded-xl bg-accent/5 border border-accent/20 text-accent-foreground text-sm">
             <CornerDownRight className="h-4 w-4 shrink-0" />
             <p>Os subdomínios abaixo são provisionados automaticamente via wildcard ou apontamentos manuais.</p>
           </div>
