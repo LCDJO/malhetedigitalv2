@@ -197,7 +197,7 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            <Route path="/:slug" element={<PublicProfile />} />
+            <Route path="/@:slug" element={<PublicProfile />} />
             <Route path="/" element={<Auth />} />
             <Route path="*" element={<NotFound />} />
             </Routes>
