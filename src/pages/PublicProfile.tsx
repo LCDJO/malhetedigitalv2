@@ -193,7 +193,7 @@ export default function PublicProfile() {
             <ArrowLeft className="h-6 w-6" />
           </Link>
         </Button>
-        <h1 className="font-bold text-lg">{profile.slug}</h1>
+        <h1 className="font-bold text-lg">{profile.slug?.replace(/^@/, '')}</h1>
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-8">
@@ -218,7 +218,7 @@ export default function PublicProfile() {
 
           <div className="flex-1 w-full">
             <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
-              <h2 className="text-xl md:text-2xl font-light">{profile.slug}</h2>
+              <h2 className="text-xl md:text-2xl font-light">{profile.slug?.replace(/^@/, '')}</h2>
               <div className="flex gap-2">
                 {currentUser?.id === profile.id ? (
                   <Button variant="outline" size="sm" className="hidden md:flex font-semibold" asChild>
