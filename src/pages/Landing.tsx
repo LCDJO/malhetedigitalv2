@@ -24,7 +24,7 @@ const Landing = () => {
               M
             </div>
             <span className="font-serif font-bold text-xl tracking-tight hidden sm:block">
-              Gestão Maçônica
+              Malhete Digital
             </span>
           </div>
 
