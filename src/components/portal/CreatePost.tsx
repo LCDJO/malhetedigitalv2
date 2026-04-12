@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ImagePlus, X, Loader2, Send, Smile, MapPin } from "lucide-react";
+import { ImagePlus, X, Loader2, Send, Smile, MapPin, Video, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -13,8 +13,10 @@ export function CreatePost({ profile, currentUser }: { profile: any; currentUser
   const queryClient = useQueryClient();
   const [caption, setCaption] = useState("");
   const [images, setImages] = useState<File[]>([]);
+  const [postType, setPostType] = useState<'post' | 'reel'>('post');
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
 
   const createPostMutation = useMutation({
     mutationFn: async () => {
@@ -27,7 +29,8 @@ export function CreatePost({ profile, currentUser }: { profile: any; currentUser
           .insert({
             user_id: currentUser.id,
             caption: caption,
-            privacy_level: 'public'
+            privacy_level: 'public',
+            post_type: postType
           })
           .select()
           .single();
@@ -71,12 +74,20 @@ export function CreatePost({ profile, currentUser }: { profile: any; currentUser
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const selectedFiles = Array.from(e.target.files);
-      setImages(prev => [...prev, ...selectedFiles].slice(0, 5));
+      const containsVideo = selectedFiles.some(f => f.type.startsWith('video/'));
+      if (containsVideo) {
+        setPostType('reel');
+        setImages([selectedFiles.find(f => f.type.startsWith('video/'))!].slice(0, 1));
+      } else {
+        setPostType('post');
+        setImages(prev => [...prev, ...selectedFiles].slice(0, 5));
+      }
     }
   };
 
   const removeImage = (index: number) => {
     setImages(prev => prev.filter((_, i) => i !== index));
+    if (images.length === 1) setPostType('post');
   };
 
   const initials = profile?.full_name
@@ -121,11 +132,18 @@ export function CreatePost({ profile, currentUser }: { profile: any; currentUser
                         key={index} 
                         className="relative w-28 h-28 shrink-0 rounded-xl overflow-hidden shadow-sm group"
                       >
-                        <img 
-                          src={URL.createObjectURL(img)} 
-                          alt="Preview" 
-                          className="w-full h-full object-cover transition-transform group-hover:scale-105" 
-                        />
+                        {img.type.startsWith('video/') ? (
+                          <video 
+                            src={URL.createObjectURL(img)} 
+                            className="w-full h-full object-cover transition-transform group-hover:scale-105" 
+                          />
+                        ) : (
+                          <img 
+                            src={URL.createObjectURL(img)} 
+                            alt="Preview" 
+                            className="w-full h-full object-cover transition-transform group-hover:scale-105" 
+                          />
+                        )}
                         <button 
                           onClick={() => removeImage(index)}
                           className="absolute top-1.5 right-1.5 bg-black/40 backdrop-blur-md rounded-full p-1 text-white hover:bg-black/60 transition-colors"
@@ -148,7 +166,7 @@ export function CreatePost({ profile, currentUser }: { profile: any; currentUser
           </div>
 
           <div className="flex items-center justify-between pt-4 border-t dark:border-slate-800">
-            <div className="flex gap-1">
+            <div className="flex gap-1 overflow-x-auto scrollbar-hide">
               <input 
                 type="file" 
                 ref={fileInputRef} 
@@ -157,14 +175,41 @@ export function CreatePost({ profile, currentUser }: { profile: any; currentUser
                 accept="image/*" 
                 className="hidden" 
               />
+              <input 
+                type="file" 
+                ref={videoInputRef} 
+                onChange={(e) => {
+                  if (e.target.files?.[0]) {
+                    setImages([e.target.files[0]]);
+                    setPostType('reel');
+                  }
+                }} 
+                accept="video/*" 
+                className="hidden" 
+              />
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={() => fileInputRef.current?.click()}
-                className="text-slate-500 hover:text-primary hover:bg-primary/5 rounded-full px-4 h-9 font-medium"
+                onClick={() => {
+                  setPostType('post');
+                  fileInputRef.current?.click();
+                }}
+                className={`rounded-full px-4 h-9 font-medium ${postType === 'post' ? 'text-primary bg-primary/5' : 'text-slate-500 hover:text-primary hover:bg-primary/5'}`}
               >
                 <ImagePlus className="mr-2 h-4 w-4" />
                 Mídia
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => {
+                  setPostType('reel');
+                  videoInputRef.current?.click();
+                }}
+                className={`rounded-full px-4 h-9 font-medium ${postType === 'reel' ? 'text-amber-500 bg-amber-50 dark:bg-amber-500/10' : 'text-slate-500 hover:text-amber-500 hover:bg-amber-50'}`}
+              >
+                <Sparkles className="mr-2 h-4 w-4" />
+                Reel
               </Button>
               <Button 
                 variant="ghost" 
@@ -173,14 +218,6 @@ export function CreatePost({ profile, currentUser }: { profile: any; currentUser
               >
                 <Smile className="mr-2 h-4 w-4" />
                 Humor
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-slate-500 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-full px-4 h-9 font-medium hidden sm:flex"
-              >
-                <MapPin className="mr-2 h-4 w-4" />
-                Local
               </Button>
             </div>
             <Button 

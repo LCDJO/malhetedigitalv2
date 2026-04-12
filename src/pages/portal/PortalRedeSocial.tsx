@@ -15,6 +15,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SocialExplore } from "@/components/portal/SocialExplore";
 import { SocialMessages } from "@/components/portal/SocialMessages";
 import { SocialStories } from "@/components/portal/SocialStories";
+import { ReelsFeed } from "@/components/portal/ReelsFeed";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSocialStore } from "@/hooks/useSocialStore";
 import { useEffect } from "react";
@@ -84,6 +85,7 @@ export default function PortalRedeSocial() {
           post_comments(id)
         `)
         .in("user_id", authorIds)
+        .eq("post_type", "post")
         .order("created_at", { ascending: false })
         .range(pageParam, pageParam + 4);
 
@@ -233,6 +235,10 @@ export default function PortalRedeSocial() {
                     </Button>
                   </div>
                 )}
+              </TabsContent>
+
+              <TabsContent value="reels" className="mt-0 focus-visible:outline-none">
+                <ReelsFeed />
               </TabsContent>
 
               <TabsContent value="explorar" className="mt-0 focus-visible:outline-none">
