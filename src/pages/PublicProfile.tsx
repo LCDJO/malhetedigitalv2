@@ -281,6 +281,9 @@ export default function PublicProfile() {
               {commonFollowers && commonFollowers.length > 0 && (
                 <div className="flex flex-col gap-1.5 pt-2">
                   <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-muted-foreground">
+                      Seguido por
+                    </span>
                     <div className="flex -space-x-2">
                       {commonFollowers.slice(0, 3).map((follower: any) => (
                         <Avatar key={follower.id} className="h-6 w-6 border-2 border-white ring-1 ring-slate-50">
@@ -291,9 +294,6 @@ export default function PublicProfile() {
                         </Avatar>
                       ))}
                     </div>
-                    <span className="text-[11px] text-muted-foreground">
-                      Seguido por
-                    </span>
                   </div>
                   <p className="text-[11px] text-muted-foreground leading-tight">
                     {commonFollowers.slice(0, 2).map((f: any, i: number) => (
