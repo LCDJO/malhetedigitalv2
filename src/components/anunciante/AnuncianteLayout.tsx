@@ -104,6 +104,11 @@ export function AnuncianteLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
+  if (!user) {
+    navigate("/anunciante/auth");
+    return null;
+  }
+
   if (!advertiser) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
