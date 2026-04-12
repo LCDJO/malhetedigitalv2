@@ -122,30 +122,53 @@ const Landing = () => {
           </div>
         </section>
 
-        {/* Features Grid */}
-        <section className="py-20 bg-muted/30">
+        {/* Features & Security */}
+        <section className="py-24 bg-muted/30">
           <div className="max-w-7xl mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="bg-card p-8 rounded-2xl border shadow-sm">
-                <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-6">
-                  <Building2 className="h-6 w-6 text-primary" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+              {/* Segurança e Contexto */}
+              <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <ShieldCheck className="h-5 w-5 text-primary" />
+                  </div>
+                  <h2 className="text-2xl font-serif font-bold tracking-tight">🔐 SEGURANÇA E CONTEXTO</h2>
                 </div>
-                <h3 className="text-xl font-bold mb-3">Gestão Administrativa</h3>
-                <p className="text-muted-foreground">Secretaria, Tesouraria e Chancelaria integradas para total controle da Loja.</p>
+                <ul className="space-y-4">
+                  {[
+                    "Sistema multi-tenant (cada potência pode ter regras)",
+                    "Controle de visibilidade por grau (opcional futuro)",
+                    "Moderação de conteúdo"
+                  ].map((item, i) => (
+                    <li key={i} className="flex items-start gap-3 text-muted-foreground">
+                      <div className="h-1.5 w-1.5 rounded-full bg-primary mt-2 shrink-0" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <div className="bg-card p-8 rounded-2xl border shadow-sm">
-                <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-6">
-                  <User className="h-6 w-6 text-primary" />
+
+              {/* Diferenciais */}
+              <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <ChevronRight className="h-5 w-5 text-primary" />
+                  </div>
+                  <h2 className="text-2xl font-serif font-bold tracking-tight">🚀 DIFERENCIAIS DO MALHETE DIGITAL</h2>
                 </div>
-                <h3 className="text-xl font-bold mb-3">Portal do Irmão</h3>
-                <p className="text-muted-foreground">Acesso fácil para que cada Irmão gerencie seu cadastro, financeiro e documentos.</p>
-              </div>
-              <div className="bg-card p-8 rounded-2xl border shadow-sm">
-                <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-6">
-                  <ShieldCheck className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="text-xl font-bold mb-3">Segurança e LGPD</h3>
-                <p className="text-muted-foreground">Dados criptografados e conformidade total com a Lei Geral de Proteção de Dados.</p>
+                <ul className="space-y-4">
+                  {[
+                    "Rede social exclusiva da maçonaria",
+                    "Validação de membros reais",
+                    "Segmentação por loja, rito e potência",
+                    "Conteúdo com níveis de acesso"
+                  ].map((item, i) => (
+                    <li key={i} className="flex items-start gap-3 text-muted-foreground">
+                      <div className="h-1.5 w-1.5 rounded-full bg-primary mt-2 shrink-0" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
           </div>
