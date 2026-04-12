@@ -26,6 +26,12 @@ export const StoryViewer = ({ isOpen, onClose, profile }: StoryViewerProps) => {
   const startTimeRef = useRef<number>(0);
   const remainingTimeRef = useRef<number>(0);
 
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  // Minimum swipe distance in pixels
+  const minSwipeDistance = 50;
+
   // Mock stories for now
   const stories: Story[] = [
     { id: "1", image_url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=60", duration: 5000 },
