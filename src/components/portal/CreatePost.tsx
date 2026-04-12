@@ -124,11 +124,18 @@ export function CreatePost({ profile, currentUser }: { profile: any; currentUser
                         key={index} 
                         className="relative w-28 h-28 shrink-0 rounded-xl overflow-hidden shadow-sm group"
                       >
-                        <img 
-                          src={URL.createObjectURL(img)} 
-                          alt="Preview" 
-                          className="w-full h-full object-cover transition-transform group-hover:scale-105" 
-                        />
+                        {img.type.startsWith('video/') ? (
+                          <video 
+                            src={URL.createObjectURL(img)} 
+                            className="w-full h-full object-cover transition-transform group-hover:scale-105" 
+                          />
+                        ) : (
+                          <img 
+                            src={URL.createObjectURL(img)} 
+                            alt="Preview" 
+                            className="w-full h-full object-cover transition-transform group-hover:scale-105" 
+                          />
+                        )}
                         <button 
                           onClick={() => removeImage(index)}
                           className="absolute top-1.5 right-1.5 bg-black/40 backdrop-blur-md rounded-full p-1 text-white hover:bg-black/60 transition-colors"
