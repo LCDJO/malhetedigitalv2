@@ -76,7 +76,10 @@ export function AnuncianteLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     supabase
       .from("advertisers")
       .select("*")
@@ -99,6 +102,11 @@ export function AnuncianteLayout({ children }: { children: React.ReactNode }) {
         <Loader2 className="h-8 w-8 animate-spin text-accent" />
       </div>
     );
+  }
+
+  if (!user) {
+    navigate("/anunciante/auth");
+    return null;
   }
 
   if (!advertiser) {
