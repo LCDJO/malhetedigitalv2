@@ -39,6 +39,8 @@ export default function PortalCadastro() {
     phone: member.phone ?? "",
     address: member.address ?? "",
     avatar_url: member.avatar_url ?? "",
+    slug: member.slug ?? "",
+    bio: member.bio ?? "",
   });
 
   useEffect(() => {
