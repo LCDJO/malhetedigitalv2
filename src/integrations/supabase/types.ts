@@ -585,6 +585,24 @@ export type Database = {
         }
         Relationships: []
       }
+      hashtags: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       incidentes: {
         Row: {
           acoes_tomadas: string | null
@@ -980,6 +998,51 @@ export type Database = {
           },
         ]
       }
+      messages: {
+        Row: {
+          content: string | null
+          created_at: string
+          id: string
+          image_url: string | null
+          receiver_id: string
+          sender_id: string
+          status: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          receiver_id: string
+          sender_id: string
+          status?: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          receiver_id?: string
+          sender_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string
@@ -1211,6 +1274,39 @@ export type Database = {
           },
         ]
       }
+      post_hashtags: {
+        Row: {
+          hashtag_id: string
+          id: string
+          post_id: string
+        }
+        Insert: {
+          hashtag_id: string
+          id?: string
+          post_id: string
+        }
+        Update: {
+          hashtag_id?: string
+          id?: string
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_hashtags_hashtag_id_fkey"
+            columns: ["hashtag_id"]
+            isOneToOne: false
+            referencedRelation: "hashtags"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_hashtags_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       post_images: {
         Row: {
           created_at: string
@@ -1277,6 +1373,7 @@ export type Database = {
           caption: string | null
           created_at: string
           id: string
+          media_url: string | null
           privacy_level: string | null
           updated_at: string
           user_id: string
@@ -1285,6 +1382,7 @@ export type Database = {
           caption?: string | null
           created_at?: string
           id?: string
+          media_url?: string | null
           privacy_level?: string | null
           updated_at?: string
           user_id: string
@@ -1293,6 +1391,7 @@ export type Database = {
           caption?: string | null
           created_at?: string
           id?: string
+          media_url?: string | null
           privacy_level?: string | null
           updated_at?: string
           user_id?: string
@@ -1364,6 +1463,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          access_level: number | null
           address: string | null
           avatar_url: string | null
           bio: string | null
@@ -1373,11 +1473,17 @@ export type Database = {
           full_name: string
           id: string
           is_active: boolean
+          loja_id: string | null
+          masonic_status: string | null
           phone: string | null
+          potencia_id: string | null
+          rito_id: string | null
+          show_suggestions: boolean
           slug: string | null
           updated_at: string
         }
         Insert: {
+          access_level?: number | null
           address?: string | null
           avatar_url?: string | null
           bio?: string | null
@@ -1387,11 +1493,17 @@ export type Database = {
           full_name: string
           id: string
           is_active?: boolean
+          loja_id?: string | null
+          masonic_status?: string | null
           phone?: string | null
+          potencia_id?: string | null
+          rito_id?: string | null
+          show_suggestions?: boolean
           slug?: string | null
           updated_at?: string
         }
         Update: {
+          access_level?: number | null
           address?: string | null
           avatar_url?: string | null
           bio?: string | null
@@ -1401,7 +1513,12 @@ export type Database = {
           full_name?: string
           id?: string
           is_active?: boolean
+          loja_id?: string | null
+          masonic_status?: string | null
           phone?: string | null
+          potencia_id?: string | null
+          rito_id?: string | null
+          show_suggestions?: boolean
           slug?: string | null
           updated_at?: string
         }
@@ -1562,6 +1679,47 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stories: {
+        Row: {
+          content_text: string | null
+          content_type: string
+          content_url: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          privacy: string
+          user_id: string
+        }
+        Insert: {
+          content_text?: string | null
+          content_type?: string
+          content_url?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          privacy?: string
+          user_id: string
+        }
+        Update: {
+          content_text?: string | null
+          content_type?: string
+          content_url?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          privacy?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stories_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
