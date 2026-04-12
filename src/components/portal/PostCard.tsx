@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Heart, MessageCircle, Share2, MoreHorizontal, Send, Bookmark } from "lucide-react";
+import { Heart, MessageCircle, Share2, MoreHorizontal, Send, Bookmark, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +12,12 @@ import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface PostCardProps {
   post: any;
@@ -104,6 +110,38 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
     }
   });
 
+  const deletePostMutation = useMutation({
+    mutationFn: async () => {
+      if (!currentUserId || post.user_id !== currentUserId) {
+        throw new Error("Não autorizado");
+      }
+
+      if (!window.confirm("Tem certeza que deseja deletar esta postagem?")) {
+        return;
+      }
+
+      // First delete comments and likes (due to foreign keys)
+      const { error: commentsError } = await supabase.from("post_comments").delete().eq("post_id", post.id);
+      if (commentsError) throw commentsError;
+
+      const { error: likesError } = await supabase.from("post_likes").delete().eq("post_id", post.id);
+      if (likesError) throw likesError;
+
+      const { error: imagesError } = await supabase.from("post_images").delete().eq("post_id", post.id);
+      if (imagesError) throw imagesError;
+
+      const { error } = await supabase.from("posts").delete().eq("id", post.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Postagem deletada com sucesso");
+      queryClient.invalidateQueries({ queryKey: ["social-feed"] });
+    },
+    onError: (error: any) => {
+      toast.error(`Erro ao deletar post: ${error.message}`);
+    }
+  });
+
   const initials = post.profiles?.full_name
     ?.split(" ")
     .filter(Boolean)
@@ -138,9 +176,29 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
               </span>
             </div>
           </div>
-          <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-slate-50 dark:hover:bg-slate-800">
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-slate-50 dark:hover:bg-slate-800">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              {currentUserId === post.user_id && (
+                <DropdownMenuItem 
+                  className="text-destructive focus:text-destructive gap-2 cursor-pointer"
+                  onClick={() => deletePostMutation.mutate()}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Deletar postagem
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem className="gap-2 cursor-pointer">
+                <Share2 className="h-4 w-4" />
+                Compartilhar
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </CardHeader>
 
         <div 
