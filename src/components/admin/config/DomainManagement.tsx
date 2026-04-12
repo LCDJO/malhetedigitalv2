@@ -1,14 +1,16 @@
 import React from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Globe, ArrowRight, Server, Share2, CornerDownRight, ExternalLink, Loader2 } from "lucide-react";
+import { Globe, ArrowRight, Server, Share2, CornerDownRight, ExternalLink, Loader2, Route } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { SUBDOMAIN_ROUTES } from "../../SubdomainRedirect";
 
 interface DomainNode {
   name: string;
   target: string;
   type: "CNAME" | "A" | "AAAA" | "NS";
+  route?: string;
   subdomains?: DomainNode[];
 }
 
