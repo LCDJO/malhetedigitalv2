@@ -42,10 +42,18 @@ const DomainNodeView: React.FC<{ node: DomainNode; level: number; isLast: boolea
                   {node.type}
                 </Badge>
               </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <ArrowRight className="h-3 w-3" />
-                <Server className="h-3 w-3" />
-                <span className="font-mono">{node.target}</span>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1.5">
+                  <ArrowRight className="h-3 w-3" />
+                  <Server className="h-3 w-3" />
+                  <span className="font-mono">{node.target}</span>
+                </div>
+                {node.route && (
+                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-primary/5 text-primary border border-primary/10">
+                    <Route className="h-3 w-3" />
+                    <span className="font-medium">Redireciona para: {node.route}</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
