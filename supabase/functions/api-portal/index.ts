@@ -26,22 +26,19 @@ async function authenticate(req: Request) {
   );
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) throw new Error("Unauthorized");
-  return { userId: user.id, supabase };
+  return { userId: user.id, email: user.email, supabase };
 }
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { userId, supabase } = await authenticate(req);
+    const { userId, email, supabase } = await authenticate(req);
     const url = new URL(req.url);
     const action = url.searchParams.get("action");
 
     // ─── PORTAL STATS (dashboard) ───
     if (req.method === "GET" && action === "stats") {
-      // Get member linked to this user (by email)
-      const { data: userData } = await supabase.auth.getUser();
-      const email = userData?.user?.email;
       if (!email) return err("No email found", 400);
 
       const { data: member } = await supabase
