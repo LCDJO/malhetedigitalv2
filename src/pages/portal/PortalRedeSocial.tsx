@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePortalMemberContext } from "@/components/portal/PortalLayout";
 import { PostCard } from "@/components/portal/PostCard";
 import { CreatePost } from "@/components/portal/CreatePost";
-import { Loader2, Users, Search, Compass, MessageCircle, LayoutGrid } from "lucide-react";
+import { Loader2, Users, Search, Compass, MessageCircle, LayoutGrid, Heart, TrendingUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +14,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SocialExplore } from "@/components/portal/SocialExplore";
 import { SocialMessages } from "@/components/portal/SocialMessages";
+import { motion, AnimatePresence } from "framer-motion";
+import { useSocialStore } from "@/hooks/useSocialStore";
+import { useEffect } from "react";
 
 function PostSkeleton() {
   return (
@@ -46,6 +49,7 @@ export default function PortalRedeSocial() {
   const member = usePortalMemberContext();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get("tab") || "feed";
+  const { setFeed } = useSocialStore();
 
   const { data: posts, isLoading } = useQuery({
     queryKey: ["social-feed", user?.id],
@@ -75,12 +79,15 @@ export default function PortalRedeSocial() {
 
       if (error) throw error;
 
-      return data.map(post => ({
+      const formattedPosts = data.map(post => ({
         ...post,
         likes_count: post.post_likes?.length || 0,
         comments_count: post.post_comments?.length || 0,
         user_has_liked: post.post_likes?.some((like: any) => like.user_id === user?.id)
       }));
+
+      setFeed(formattedPosts);
+      return formattedPosts;
     },
     enabled: !!user?.id && activeTab === "feed",
   });
@@ -101,108 +108,163 @@ export default function PortalRedeSocial() {
   });
 
   return (
-    <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-8">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-8 pb-10"
+    >
       {/* Left / Center: Feed */}
       <div className="flex-1 space-y-6">
-        <header className="mb-6">
-          <h1 className="text-2xl font-serif font-bold text-foreground">Malhete Digital</h1>
-          <p className="text-muted-foreground text-sm">Rede Social Maçônica</p>
+        <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <motion.h1 
+              initial={{ x: -20 }}
+              animate={{ x: 0 }}
+              className="text-3xl font-serif font-bold text-foreground tracking-tight"
+            >
+              Malhete Digital
+            </motion.h1>
+            <p className="text-muted-foreground text-sm flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Rede Social Maçônica Ativa
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="rounded-full gap-2 text-xs font-bold">
+              <TrendingUp className="h-3 w-3" />
+              Em alta
+            </Button>
+            <Button variant="outline" size="sm" className="rounded-full gap-2 text-xs font-bold">
+              <Heart className="h-3 w-3" />
+              Atividade
+            </Button>
+          </div>
         </header>
 
         <Tabs value={activeTab} onValueChange={(val) => setSearchParams({ tab: val })} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-slate-100 dark:bg-slate-800/50 p-1 mb-6">
-            <TabsTrigger value="feed" className="gap-2">
+          <TabsList className="grid w-full grid-cols-3 bg-slate-100/80 dark:bg-slate-800/50 p-1 mb-8 rounded-xl backdrop-blur-sm sticky top-0 z-10">
+            <TabsTrigger value="feed" className="gap-2 rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm transition-all">
               <LayoutGrid className="h-4 w-4" />
-              Feed
+              <span className="hidden sm:inline">Feed</span>
             </TabsTrigger>
-            <TabsTrigger value="explorar" className="gap-2">
+            <TabsTrigger value="explorar" className="gap-2 rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm transition-all">
               <Compass className="h-4 w-4" />
-              Explorar
+              <span className="hidden sm:inline">Explorar</span>
             </TabsTrigger>
-            <TabsTrigger value="mensagens" className="gap-2">
+            <TabsTrigger value="mensagens" className="gap-2 rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm transition-all">
               <MessageCircle className="h-4 w-4" />
-              Mensagens
+              <span className="hidden sm:inline">Mensagens</span>
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="feed" className="space-y-6 mt-0">
-            <CreatePost profile={member} currentUser={user} />
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <TabsContent value="feed" className="space-y-6 mt-0">
+                <CreatePost profile={member} currentUser={user} />
 
-            {isLoading ? (
-              <div className="max-w-xl mx-auto space-y-6">
-                <PostSkeleton />
-                <PostSkeleton />
-              </div>
-            ) : posts && posts.length > 0 ? (
-              <div className="max-w-xl mx-auto">
-                {posts.map((post) => (
-                  <PostCard key={post.id} post={post} currentUserId={user?.id} />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-xl border border-dashed">
-                <Users className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                <h3 className="text-lg font-bold">Seu feed está vazio</h3>
-                <p className="text-muted-foreground">Siga outros irmãos para ver suas publicações aqui.</p>
-              </div>
-            )}
-          </TabsContent>
+                {isLoading ? (
+                  <div className="max-w-xl mx-auto space-y-6">
+                    <PostSkeleton />
+                    <PostSkeleton />
+                  </div>
+                ) : posts && posts.length > 0 ? (
+                  <div className="max-w-xl mx-auto">
+                    {posts.map((post) => (
+                      <PostCard key={post.id} post={post} currentUserId={user?.id} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-24 bg-white dark:bg-slate-900 rounded-3xl border-2 border-dashed border-slate-100 dark:border-slate-800">
+                    <div className="bg-slate-50 dark:bg-slate-800 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <Users className="h-10 w-10 text-slate-300" />
+                    </div>
+                    <h3 className="text-xl font-bold mb-2">Seu feed está vazio</h3>
+                    <p className="text-muted-foreground max-w-xs mx-auto">Siga outros irmãos da sua loja para ver suas publicações e novidades.</p>
+                    <Button 
+                      variant="link" 
+                      className="mt-4 font-bold"
+                      onClick={() => setSearchParams({ tab: "explorar" })}
+                    >
+                      Explorar a rede
+                    </Button>
+                  </div>
+                )}
+              </TabsContent>
 
-          <TabsContent value="explorar" className="mt-0 focus-visible:outline-none">
-            <SocialExplore />
-          </TabsContent>
+              <TabsContent value="explorar" className="mt-0 focus-visible:outline-none">
+                <SocialExplore />
+              </TabsContent>
 
-          <TabsContent value="mensagens" className="mt-0 focus-visible:outline-none">
-            <SocialMessages />
-          </TabsContent>
+              <TabsContent value="mensagens" className="mt-0 focus-visible:outline-none">
+                <SocialMessages />
+              </TabsContent>
+            </motion.div>
+          </AnimatePresence>
         </Tabs>
       </div>
 
       {/* Right Sidebar: Suggestions & Search */}
-      <aside className="w-full lg:w-80 space-y-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Buscar irmãos..." className="pl-9 bg-white dark:bg-slate-900 border-none shadow-sm" />
+      <aside className="w-full lg:w-80 space-y-8">
+        <div className="relative group">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
+          <Input 
+            placeholder="Buscar irmãos..." 
+            className="pl-9 bg-white dark:bg-slate-900 border-none shadow-sm h-11 rounded-xl focus-visible:ring-1 focus-visible:ring-primary/20 transition-all" 
+          />
         </div>
 
-        <Card className="border-none shadow-sm bg-white dark:bg-slate-900">
-          <CardHeader className="pb-2">
+        <Card className="border-none shadow-sm bg-white dark:bg-slate-900 rounded-2xl overflow-hidden">
+          <CardHeader className="pb-4 pt-6">
             <CardTitle className="text-sm font-bold flex items-center gap-2">
               <Users className="h-4 w-4 text-primary" />
               Sugestões para você
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 pt-2">
+          <CardContent className="space-y-5 pb-6">
             {suggestedProfiles?.map((profile) => (
-              <div key={profile.id} className="flex items-center justify-between gap-3">
-                <Link to={`/${profile.slug}`} className="flex items-center gap-2 flex-1 min-w-0">
-                  <Avatar className="h-8 w-8 border">
+              <motion.div 
+                whileHover={{ x: 4 }}
+                key={profile.id} 
+                className="flex items-center justify-between gap-3"
+              >
+                <Link to={`/${profile.slug}`} className="flex items-center gap-3 flex-1 min-w-0">
+                  <Avatar className="h-10 w-10 border shadow-sm">
                     <AvatarImage src={profile.avatar_url} />
-                    <AvatarFallback className="bg-primary/5 text-primary text-[10px] font-bold">
+                    <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">
                       {profile.full_name?.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="min-w-0">
-                    <p className="text-xs font-bold truncate">{profile.full_name}</p>
+                    <p className="text-xs font-bold truncate leading-none mb-1 hover:underline">{profile.full_name}</p>
                     <p className="text-[10px] text-muted-foreground truncate">@{profile.slug}</p>
                   </div>
                 </Link>
-                <Button variant="ghost" size="sm" className="text-primary text-xs font-bold hover:bg-primary/5 px-2 h-7" asChild>
-                  <Link to={`/${profile.slug}`}>Ver</Link>
+                <Button variant="secondary" size="sm" className="text-xs font-bold h-8 px-4 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-primary/10 hover:text-primary transition-all" asChild>
+                  <Link to={`/${profile.slug}`}>Seguir</Link>
                 </Button>
-              </div>
+              </motion.div>
             ))}
+            <Button variant="ghost" className="w-full text-xs font-bold text-primary hover:bg-primary/5" asChild>
+              <Link to="?tab=explorar">Ver todos os irmãos</Link>
+            </Button>
           </CardContent>
         </Card>
 
-        <div className="px-4 text-[10px] text-muted-foreground flex flex-wrap gap-x-2 gap-y-1">
+        <div className="px-4 text-[10px] text-muted-foreground flex flex-wrap gap-x-3 gap-y-2 opacity-60 hover:opacity-100 transition-opacity">
           <a href="#" className="hover:underline">Sobre</a>
           <a href="#" className="hover:underline">Ajuda</a>
           <a href="#" className="hover:underline">Privacidade</a>
           <a href="#" className="hover:underline">Termos</a>
-          <span className="mt-2 block w-full text-slate-300">© 2024 Malhete Digital</span>
+          <a href="#" className="hover:underline">Configurações</a>
+          <span className="mt-4 block w-full text-slate-300 dark:text-slate-700">© 2024 MALHETE DIGITAL</span>
         </div>
       </aside>
-    </div>
+    </motion.div>
   );
 }
