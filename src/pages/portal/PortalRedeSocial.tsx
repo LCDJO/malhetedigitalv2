@@ -85,6 +85,7 @@ export default function PortalRedeSocial() {
           post_comments(id)
         `)
         .in("user_id", authorIds)
+        .eq("post_type", "post")
         .order("created_at", { ascending: false })
         .range(pageParam, pageParam + 4);
 
