@@ -81,7 +81,22 @@ export const StoryViewer = ({ isOpen, onClose, profile }: StoryViewerProps) => {
 
   useEffect(() => {
     if (!isOpen || isPaused) return;
-...
+
+    const duration = currentStory.duration;
+    const interval = 50; // update every 50ms
+    const step = (interval / duration) * 100;
+
+    const timer = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(timer);
+          nextStory();
+          return 100;
+        }
+        return prev + step;
+      });
+    }, interval);
+
     return () => clearInterval(timer);
   }, [isOpen, currentStoryIndex, isPaused, currentStory.duration]);
 
