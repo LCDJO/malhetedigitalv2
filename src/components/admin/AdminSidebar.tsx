@@ -91,13 +91,14 @@ const segurancaItems: SimpleNavItem[] = [
   { title: "Log de Auditoria", url: "/admin/log-auditoria", icon: ScrollText },
 ];
 
-// ── COMPLIANCE ──
-const complianceItems: SimpleNavItem[] = [
+// ── PARAMETRIZAÇÕES ──
+const parametrizaçõesItems: SimpleNavItem[] = [
   { title: "Incidentes", url: "/admin/incidentes", icon: ShieldAlert },
   { title: "Termos e LGPD", url: "/admin/gestao-termos", icon: Scale },
   { title: "Controle de Aceites", url: "/admin/controle-aceites", icon: ClipboardCheck },
   { title: "Configurações", url: "/admin/configuracoes", icon: Settings },
 ];
+
 
 const integracaoComunicacao: SimpleNavItem[] = [
   { title: "Email", url: "/admin/integracoes/email", icon: Mail },
@@ -258,8 +259,9 @@ export function AdminSidebar() {
         {/* Segurança */}
         {renderSimpleSection("Segurança", segurancaItems)}
 
-        {/* Compliance */}
-        {renderSimpleSection("Compliance", complianceItems)}
+        {/* Parametrizações */}
+        {renderSimpleSection("Parametrizações", parametrizaçõesItems)}
+
 
         {/* Integrações */}
         <SidebarGroup className="mt-1">
