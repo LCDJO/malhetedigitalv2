@@ -2,9 +2,9 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
-import { Search, Hash, Users, Store, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Search, Hash, Users, Store } from "lucide-react";
 import { PostCard } from "./PostCard";
-import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -40,7 +40,7 @@ export function SocialExplore() {
     },
   });
 
-  const { data: profiles, isLoading: isLoadingProfiles } = useQuery({
+  const { data: profiles } = useQuery({
     queryKey: ["explore-profiles", searchTerm],
     queryFn: async () => {
       if (!searchTerm) return [];
@@ -138,5 +138,3 @@ export function SocialExplore() {
     </div>
   );
 }
-
-import { Button } from "@/components/ui/button";
