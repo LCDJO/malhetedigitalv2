@@ -303,7 +303,7 @@ export default function PublicProfile() {
                       </span>
                     ))}
                     {profile.followersCount > 2 && (
-                      <> e outras <span className="font-bold text-foreground">{profile.followersCount - 2} pessoas</span></>
+                      <> e outras <span className="font-bold text-foreground">{profile.followersCount - 2} {profile.followersCount - 2 === 1 ? 'pessoa' : 'pessoas'}</span></>
                     )}
                   </p>
                 </div>
