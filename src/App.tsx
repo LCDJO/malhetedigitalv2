@@ -11,6 +11,7 @@ import { PortalLayout } from "@/components/portal/PortalLayout";
 import { SubdomainRedirect } from "@/components/SubdomainRedirect";
 import Auth from "./pages/Auth";
 import Index from "./pages/Index";
+import Landing from "./pages/Landing";
 import Secretaria from "./pages/Secretaria";
 import Tesouraria from "./pages/Tesouraria";
 
