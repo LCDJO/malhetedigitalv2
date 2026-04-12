@@ -108,6 +108,7 @@ export function DomainManagement() {
           name: "painel.malhetedigital.com.br",
           type: "CNAME",
           target: "cname.vercel-dns.com",
+          route: SUBDOMAIN_ROUTES.painel,
           subdomains: [
             { name: "api.malhetedigital.com.br", type: "CNAME", target: "supabase.co" },
             { name: "auth.malhetedigital.com.br", type: "CNAME", target: "auth.supabase.co" },
@@ -117,11 +118,13 @@ export function DomainManagement() {
           name: "irmao.malhetedigital.com.br",
           type: "CNAME",
           target: "cname.vercel-dns.com",
+          route: SUBDOMAIN_ROUTES.irmao,
         },
         {
           name: "business.malhetedigital.com.br",
           type: "CNAME",
           target: "cname.vercel-dns.com",
+          route: SUBDOMAIN_ROUTES.business,
         },
         {
           name: "Wildcard (*.malhetedigital.com.br)",
