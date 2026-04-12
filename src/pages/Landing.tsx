@@ -183,11 +183,11 @@ const Landing = () => {
               M
             </div>
             <span className="font-serif font-bold text-lg tracking-tight">
-              Gestão Maçônica
+              Malhete Digital
             </span>
           </div>
           <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} Gestão Maçônica. Todos os direitos reservados.
+            &copy; {new Date().getFullYear()} Malhete Digital. Todos os direitos reservados.
           </p>
           <div className="flex gap-6">
             <button className="text-sm text-muted-foreground hover:text-primary transition-colors">Termos</button>
