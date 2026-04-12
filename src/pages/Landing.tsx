@@ -29,23 +29,36 @@ const Landing = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => navigate("/auth")}
-              className="hidden md:flex items-center gap-2"
-            >
-              <Building2 className="h-4 w-4 text-primary" />
-              Login de Loja
-            </Button>
-            <Button 
-              size="sm" 
-              onClick={() => navigate("/portal/auth")}
-              className="flex items-center gap-2"
-            >
-              <User className="h-4 w-4" />
-              Portal do Irmão
-            </Button>
+            {user ? (
+              <Button 
+                size="sm" 
+                onClick={() => navigate(getDashboardPath())}
+                className="flex items-center gap-2"
+              >
+                <LayoutDashboard className="h-4 w-4" />
+                Acessar Dashboard
+              </Button>
+            ) : (
+              <>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => navigate("/auth")}
+                  className="hidden md:flex items-center gap-2"
+                >
+                  <Building2 className="h-4 w-4 text-primary" />
+                  Login de Loja
+                </Button>
+                <Button 
+                  size="sm" 
+                  onClick={() => navigate("/portal/auth")}
+                  className="flex items-center gap-2"
+                >
+                  <User className="h-4 w-4" />
+                  Portal do Irmão
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </header>
