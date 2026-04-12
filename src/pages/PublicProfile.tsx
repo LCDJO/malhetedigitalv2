@@ -18,11 +18,13 @@ export default function PublicProfile() {
     queryFn: async () => {
       if (!slug) return null;
       
+      const cleanSlug = slug.startsWith('@') ? slug.substring(1) : slug;
+      
       // Get profile
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("id, full_name, avatar_url, bio, slug")
-        .eq("slug", slug)
+        .eq("slug", cleanSlug)
         .maybeSingle();
 
       if (profileError) throw profileError;
