@@ -192,6 +192,7 @@ export default function PortalRedeSocial() {
               transition={{ duration: 0.2 }}
             >
               <TabsContent value="feed" className="space-y-6 mt-0">
+                <SocialStories />
                 <CreatePost profile={member} currentUser={user} />
 
                 {isLoading ? (
