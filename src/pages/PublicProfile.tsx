@@ -169,22 +169,30 @@ export default function PublicProfile() {
 
       <main className="max-w-4xl mx-auto px-4 py-8">
         {/* Profile Info Section */}
-        <section className="flex flex-col md:flex-row gap-8 items-center md:items-start mb-12">
-          <Avatar className="h-24 w-24 md:h-40 md:w-40 border-2 border-slate-100 ring-2 ring-primary/10">
-            {profile.avatar_url ? (
-              <AvatarImage src={profile.avatar_url} alt={profile.full_name} className="object-cover" />
-            ) : null}
-            <AvatarFallback className="bg-slate-100 text-slate-400 text-4xl">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
+        <section className="flex flex-col md:flex-row gap-8 items-start mb-12">
+          <div className="flex flex-col items-center gap-4 shrink-0">
+            <Avatar className="h-24 w-24 md:h-40 md:w-40 border-2 border-slate-100 ring-2 ring-primary/10">
+              {profile.avatar_url ? (
+                <AvatarImage src={profile.avatar_url} alt={profile.full_name} className="object-cover" />
+              ) : null}
+              <AvatarFallback className="bg-slate-100 text-slate-400 text-4xl">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            
+            {currentUser?.id === profile.id && (
+              <Button variant="outline" size="sm" className="w-full md:hidden font-semibold" asChild>
+                <Link to="/portal/perfil">Editar perfil</Link>
+              </Button>
+            )}
+          </div>
 
-          <div className="flex-1 text-center md:text-left">
+          <div className="flex-1 w-full">
             <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
-              <h2 className="text-2xl font-light">{profile.slug}</h2>
-              <div className="flex gap-2 justify-center">
+              <h2 className="text-xl md:text-2xl font-light">@{profile.slug}</h2>
+              <div className="flex gap-2">
                 {currentUser?.id === profile.id ? (
-                  <Button variant="outline" size="sm" asChild>
+                  <Button variant="outline" size="sm" className="hidden md:flex font-semibold" asChild>
                     <Link to="/portal/perfil">Editar perfil</Link>
                   </Button>
                 ) : (
@@ -193,6 +201,7 @@ export default function PublicProfile() {
                       size="sm" 
                       variant={profile.isFollowing ? "secondary" : "default"}
                       onClick={() => followMutation.mutate()}
+                      className="font-semibold flex-1 md:flex-none"
                       disabled={followMutation.isPending || !currentUser}
                     >
                       {profile.isFollowing ? (
@@ -207,7 +216,7 @@ export default function PublicProfile() {
                         </>
                       )}
                     </Button>
-                    <Button size="sm" variant="secondary" disabled={!currentUser}>
+                    <Button size="sm" variant="secondary" className="font-semibold flex-1 md:flex-none" disabled={!currentUser}>
                       <MessageSquare className="mr-2 h-4 w-4" />
                       Mensagem
                     </Button>
@@ -216,17 +225,17 @@ export default function PublicProfile() {
               </div>
             </div>
 
-            <div className="flex justify-center md:justify-start gap-8 mb-6">
-              <div>
-                <span className="font-bold">{profile.postsCount}</span>{" "}
+            <div className="flex justify-between md:justify-start md:gap-10 mb-6 py-4 md:py-0 border-y md:border-none">
+              <div className="flex flex-col md:flex-row items-center md:gap-1 text-sm md:text-base">
+                <span className="font-bold">{profile.postsCount}</span>
                 <span className="text-slate-500">publicações</span>
               </div>
-              <div>
-                <span className="font-bold">{profile.followersCount}</span>{" "}
+              <div className="flex flex-col md:flex-row items-center md:gap-1 text-sm md:text-base">
+                <span className="font-bold">{profile.followersCount}</span>
                 <span className="text-slate-500">seguidores</span>
               </div>
-              <div>
-                <span className="font-bold">{profile.followingCount}</span>{" "}
+              <div className="flex flex-col md:flex-row items-center md:gap-1 text-sm md:text-base">
+                <span className="font-bold">{profile.followingCount}</span>
                 <span className="text-slate-500">seguindo</span>
               </div>
             </div>
