@@ -24,7 +24,7 @@ const Landing = () => {
               M
             </div>
             <span className="font-serif font-bold text-xl tracking-tight hidden sm:block">
-              Malhete Digital
+              Gestão Maçônica
             </span>
           </div>
 
@@ -122,53 +122,47 @@ const Landing = () => {
           </div>
         </section>
 
-        {/* Features & Security */}
-        <section className="py-24 bg-muted/30">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-              {/* Segurança e Contexto */}
-              <div className="space-y-6">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <ShieldCheck className="h-5 w-5 text-primary" />
-                  </div>
-                  <h2 className="text-2xl font-serif font-bold tracking-tight">🔐 SEGURANÇA E CONTEXTO</h2>
+        {/* Deliverables Section */}
+        <section className="py-20 bg-muted/30">
+          <div className="max-w-3xl mx-auto px-4">
+            <h2 className="text-3xl font-serif font-bold text-center mb-10 flex items-center justify-center gap-3">
+              <span>📦</span> ENTREGÁVEIS
+            </h2>
+            <div className="bg-card p-8 rounded-2xl border shadow-sm space-y-8">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 text-lg font-medium">
+                  <div className="h-2 w-2 rounded-full bg-primary" />
+                  APIs REST completas
                 </div>
-                <ul className="space-y-4">
-                  {[
-                    "Sistema multi-tenant (cada potência pode ter regras)",
-                    "Controle de visibilidade por grau (opcional futuro)",
-                    "Moderação de conteúdo"
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-start gap-3 text-muted-foreground">
-                      <div className="h-1.5 w-1.5 rounded-full bg-primary mt-2 shrink-0" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
+                <div className="flex items-center gap-3 text-lg font-medium">
+                  <div className="h-2 w-2 rounded-full bg-primary" />
+                  Estrutura frontend (React / Next.js)
+                </div>
               </div>
 
-              {/* Diferenciais */}
-              <div className="space-y-6">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <ChevronRight className="h-5 w-5 text-primary" />
-                  </div>
-                  <h2 className="text-2xl font-serif font-bold tracking-tight">🚀 DIFERENCIAIS DO MALHETE DIGITAL</h2>
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 text-lg font-bold text-primary">
+                  <div className="h-2 w-2 rounded-full bg-primary" />
+                  Sistema funcional com:
                 </div>
-                <ul className="space-y-4">
-                  {[
-                    "Rede social exclusiva da maçonaria",
-                    "Validação de membros reais",
-                    "Segmentação por loja, rito e potência",
-                    "Conteúdo com níveis de acesso"
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-start gap-3 text-muted-foreground">
-                      <div className="h-1.5 w-1.5 rounded-full bg-primary mt-2 shrink-0" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-8">
+                  <div className="flex items-center gap-3 bg-muted/50 p-4 rounded-xl border">
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                    <span>criação de perfil com slug</span>
+                  </div>
+                  <div className="flex items-center gap-3 bg-muted/50 p-4 rounded-xl border">
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                    <span>feed</span>
+                  </div>
+                  <div className="flex items-center gap-3 bg-muted/50 p-4 rounded-xl border">
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                    <span>stories</span>
+                  </div>
+                  <div className="flex items-center gap-3 bg-muted/50 p-4 rounded-xl border">
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                    <span>mensagens</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -183,11 +177,11 @@ const Landing = () => {
               M
             </div>
             <span className="font-serif font-bold text-lg tracking-tight">
-              Malhete Digital
+              Gestão Maçônica
             </span>
           </div>
           <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} Malhete Digital. Todos os direitos reservados.
+            &copy; {new Date().getFullYear()} Gestão Maçônica. Todos os direitos reservados.
           </p>
           <div className="flex gap-6">
             <button className="text-sm text-muted-foreground hover:text-primary transition-colors">Termos</button>

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getNotifications, markNotificationsRead } from "@/services/portal";
 import { usePortalMemberContext } from "./PortalLayout";
-import { Bell, CheckCheck, Wallet, Calendar, Info, Loader2, ShieldAlert, UserPlus, Heart, MessageSquare, Mail } from "lucide-react";
+import { Bell, CheckCheck, Wallet, Calendar, Info, Loader2, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -25,12 +25,7 @@ const typeIcons: Record<string, any> = {
   reuniao: Calendar,
   lgpd: ShieldAlert,
   geral: Info,
-  seguidor: UserPlus,
-  curtida: Heart,
-  comentario: MessageSquare,
-  mensagem: Mail,
 };
-
 
 export function PortalNotifications() {
   const member = usePortalMemberContext();
@@ -158,14 +153,7 @@ export function PortalNotifications() {
                           ? "bg-[hsl(42_65%_50%/0.15)] text-[hsl(42_60%_68%)]"
                           : n.type === "lgpd"
                           ? "bg-[hsl(0_60%_30%/0.3)] text-[hsl(0_70%_65%)]"
-                          : n.type === "curtida"
-                          ? "bg-red-500/10 text-red-500"
-                          : n.type === "seguidor"
-                          ? "bg-blue-500/10 text-blue-500"
-                          : n.type === "comentario"
-                          ? "bg-green-500/10 text-green-500"
                           : "bg-[hsl(220_18%_14%)] text-[hsl(220_10%_55%)]"
-
                       )}
                     >
                       <Icon className="h-4 w-4" />

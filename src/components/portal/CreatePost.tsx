@@ -56,27 +56,6 @@ export function CreatePost({ profile, currentUser }: { profile: any; currentUser
             order_index: i
           });
         }
-        
-        // 3. Extract and Index Hashtags
-        const hashtags = caption.match(/#\w+/g) || [];
-        for (const tag of hashtags) {
-          const tagName = tag.slice(1).toLowerCase();
-          
-          // Upsert hashtag
-          const { data: tagRecord } = await supabase
-            .from("hashtags")
-            .upsert({ name: tagName }, { onConflict: "name" })
-            .select()
-            .single();
-            
-          if (tagRecord) {
-            await supabase.from("post_hashtags").insert({
-              post_id: post.id,
-              hashtag_id: tagRecord.id
-            });
-          }
-        }
-
 
         setCaption("");
         setImages([]);

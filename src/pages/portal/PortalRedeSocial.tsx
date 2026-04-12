@@ -4,7 +4,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePortalMemberContext } from "@/components/portal/PortalLayout";
 import { PostCard } from "@/components/portal/PostCard";
 import { CreatePost } from "@/components/portal/CreatePost";
-import { StoriesBar } from "@/components/portal/StoriesBar";
 import { Loader2, Users, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -81,7 +80,6 @@ export default function PortalRedeSocial() {
           <p className="text-muted-foreground text-sm">Rede Social Maçônica</p>
         </header>
 
-        <StoriesBar />
         <CreatePost profile={member} currentUser={user} />
 
         {isLoading ? (
@@ -105,13 +103,10 @@ export default function PortalRedeSocial() {
 
       {/* Right Sidebar: Suggestions & Search */}
       <aside className="w-full lg:w-80 space-y-6">
-        <Link to="/portal/explorar" className="relative block group">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-          <div className="pl-9 py-2 bg-white dark:bg-slate-900 rounded-md border-none shadow-sm text-sm text-muted-foreground">
-            Buscar irmãos, lojas ou ritos...
-          </div>
-        </Link>
-
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Buscar irmãos..." className="pl-9 bg-white dark:bg-slate-900 border-none shadow-sm" />
+        </div>
 
         <Card className="border-none shadow-sm bg-white dark:bg-slate-900">
           <CardHeader className="pb-2">
