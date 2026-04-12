@@ -218,10 +218,10 @@ export function MeuPerfilDialog({ open, onOpenChange }: MeuPerfilDialogProps) {
                 <div className="space-y-0.5">
                   <div className="flex items-center gap-2">
                     <Users className="h-4 w-4 text-primary" />
-                    <Label className="text-sm font-medium">Mostrar sugestões</Label>
+                    <Label className="text-sm font-medium">Mostre no perfil público storys</Label>
                   </div>
                   <p className="text-[11px] text-muted-foreground">
-                    Sugestões de contas baseadas em localização e fraternidade
+                    Exibir seus stories compartilhados para outros usuários no seu perfil público
                   </p>
                 </div>
                 <Switch
