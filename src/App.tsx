@@ -36,6 +36,10 @@ import PortalMinhaLoja from "./pages/portal/PortalMinhaLoja";
 import PortalDocumentos from "./pages/portal/PortalDocumentos";
 import PortalRedeSocial from "./pages/portal/PortalRedeSocial";
 import PortalMensagens from "./pages/portal/PortalMensagens";
+import PortalExplorar from "./pages/portal/PortalExplorar";
+import PortalTag from "./pages/portal/PortalTag";
+
+
 
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -155,7 +159,11 @@ const App = () => (
                     <Routes>
                       <Route path="/" element={<PortalDashboard />} />
                       <Route path="/rede-social" element={<PortalRedeSocial />} />
+                      <Route path="/explorar" element={<PortalExplorar />} />
+                      <Route path="/tag/:hashtag" element={<PortalTag />} />
                       <Route path="/mensagens" element={<PortalMensagens />} />
+
+
                       <Route path="/perfil" element={<PortalCadastro />} />
                       <Route path="/jornada" element={<PortalJornada />} />
                       <Route path="/minha-loja" element={<PortalMinhaLoja />} />

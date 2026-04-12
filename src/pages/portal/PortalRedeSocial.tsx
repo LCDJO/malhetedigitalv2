@@ -105,10 +105,13 @@ export default function PortalRedeSocial() {
 
       {/* Right Sidebar: Suggestions & Search */}
       <aside className="w-full lg:w-80 space-y-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Buscar irmãos..." className="pl-9 bg-white dark:bg-slate-900 border-none shadow-sm" />
-        </div>
+        <Link to="/portal/explorar" className="relative block group">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+          <div className="pl-9 py-2 bg-white dark:bg-slate-900 rounded-md border-none shadow-sm text-sm text-muted-foreground">
+            Buscar irmãos, lojas ou ritos...
+          </div>
+        </Link>
+
 
         <Card className="border-none shadow-sm bg-white dark:bg-slate-900">
           <CardHeader className="pb-2">

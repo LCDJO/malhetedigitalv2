@@ -585,6 +585,24 @@ export type Database = {
         }
         Relationships: []
       }
+      hashtags: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       incidentes: {
         Row: {
           acoes_tomadas: string | null
@@ -1256,6 +1274,39 @@ export type Database = {
           },
         ]
       }
+      post_hashtags: {
+        Row: {
+          hashtag_id: string
+          id: string
+          post_id: string
+        }
+        Insert: {
+          hashtag_id: string
+          id?: string
+          post_id: string
+        }
+        Update: {
+          hashtag_id?: string
+          id?: string
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_hashtags_hashtag_id_fkey"
+            columns: ["hashtag_id"]
+            isOneToOne: false
+            referencedRelation: "hashtags"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_hashtags_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       post_images: {
         Row: {
           created_at: string
@@ -1322,6 +1373,7 @@ export type Database = {
           caption: string | null
           created_at: string
           id: string
+          media_url: string | null
           privacy_level: string | null
           updated_at: string
           user_id: string
@@ -1330,6 +1382,7 @@ export type Database = {
           caption?: string | null
           created_at?: string
           id?: string
+          media_url?: string | null
           privacy_level?: string | null
           updated_at?: string
           user_id: string
@@ -1338,6 +1391,7 @@ export type Database = {
           caption?: string | null
           created_at?: string
           id?: string
+          media_url?: string | null
           privacy_level?: string | null
           updated_at?: string
           user_id?: string
@@ -1419,8 +1473,11 @@ export type Database = {
           full_name: string
           id: string
           is_active: boolean
+          loja_id: string | null
           masonic_status: string | null
           phone: string | null
+          potencia_id: string | null
+          rito_id: string | null
           slug: string | null
           updated_at: string
         }
@@ -1435,8 +1492,11 @@ export type Database = {
           full_name: string
           id: string
           is_active?: boolean
+          loja_id?: string | null
           masonic_status?: string | null
           phone?: string | null
+          potencia_id?: string | null
+          rito_id?: string | null
           slug?: string | null
           updated_at?: string
         }
@@ -1451,8 +1511,11 @@ export type Database = {
           full_name?: string
           id?: string
           is_active?: boolean
+          loja_id?: string | null
           masonic_status?: string | null
           phone?: string | null
+          potencia_id?: string | null
+          rito_id?: string | null
           slug?: string | null
           updated_at?: string
         }

@@ -27,6 +27,8 @@ import {
 import { cn } from "@/lib/utils";
 import { PortalFooter } from "./PortalFooter";
 import { PortalNotifications } from "./PortalNotifications";
+import { PortalBottomNav } from "./PortalBottomNav";
+
 
 // Context to share member data across portal pages
 const PortalMemberContext = createContext<PortalMember | null>(null);
@@ -311,12 +313,15 @@ export function PortalLayout({ children }: { children: React.ReactNode }) {
             </div>
           </header>
 
-          <main className="flex-1 overflow-auto p-4 sm:p-5 md:p-7">
+          <main className="flex-1 overflow-auto p-4 sm:p-5 md:p-7 pb-24 md:pb-7">
             {children}
           </main>
 
           {/* Footer institucional */}
           <PortalFooter />
+
+          {/* Mobile Bottom Navigation */}
+          <PortalBottomNav />
         </div>
       </div>
     </PortalMemberContext.Provider>

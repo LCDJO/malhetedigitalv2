@@ -9,6 +9,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
+import { usePortalMemberContext } from "@/components/portal/PortalLayout";
+import { LucideIcon } from "lucide-react";
+
 
 interface PostCardProps {
   post: any;
@@ -17,6 +20,7 @@ interface PostCardProps {
 
 export function PostCard({ post, currentUserId }: PostCardProps) {
   const queryClient = useQueryClient();
+  const member = usePortalMemberContext();
   const [isLiked, setIsLiked] = useState(post.user_has_liked);
   const [likesCount, setLikesCount] = useState(post.likes_count || 0);
 
@@ -40,12 +44,33 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
     },
   });
 
+  const renderCaption = (caption: string) => {
+    if (!caption) return null;
+    const parts = caption.split(/(\s+)/);
+    return parts.map((part, index) => {
+      if (part.startsWith("#")) {
+        const tag = part.slice(1);
+        return (
+          <Link 
+            key={index} 
+            to={`/portal/tag/${tag}`} 
+            className="text-primary hover:underline font-medium"
+          >
+            {part}
+          </Link>
+        );
+      }
+      return part;
+    });
+  };
+
   const initials = post.profiles?.full_name
     ?.split(" ")
     .map((n: string) => n[0])
     .join("")
     .toUpperCase()
     .slice(0, 2);
+
 
   return (
     <Card className="mb-6 border-none shadow-sm overflow-hidden bg-white dark:bg-slate-900">
@@ -103,7 +128,10 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
           <Link to={`/${post.profiles?.slug}`} className="font-bold mr-2 hover:underline">
             {post.profiles?.full_name}
           </Link>
-          <span className="text-slate-700 dark:text-slate-300">{post.caption}</span>
+          <span className="text-slate-700 dark:text-slate-300">
+            {renderCaption(post.caption)}
+          </span>
+
         </div>
       </CardContent>
 
