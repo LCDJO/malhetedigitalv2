@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
@@ -39,6 +40,8 @@ export default function PortalCadastro() {
     phone: member.phone ?? "",
     address: member.address ?? "",
     avatar_url: member.avatar_url ?? "",
+    slug: member.slug ?? "",
+    bio: member.bio ?? "",
   });
 
   useEffect(() => {
@@ -47,8 +50,10 @@ export default function PortalCadastro() {
       phone: member.phone ?? "",
       address: member.address ?? "",
       avatar_url: member.avatar_url ?? "",
+      slug: member.slug ?? "",
+      bio: member.bio ?? "",
     });
-  }, [member.id, member.email, member.phone, member.address, member.avatar_url]);
+  }, [member.id, member.email, member.phone, member.address, member.avatar_url, member.slug, member.bio]);
 
   const isDirty = useMemo(() => {
     const normalize = (value: string | null | undefined) => (value ?? "").trim();
@@ -56,9 +61,11 @@ export default function PortalCadastro() {
       normalize(form.email) !== normalize(member.email) ||
       normalize(form.phone) !== normalize(member.phone) ||
       normalize(form.address) !== normalize(member.address) ||
-      normalize(form.avatar_url) !== normalize(member.avatar_url)
+      normalize(form.avatar_url) !== normalize(member.avatar_url) ||
+      normalize(form.slug) !== normalize(member.slug) ||
+      normalize(form.bio) !== normalize(member.bio)
     );
-  }, [form, member.email, member.phone, member.address, member.avatar_url]);
+  }, [form, member.email, member.phone, member.address, member.avatar_url, member.slug, member.bio]);
 
   const initials = member.full_name
     .split(" ")
@@ -101,19 +108,53 @@ export default function PortalCadastro() {
   const handleSalvar = async () => {
     setSaving(true);
     const email = form.email.trim().toLowerCase();
-    const payload = {
+    
+    // Member update payload
+    const memberPayload = {
       email: email || null,
       phone: form.phone.trim() || null,
       address: form.address.trim() || null,
       avatar_url: form.avatar_url.trim() || null,
     };
 
-    const { error } = await supabase.from("members").update(payload).eq("id", member.id);
+    // Profile update payload
+    const profilePayload = {
+      slug: form.slug.trim().toLowerCase() || null,
+      bio: form.bio.trim() || null,
+      avatar_url: form.avatar_url.trim() || null,
+    };
 
-    if (error) {
-      toast.error(error.message || "Erro ao atualizar cadastro.");
+    // 1. Validate slug uniqueness if changed
+    if (form.slug.trim() && form.slug.trim().toLowerCase() !== member.slug) {
+      const { data: existingSlug } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("slug", form.slug.trim().toLowerCase())
+        .maybeSingle();
+      
+      if (existingSlug && existingSlug.id !== user?.id) {
+        toast.error("Este nome de usuário (slug) já está sendo usado.");
+        setSaving(false);
+        return;
+      }
+    }
+
+    // 2. Update Member table
+    const { error: memberError } = await supabase.from("members").update(memberPayload).eq("id", member.id);
+    if (memberError) {
+      toast.error(memberError.message || "Erro ao atualizar dados do membro.");
       setSaving(false);
       return;
+    }
+
+    // 3. Update Profile table
+    if (user?.id) {
+      const { error: profileError } = await supabase.from("profiles").update(profilePayload).eq("id", user.id);
+      if (profileError) {
+        toast.error(profileError.message || "Erro ao atualizar perfil social.");
+        setSaving(false);
+        return;
+      }
     }
 
     if (email && user?.email && email !== user.email.toLowerCase()) {
@@ -128,7 +169,7 @@ export default function PortalCadastro() {
     }
 
     toast.success("Dados atualizados com sucesso.");
-    logAction({ action: "UPDATE_OWN_PROFILE", targetTable: "members", targetId: member.id, details: { email: payload.email, phone: payload.phone } });
+    logAction({ action: "UPDATE_OWN_PROFILE", targetTable: "members", targetId: member.id, details: { email: memberPayload.email, phone: memberPayload.phone, slug: profilePayload.slug } });
     setSaving(false);
   };
 
@@ -174,14 +215,32 @@ export default function PortalCadastro() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
             <div className="space-y-1.5">
+              <Label>Nome de Usuário (@slug)</Label>
+              <Input 
+                value={form.slug} 
+                onChange={(e) => setForm((prev) => ({ ...prev, slug: e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, '') }))} 
+                placeholder="nome.exemplo" 
+              />
+              <p className="text-[10px] text-muted-foreground">Seu perfil será: malhete.com/@{form.slug || "usuario"}</p>
+            </div>
+            <div className="space-y-1.5">
               <Label>E-mail</Label>
               <Input value={form.email} onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))} placeholder="seuemail@exemplo.com" />
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label>Biografia (Bio)</Label>
+              <Textarea 
+                value={form.bio} 
+                onChange={(e) => setForm((prev) => ({ ...prev, bio: e.target.value }))} 
+                placeholder="Conte um pouco sobre sua trajetória na Ordem..." 
+                className="min-h-[100px]"
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Telefone Celular</Label>
               <Input value={form.phone} onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))} placeholder="(00) 00000-0000" />
             </div>
-            <div className="space-y-1.5 sm:col-span-2">
+            <div className="space-y-1.5 sm:col-span-1">
               <Label>Endereço</Label>
               <Input value={form.address} onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))} placeholder="Rua, número, bairro, cidade" />
             </div>
