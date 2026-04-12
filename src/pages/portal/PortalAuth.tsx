@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Eye, EyeOff, KeyRound, ArrowLeft, LogIn, ShieldAlert, Loader2, UserPlus } from "lucide-react";
+import { Eye, EyeOff, KeyRound, ArrowLeft, LogIn, ShieldAlert, Loader2, UserPlus, Chrome } from "lucide-react";
 
 type PortalAuthView = "login" | "forgot" | "reset" | "force_change" | "first_access";
 
@@ -180,6 +180,21 @@ export default function PortalAuth() {
     setLoading(false);
   };
 
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/portal/auth`
+      }
+    });
+
+    if (error) {
+      toast.error("Erro ao entrar com Google: " + error.message);
+      setLoading(false);
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!identifier || !password) {
@@ -306,6 +321,7 @@ export default function PortalAuth() {
     setForceChangeEmail(null);
     navigate("/portal", { replace: true });
   };
+
 
   const PwToggle = () => (
     <button
@@ -458,6 +474,17 @@ export default function PortalAuth() {
                 disabled={loading}
               >
                 {loading ? "Entrando..." : "Entrar"}
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleGoogleLogin}
+                className="w-full h-8 text-xs font-semibold flex items-center justify-center gap-2 border-[#dbdbdb] hover:bg-[#fafafa]"
+                disabled={loading}
+              >
+                <Chrome className="h-4 w-4 text-[#4285F4]" />
+                Entrar com Google
               </Button>
               
               <div className="relative my-4">
