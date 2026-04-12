@@ -81,6 +81,7 @@ export default function PortalRedeSocial() {
           <p className="text-muted-foreground text-sm">Rede Social Maçônica</p>
         </header>
 
+        <StoriesBar />
         <CreatePost profile={member} currentUser={user} />
 
         {isLoading ? (
