@@ -5,6 +5,14 @@ import { Building2, User, ShieldCheck, ChevronRight, LayoutDashboard } from "luc
 
 const Landing = () => {
   const navigate = useNavigate();
+  const { user, role } = useAuth();
+
+  const getDashboardPath = () => {
+    if (role === "superadmin") return "/admin";
+    // Check if user is an advertiser is done by redirect logic, but simplified here:
+    // This is just a UI convenience
+    return "/dashboard";
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
