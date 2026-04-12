@@ -180,6 +180,21 @@ export default function PortalAuth() {
     setLoading(false);
   };
 
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/portal/auth`
+      }
+    });
+
+    if (error) {
+      toast.error("Erro ao entrar com Google: " + error.message);
+      setLoading(false);
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!identifier || !password) {
@@ -306,6 +321,7 @@ export default function PortalAuth() {
     setForceChangeEmail(null);
     navigate("/portal", { replace: true });
   };
+
 
   const PwToggle = () => (
     <button
