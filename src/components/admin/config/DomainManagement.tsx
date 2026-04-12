@@ -81,9 +81,10 @@ const DomainNodeView: React.FC<{ node: DomainNode; level: number; isLast: boolea
           </div>
 
           <div className="flex items-center gap-3">
-             <div className="hidden sm:flex px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-[10px] font-bold uppercase tracking-wider">
+             <div className="hidden sm:flex px-3 py-1 rounded-full bg-success/10 text-success border border-success/20 text-[10px] font-bold uppercase tracking-wider">
                Ativo
              </div>
+
              <button className="p-2 text-muted-foreground hover:text-foreground transition-colors">
                <ExternalLink className="h-4 w-4" />
              </button>
