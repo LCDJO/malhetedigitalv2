@@ -13,8 +13,10 @@ export function CreatePost({ profile, currentUser }: { profile: any; currentUser
   const queryClient = useQueryClient();
   const [caption, setCaption] = useState("");
   const [images, setImages] = useState<File[]>([]);
+  const [postType, setPostType] = useState<'post' | 'reel'>('post');
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
 
   const createPostMutation = useMutation({
     mutationFn: async () => {
@@ -27,7 +29,8 @@ export function CreatePost({ profile, currentUser }: { profile: any; currentUser
           .insert({
             user_id: currentUser.id,
             caption: caption,
-            privacy_level: 'public'
+            privacy_level: 'public',
+            post_type: postType
           })
           .select()
           .single();
