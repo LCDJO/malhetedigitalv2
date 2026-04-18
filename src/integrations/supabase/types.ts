@@ -1480,9 +1480,11 @@ export type Database = {
           masonic_status: string | null
           phone: string | null
           potencia_id: string | null
+          profile_type: string
           rito_id: string | null
           show_suggestions: boolean
           slug: string | null
+          tenant_id: string | null
           updated_at: string
         }
         Insert: {
@@ -1500,9 +1502,11 @@ export type Database = {
           masonic_status?: string | null
           phone?: string | null
           potencia_id?: string | null
+          profile_type?: string
           rito_id?: string | null
           show_suggestions?: boolean
           slug?: string | null
+          tenant_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -1520,12 +1524,22 @@ export type Database = {
           masonic_status?: string | null
           phone?: string | null
           potencia_id?: string | null
+          profile_type?: string
           rito_id?: string | null
           show_suggestions?: boolean
           slug?: string | null
+          tenant_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ranking_snapshots: {
         Row: {
@@ -2327,6 +2341,10 @@ export type Database = {
         Returns: undefined
       }
       count_failed_attempts: { Args: { _identifier: string }; Returns: number }
+      generate_unique_lodge_slug: {
+        Args: { _name: string; _number: string }
+        Returns: string
+      }
       get_advertiser_id: { Args: { _user_id: string }; Returns: string }
       get_auth_email: { Args: never; Returns: string }
       get_user_role: {
