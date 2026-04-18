@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, ArrowLeft, MessageSquare, UserPlus, UserCheck, Heart, MessageCircle } from "lucide-react";
+import { Loader2, ArrowLeft, MessageSquare, UserPlus, UserCheck, Heart, MessageCircle, Building2, BadgeCheck, MapPin } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,22 +21,35 @@ export default function PublicProfile() {
       
       const cleanSlug = slug.startsWith('@') ? slug.substring(1) : slug;
       
-      // Get profile
+      // Get profile (with lodge-specific fields)
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
-        .select("id, full_name, avatar_url, bio, slug")
+        .select("id, full_name, avatar_url, bio, slug, profile_type, tenant_id, rito_id, potencia_id")
         .eq("slug", cleanSlug)
         .maybeSingle();
 
       if (profileError) throw profileError;
       if (!profileData) return null;
 
-      // Get tenant (Lodge) info
-      const { data: tenantUsers } = await supabase
-        .from("tenant_users")
-        .select("tenant_id, tenants(name, potencia, rito)")
-        .eq("user_id", profileData.id)
-        .maybeSingle();
+      const isLodge = profileData.profile_type === 'lodge';
+
+      // Lodge info: from tenant directly if lodge, else from tenant_users link
+      let lodgeInfo: any = null;
+      if (isLodge && profileData.tenant_id) {
+        const { data: t } = await supabase
+          .from("tenants")
+          .select("name, potencia, rito, orient, lodge_number")
+          .eq("id", profileData.tenant_id)
+          .maybeSingle();
+        lodgeInfo = t;
+      } else {
+        const { data: tenantUsers } = await supabase
+          .from("tenant_users")
+          .select("tenant_id, tenants(name, potencia, rito)")
+          .eq("user_id", profileData.id)
+          .maybeSingle();
+        lodgeInfo = tenantUsers?.tenants;
+      }
 
       // Get counts
       const { count: followersCount } = await supabase
@@ -67,7 +81,8 @@ export default function PublicProfile() {
 
       return {
         ...profileData,
-        lodge: tenantUsers?.tenants,
+        isLodge,
+        lodge: lodgeInfo,
         followersCount: followersCount || 0,
         followingCount: followingCount || 0,
         postsCount: postsCount || 0,
@@ -269,12 +284,41 @@ export default function PublicProfile() {
               </div>
             </div>
 
-            <div className="space-y-1">
-              <h3 className="font-bold">{profile.full_name}</h3>
-              {profile.lodge && (
-                <p className="text-primary font-medium text-sm">
-                  {profile.lodge.name} | {profile.lodge.potencia} | {profile.lodge.rito}
-                </p>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="font-bold">{profile.full_name}</h3>
+                {profile.isLodge && (
+                  <Badge className="bg-primary/10 text-primary hover:bg-primary/15 border-0 gap-1">
+                    <BadgeCheck className="h-3 w-3" />
+                    Loja Oficial
+                  </Badge>
+                )}
+              </div>
+
+              {profile.isLodge && profile.lodge ? (
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                  {profile.lodge.rito && (
+                    <span className="inline-flex items-center gap-1 text-primary font-medium">
+                      <Building2 className="h-3.5 w-3.5" /> Rito {profile.lodge.rito}
+                    </span>
+                  )}
+                  {profile.lodge.potencia && (
+                    <span className="inline-flex items-center gap-1 text-muted-foreground">
+                      ⚖️ {profile.lodge.potencia}
+                    </span>
+                  )}
+                  {profile.lodge.orient && (
+                    <span className="inline-flex items-center gap-1 text-muted-foreground">
+                      <MapPin className="h-3.5 w-3.5" /> Or∴ {profile.lodge.orient}
+                    </span>
+                  )}
+                </div>
+              ) : (
+                profile.lodge && (
+                  <p className="text-primary font-medium text-sm">
+                    {profile.lodge.name} | {profile.lodge.potencia} | {profile.lodge.rito}
+                  </p>
+                )
               )}
               {profile.bio && <p className="text-sm whitespace-pre-line mb-3">{profile.bio}</p>}
               
