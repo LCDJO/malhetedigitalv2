@@ -284,12 +284,41 @@ export default function PublicProfile() {
               </div>
             </div>
 
-            <div className="space-y-1">
-              <h3 className="font-bold">{profile.full_name}</h3>
-              {profile.lodge && (
-                <p className="text-primary font-medium text-sm">
-                  {profile.lodge.name} | {profile.lodge.potencia} | {profile.lodge.rito}
-                </p>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="font-bold">{profile.full_name}</h3>
+                {profile.isLodge && (
+                  <Badge className="bg-primary/10 text-primary hover:bg-primary/15 border-0 gap-1">
+                    <BadgeCheck className="h-3 w-3" />
+                    Loja Oficial
+                  </Badge>
+                )}
+              </div>
+
+              {profile.isLodge && profile.lodge ? (
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                  {profile.lodge.rito && (
+                    <span className="inline-flex items-center gap-1 text-primary font-medium">
+                      <Building2 className="h-3.5 w-3.5" /> Rito {profile.lodge.rito}
+                    </span>
+                  )}
+                  {profile.lodge.potencia && (
+                    <span className="inline-flex items-center gap-1 text-muted-foreground">
+                      ⚖️ {profile.lodge.potencia}
+                    </span>
+                  )}
+                  {profile.lodge.orient && (
+                    <span className="inline-flex items-center gap-1 text-muted-foreground">
+                      <MapPin className="h-3.5 w-3.5" /> Or∴ {profile.lodge.orient}
+                    </span>
+                  )}
+                </div>
+              ) : (
+                profile.lodge && (
+                  <p className="text-primary font-medium text-sm">
+                    {profile.lodge.name} | {profile.lodge.potencia} | {profile.lodge.rito}
+                  </p>
+                )
               )}
               {profile.bio && <p className="text-sm whitespace-pre-line mb-3">{profile.bio}</p>}
               
