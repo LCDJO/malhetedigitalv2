@@ -21,22 +21,35 @@ export default function PublicProfile() {
       
       const cleanSlug = slug.startsWith('@') ? slug.substring(1) : slug;
       
-      // Get profile
+      // Get profile (with lodge-specific fields)
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
-        .select("id, full_name, avatar_url, bio, slug")
+        .select("id, full_name, avatar_url, bio, slug, profile_type, tenant_id, rito_id, potencia_id")
         .eq("slug", cleanSlug)
         .maybeSingle();
 
       if (profileError) throw profileError;
       if (!profileData) return null;
 
-      // Get tenant (Lodge) info
-      const { data: tenantUsers } = await supabase
-        .from("tenant_users")
-        .select("tenant_id, tenants(name, potencia, rito)")
-        .eq("user_id", profileData.id)
-        .maybeSingle();
+      const isLodge = profileData.profile_type === 'lodge';
+
+      // Lodge info: from tenant directly if lodge, else from tenant_users link
+      let lodgeInfo: any = null;
+      if (isLodge && profileData.tenant_id) {
+        const { data: t } = await supabase
+          .from("tenants")
+          .select("name, potencia, rito, orient, lodge_number")
+          .eq("id", profileData.tenant_id)
+          .maybeSingle();
+        lodgeInfo = t;
+      } else {
+        const { data: tenantUsers } = await supabase
+          .from("tenant_users")
+          .select("tenant_id, tenants(name, potencia, rito)")
+          .eq("user_id", profileData.id)
+          .maybeSingle();
+        lodgeInfo = tenantUsers?.tenants;
+      }
 
       // Get counts
       const { count: followersCount } = await supabase
