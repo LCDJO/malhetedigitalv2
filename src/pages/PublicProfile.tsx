@@ -81,7 +81,8 @@ export default function PublicProfile() {
 
       return {
         ...profileData,
-        lodge: tenantUsers?.tenants,
+        isLodge,
+        lodge: lodgeInfo,
         followersCount: followersCount || 0,
         followingCount: followingCount || 0,
         postsCount: postsCount || 0,
