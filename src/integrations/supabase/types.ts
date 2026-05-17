@@ -2425,6 +2425,15 @@ export type Database = {
       }
       get_advertiser_id: { Args: { _user_id: string }; Returns: string }
       get_auth_email: { Args: never; Returns: string }
+      get_my_profile_private: {
+        Args: never
+        Returns: {
+          address: string
+          birth_date: string
+          cpf: string
+          phone: string
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]

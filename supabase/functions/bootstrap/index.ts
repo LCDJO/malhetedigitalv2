@@ -5,9 +5,32 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// In-memory sliding-window rate limiter (per edge instance)
+const rateBuckets = new Map<string, number[]>();
+function checkRate(key: string, maxRequests: number, windowMs: number) {
+  const now = Date.now();
+  const arr = (rateBuckets.get(key) ?? []).filter((t) => now - t < windowMs);
+  if (arr.length >= maxRequests) return false;
+  arr.push(now);
+  rateBuckets.set(key, arr);
+  return true;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
+  }
+
+  const ip =
+    req.headers.get("cf-connecting-ip") ||
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    "unknown";
+  const limit = req.method === "POST" ? 5 : 20;
+  if (!checkRate(`bootstrap:${ip}:${req.method}`, limit, 3_600_000)) {
+    return new Response(
+      JSON.stringify({ error: "Muitas tentativas. Tente novamente mais tarde." }),
+      { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
 
   const supabaseAdmin = createClient(
