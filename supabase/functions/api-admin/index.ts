@@ -30,7 +30,8 @@ async function authenticate(req: Request) {
 }
 
 async function requireSuperAdmin(supabase: ReturnType<typeof createClient>, userId: string) {
-  const { data } = await supabase.rpc("is_superadmin", { _user_id: userId });
+  const { data, error } = await supabase.rpc("is_superadmin", { _user_id: userId });
+  if (error) console.error("is_superadmin RPC error:", error);
   if (!data) throw new Error("Forbidden");
 }
 
