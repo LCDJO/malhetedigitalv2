@@ -48,6 +48,7 @@ import AdminPotenciasRitos from "./pages/admin/AdminPotenciasRitos";
 import AdminBannerLogin from "./pages/admin/AdminBannerLogin";
 import AdminBannerAnalytics from "./pages/admin/AdminBannerAnalytics";
 import AdminIntegracoes from "./pages/admin/AdminIntegracoes";
+import AdminModulosEmail from "./pages/admin/AdminModulosEmail";
 import AdminIntegracoesWhatsapp from "./pages/admin/AdminIntegracoesWhatsapp";
 import AdminIntegracoesTelegram from "./pages/admin/AdminIntegracoesTelegram";
 import AdminIntegracoesSicredi from "./pages/admin/AdminIntegracoesSicredi";
@@ -125,7 +126,7 @@ const App = () => (
                       <Route path="/controle-aceites" element={<ControleAceites />} />
                       <Route path="/configuracoes" element={<AdminConfigSuperAdmin />} />
                       <Route path="/integracoes/email" element={<AdminIntegracoes />} />
-                      <Route path="/integracoes/whatsapp" element={<AdminIntegracoesWhatsapp />} />
+                      <Route path="/modulos/email" element={<AdminModulosEmail />} />
                       <Route path="/integracoes/telegram" element={<AdminIntegracoesTelegram />} />
                       <Route path="/integracoes/stripe" element={<AdminIntegracoesStripe />} />
                       <Route path="/integracoes/bancos/bb" element={<AdminIntegracoesBB />} />
