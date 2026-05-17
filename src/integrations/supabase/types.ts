@@ -534,6 +534,137 @@ export type Database = {
           },
         ]
       }
+      email_dispatch_tasks: {
+        Row: {
+          audience: string
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          custom_emails: string[] | null
+          error_message: string | null
+          failed_count: number
+          id: string
+          metadata: Json
+          name: string
+          scheduled_at: string | null
+          sent_count: number
+          started_at: string | null
+          status: string
+          template_id: string | null
+          tenant_id: string
+          total_recipients: number
+          updated_at: string
+        }
+        Insert: {
+          audience?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          custom_emails?: string[] | null
+          error_message?: string | null
+          failed_count?: number
+          id?: string
+          metadata?: Json
+          name: string
+          scheduled_at?: string | null
+          sent_count?: number
+          started_at?: string | null
+          status?: string
+          template_id?: string | null
+          tenant_id: string
+          total_recipients?: number
+          updated_at?: string
+        }
+        Update: {
+          audience?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          custom_emails?: string[] | null
+          error_message?: string | null
+          failed_count?: number
+          id?: string
+          metadata?: Json
+          name?: string
+          scheduled_at?: string | null
+          sent_count?: number
+          started_at?: string | null
+          status?: string
+          template_id?: string | null
+          tenant_id?: string
+          total_recipients?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_dispatch_tasks_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "email_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_dispatch_tasks_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_templates: {
+        Row: {
+          body_html: string
+          body_text: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          key: string
+          name: string
+          subject: string
+          tenant_id: string
+          updated_at: string
+          variables: Json
+        }
+        Insert: {
+          body_html: string
+          body_text?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          key: string
+          name: string
+          subject: string
+          tenant_id: string
+          updated_at?: string
+          variables?: Json
+        }
+        Update: {
+          body_html?: string
+          body_text?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          key?: string
+          name?: string
+          subject?: string
+          tenant_id?: string
+          updated_at?: string
+          variables?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_templates_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_verification_codes: {
         Row: {
           code: string
