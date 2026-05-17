@@ -197,6 +197,7 @@ const App = () => (
                       <Route path="/comunicacoes/preferencias" element={<ProtectedRoute navKey="comunicacoes"><ComunicacoesPreferencias /></ProtectedRoute>} />
                       <Route path="/comunicacoes/templates" element={<ProtectedRoute navKey="comunicacoes"><ComunicacoesTemplates /></ProtectedRoute>} />
                       <Route path="/comunicacoes/tarefas" element={<ProtectedRoute navKey="comunicacoes"><ComunicacoesTarefas /></ProtectedRoute>} />
+                      <Route path="/comunicacoes/push/preferencias" element={<ProtectedRoute navKey="comunicacoes"><ComunicacoesPush /></ProtectedRoute>} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </DashboardLayout>
