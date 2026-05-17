@@ -29,6 +29,7 @@ import {
   Mail,
   FileText,
   Send,
+  Bell,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth, roleLabels } from "@/contexts/AuthContext";
