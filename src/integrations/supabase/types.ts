@@ -1035,24 +1035,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "messages_receiver_id_fkey"
-            columns: ["receiver_id"]
-            isOneToOne: false
-            referencedRelation: "public_profiles"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "messages_sender_id_fkey"
             columns: ["sender_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "messages_sender_id_fkey"
-            columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1753,13 +1739,6 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "stories_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "public_profiles"
-            referencedColumns: ["id"]
-          },
         ]
       }
       subscriptions: {
@@ -2426,65 +2405,7 @@ export type Database = {
       }
     }
     Views: {
-      public_profiles: {
-        Row: {
-          avatar_url: string | null
-          bio: string | null
-          created_at: string | null
-          full_name: string | null
-          id: string | null
-          is_active: boolean | null
-          loja_id: string | null
-          masonic_status: string | null
-          potencia_id: string | null
-          profile_type: string | null
-          rito_id: string | null
-          show_suggestions: boolean | null
-          slug: string | null
-          tenant_id: string | null
-        }
-        Insert: {
-          avatar_url?: string | null
-          bio?: string | null
-          created_at?: string | null
-          full_name?: string | null
-          id?: string | null
-          is_active?: boolean | null
-          loja_id?: string | null
-          masonic_status?: string | null
-          potencia_id?: string | null
-          profile_type?: string | null
-          rito_id?: string | null
-          show_suggestions?: boolean | null
-          slug?: string | null
-          tenant_id?: string | null
-        }
-        Update: {
-          avatar_url?: string | null
-          bio?: string | null
-          created_at?: string | null
-          full_name?: string | null
-          id?: string | null
-          is_active?: boolean | null
-          loja_id?: string | null
-          masonic_status?: string | null
-          potencia_id?: string | null
-          profile_type?: string | null
-          rito_id?: string | null
-          show_suggestions?: boolean | null
-          slug?: string | null
-          tenant_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+      [_ in never]: never
     }
     Functions: {
       broadcast_notification: {
@@ -2504,6 +2425,15 @@ export type Database = {
       }
       get_advertiser_id: { Args: { _user_id: string }; Returns: string }
       get_auth_email: { Args: never; Returns: string }
+      get_my_profile_private: {
+        Args: never
+        Returns: {
+          address: string
+          birth_date: string
+          cpf: string
+          phone: string
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
