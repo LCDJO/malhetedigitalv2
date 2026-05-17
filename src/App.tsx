@@ -126,8 +126,9 @@ const App = () => (
                       <Route path="/controle-aceites" element={<ControleAceites />} />
                       <Route path="/configuracoes" element={<AdminConfigSuperAdmin />} />
                       <Route path="/integracoes/email" element={<AdminIntegracoes />} />
-                      <Route path="/modulos/email" element={<AdminModulosEmail />} />
-                      <Route path="/integracoes/telegram" element={<AdminIntegracoesTelegram />} />
+                       <Route path="/modulos/email" element={<AdminModulosEmail />} />
+                       <Route path="/integracoes/whatsapp" element={<AdminIntegracoesWhatsapp />} />
+                       <Route path="/integracoes/telegram" element={<AdminIntegracoesTelegram />} />
                       <Route path="/integracoes/stripe" element={<AdminIntegracoesStripe />} />
                       <Route path="/integracoes/bancos/bb" element={<AdminIntegracoesBB />} />
                       <Route path="/integracoes/bancos/bradesco" element={<AdminIntegracoesBradesco />} />
