@@ -3,11 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Mail, Server } from "lucide-react";
+import { Loader2, Mail, Server, Bell } from "lucide-react";
 import { toast } from "sonner";
 
 const MODULES = [
   { key: "email_servers", label: "Servidores de E-mail (Titan)", icon: Mail, description: "Permite ao tenant configurar Titan, gerenciar caixas e enviar e-mails." },
+  { key: "push_onesignal", label: "Push (OneSignal)", icon: Bell, description: "Permite ao tenant configurar a integração OneSignal e enviar notificações push aos membros." },
 ];
 
 interface TenantRow {
