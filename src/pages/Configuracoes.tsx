@@ -201,6 +201,11 @@ export default function Configuracoes() {
           <TabsTrigger value="plano_contas" className="gap-1.5 text-xs sm:text-sm">
             <BookOpen className="h-3.5 w-3.5" /> Plano de Contas
           </TabsTrigger>
+          {emailModuleEnabled && (
+            <TabsTrigger value="email" className="gap-1.5 text-xs sm:text-sm">
+              <Mail className="h-3.5 w-3.5" /> Servidor de E-mail
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="dados" className="mt-6">
