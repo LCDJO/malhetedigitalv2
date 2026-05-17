@@ -111,6 +111,7 @@ const navSections: NavSection[] = [
           { title: "Preferências", url: "/dashboard/comunicacoes/preferencias", icon: Settings, navKey: "comunicacoes" },
           { title: "Templates de E-mail", url: "/dashboard/comunicacoes/templates", icon: FileText, navKey: "comunicacoes" },
           { title: "Tarefas de Disparo", url: "/dashboard/comunicacoes/tarefas", icon: Send, navKey: "comunicacoes" },
+          { title: "Push (OneSignal)", url: "/dashboard/comunicacoes/push/preferencias", icon: Bell, navKey: "comunicacoes" },
         ],
       },
     ],
