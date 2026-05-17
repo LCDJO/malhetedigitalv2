@@ -235,6 +235,12 @@ export default function Configuracoes() {
         <TabsContent value="plano_contas" className="mt-6">
           <TabPlanoContas />
         </TabsContent>
+
+        {emailModuleEnabled && tenantId && (
+          <TabsContent value="email" className="mt-6">
+            <TabIntegracaoEmail tenantId={tenantId} enabled={emailModuleEnabled} />
+          </TabsContent>
+        )}
       </Tabs>
 
       {/* Impact notice */}
