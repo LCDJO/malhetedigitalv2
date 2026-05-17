@@ -26,6 +26,9 @@ import {
   Monitor,
   ShieldCheck,
   ChevronDown,
+  Mail,
+  FileText,
+  Send,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth, roleLabels } from "@/contexts/AuthContext";
