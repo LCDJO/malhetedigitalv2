@@ -101,7 +101,8 @@ const parametrizaçõesItems: SimpleNavItem[] = [
 
 
 const integracaoComunicacao: SimpleNavItem[] = [
-  { title: "Email", url: "/admin/integracoes/email", icon: Mail },
+  { title: "Email (Provedores)", url: "/admin/integracoes/email", icon: Mail },
+  { title: "Módulo E-mail por Loja", url: "/admin/modulos/email", icon: Mail },
   { title: "WhatsApp", url: "/admin/integracoes/whatsapp", icon: MessageCircle },
   { title: "Telegram", url: "/admin/integracoes/telegram", icon: Send },
 ];
