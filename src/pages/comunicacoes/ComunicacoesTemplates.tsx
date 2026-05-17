@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useScope } from "@/contexts/ScopeContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, FileText, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, FileText, Loader2, Sparkles } from "lucide-react";
 
 interface Template {
   id: string;
@@ -32,6 +32,48 @@ const emptyTemplate = {
   is_active: true,
 };
 
+const AVAILABLE_VARIABLES: { key: string; label: string; sample: string }[] = [
+  { key: "nome", label: "Nome do destinatário", sample: "João da Silva" },
+  { key: "email", label: "E-mail", sample: "joao@exemplo.com" },
+  { key: "loja", label: "Nome da Loja", sample: "Loja Maçônica Exemplo" },
+  { key: "data", label: "Data atual", sample: new Date().toLocaleDateString("pt-BR") },
+  { key: "link", label: "Link/URL", sample: "https://malhetedigital.com.br" },
+  { key: "cim", label: "CIM", sample: "123456" },
+  { key: "grau", label: "Grau", sample: "Mestre" },
+];
+
+const WELCOME_TEMPLATE = {
+  key: "boas_vindas",
+  name: "Boas-vindas (padrão)",
+  subject: "Bem-vindo(a) à {{loja}}, {{nome}}!",
+  body_html: `<div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; color: #1a2a44;">
+  <h1 style="color: #1a2a44; border-bottom: 2px solid #c9a84c; padding-bottom: 8px;">
+    Bem-vindo(a), {{nome}}!
+  </h1>
+  <p>É com grande satisfação que damos as boas-vindas à <strong>{{loja}}</strong>.</p>
+  <p>Sua conta foi criada com sucesso e você já pode acessar o portal utilizando o e-mail <strong>{{email}}</strong>.</p>
+  <p style="text-align: center; margin: 32px 0;">
+    <a href="{{link}}" style="background: #1a2a44; color: #c9a84c; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
+      Acessar o Portal
+    </a>
+  </p>
+  <p>Em caso de dúvidas, responda este e-mail ou entre em contato com a secretaria.</p>
+  <p style="margin-top: 32px;">T∴ F∴ A∴<br/><strong>{{loja}}</strong></p>
+  <hr style="border: none; border-top: 1px solid #e5e5e5; margin-top: 32px;"/>
+  <p style="font-size: 11px; color: #888;">Enviado em {{data}}</p>
+</div>`,
+  body_text: "Bem-vindo(a) {{nome}} à {{loja}}! Acesse o portal em {{link}}.",
+  is_active: true,
+};
+
+function renderPreview(html: string): string {
+  let out = html;
+  for (const v of AVAILABLE_VARIABLES) {
+    out = out.replaceAll(`{{${v.key}}}`, v.sample);
+  }
+  return out;
+}
+
 export default function ComunicacoesTemplates() {
   const { tenantId } = useScope();
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -40,6 +82,7 @@ export default function ComunicacoesTemplates() {
   const [editing, setEditing] = useState<Template | null>(null);
   const [form, setForm] = useState({ ...emptyTemplate });
   const [saving, setSaving] = useState(false);
+  const bodyRef = useRef<HTMLTextAreaElement | null>(null);
 
   const load = async () => {
     if (!tenantId) return;
@@ -64,6 +107,12 @@ export default function ComunicacoesTemplates() {
     setOpen(true);
   };
 
+  const openWelcome = () => {
+    setEditing(null);
+    setForm({ ...WELCOME_TEMPLATE });
+    setOpen(true);
+  };
+
   const openEdit = (t: Template) => {
     setEditing(t);
     setForm({
@@ -75,6 +124,24 @@ export default function ComunicacoesTemplates() {
       is_active: t.is_active,
     });
     setOpen(true);
+  };
+
+  const insertVariable = (varKey: string) => {
+    const token = `{{${varKey}}}`;
+    const el = bodyRef.current;
+    if (!el) {
+      setForm((f) => ({ ...f, body_html: f.body_html + token }));
+      return;
+    }
+    const start = el.selectionStart ?? form.body_html.length;
+    const end = el.selectionEnd ?? form.body_html.length;
+    const next = form.body_html.slice(0, start) + token + form.body_html.slice(end);
+    setForm((f) => ({ ...f, body_html: next }));
+    requestAnimationFrame(() => {
+      el.focus();
+      const pos = start + token.length;
+      el.setSelectionRange(pos, pos);
+    });
   };
 
   const save = async () => {
@@ -108,9 +175,11 @@ export default function ComunicacoesTemplates() {
     }
   };
 
+  const hasWelcome = templates.some((t) => t.key === "boas_vindas");
+
   return (
     <div className="p-6 space-y-6 max-w-6xl mx-auto">
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-serif font-bold flex items-center gap-2">
             <FileText className="h-6 w-6" /> Templates de E-mail
@@ -119,9 +188,16 @@ export default function ComunicacoesTemplates() {
             Gerencie os modelos de e-mail utilizados nas comunicações da loja.
           </p>
         </div>
-        <Button onClick={openNew}>
-          <Plus className="h-4 w-4 mr-2" /> Novo Template
-        </Button>
+        <div className="flex gap-2">
+          {!hasWelcome && (
+            <Button variant="outline" onClick={openWelcome}>
+              <Sparkles className="h-4 w-4 mr-2" /> Usar modelo de boas-vindas
+            </Button>
+          )}
+          <Button onClick={openNew}>
+            <Plus className="h-4 w-4 mr-2" /> Novo Template
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -171,62 +247,109 @@ export default function ComunicacoesTemplates() {
       </Card>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editing ? "Editar Template" : "Novo Template"}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* LEFT: form */}
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Chave *</Label>
+                  <Input
+                    value={form.key}
+                    onChange={(e) => setForm({ ...form, key: e.target.value })}
+                    placeholder="ex: boas_vindas"
+                    disabled={!!editing}
+                  />
+                </div>
+                <div>
+                  <Label>Nome *</Label>
+                  <Input
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    placeholder="Boas-vindas ao novo irmão"
+                  />
+                </div>
+              </div>
               <div>
-                <Label>Chave *</Label>
+                <Label>Assunto *</Label>
                 <Input
-                  value={form.key}
-                  onChange={(e) => setForm({ ...form, key: e.target.value })}
-                  placeholder="ex: boas_vindas"
-                  disabled={!!editing}
+                  value={form.subject}
+                  onChange={(e) => setForm({ ...form, subject: e.target.value })}
+                  placeholder="Bem-vindo à Loja"
                 />
               </div>
               <div>
-                <Label>Nome *</Label>
-                <Input
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="Boas-vindas ao novo irmão"
+                <Label>Corpo HTML *</Label>
+                <Textarea
+                  ref={bodyRef}
+                  rows={12}
+                  value={form.body_html}
+                  onChange={(e) => setForm({ ...form, body_html: e.target.value })}
+                  placeholder="<p>Olá {{nome}}, ...</p>"
+                  className="font-mono text-xs"
+                />
+                <div className="mt-2 rounded-md border bg-muted/30 p-2">
+                  <p className="text-[11px] text-muted-foreground mb-1.5">
+                    Variáveis disponíveis (clique para inserir):
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {AVAILABLE_VARIABLES.map((v) => (
+                      <button
+                        key={v.key}
+                        type="button"
+                        onClick={() => insertVariable(v.key)}
+                        title={v.label}
+                        className="text-xs px-2 py-0.5 rounded border bg-background hover:bg-accent hover:text-accent-foreground transition font-mono"
+                      >
+                        {`{{${v.key}}}`}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div>
+                <Label>Corpo texto (opcional)</Label>
+                <Textarea
+                  rows={3}
+                  value={form.body_text}
+                  onChange={(e) => setForm({ ...form, body_text: e.target.value })}
                 />
               </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={form.is_active}
+                  onCheckedChange={(v) => setForm({ ...form, is_active: v })}
+                />
+                <Label>Ativo</Label>
+              </div>
             </div>
-            <div>
-              <Label>Assunto *</Label>
-              <Input
-                value={form.subject}
-                onChange={(e) => setForm({ ...form, subject: e.target.value })}
-                placeholder="Bem-vindo à Loja"
-              />
-            </div>
-            <div>
-              <Label>Corpo HTML *</Label>
-              <Textarea
-                rows={8}
-                value={form.body_html}
-                onChange={(e) => setForm({ ...form, body_html: e.target.value })}
-                placeholder="<p>Olá {{nome}}, ...</p>"
-                className="font-mono text-xs"
-              />
-            </div>
-            <div>
-              <Label>Corpo texto (opcional)</Label>
-              <Textarea
-                rows={3}
-                value={form.body_text}
-                onChange={(e) => setForm({ ...form, body_text: e.target.value })}
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={form.is_active}
-                onCheckedChange={(v) => setForm({ ...form, is_active: v })}
-              />
-              <Label>Ativo</Label>
+
+            {/* RIGHT: preview */}
+            <div className="space-y-2">
+              <Label>Prévia do e-mail</Label>
+              <div className="border rounded-md bg-white overflow-hidden">
+                <div className="bg-muted px-3 py-2 border-b">
+                  <p className="text-[11px] text-muted-foreground">Assunto</p>
+                  <p className="text-sm font-medium text-foreground truncate">
+                    {renderPreview(form.subject) || <span className="text-muted-foreground italic">(sem assunto)</span>}
+                  </p>
+                </div>
+                <div
+                  className="p-4 text-sm overflow-auto"
+                  style={{ minHeight: 320, maxHeight: 500, color: "#1a2a44" }}
+                  dangerouslySetInnerHTML={{
+                    __html: form.body_html
+                      ? renderPreview(form.body_html)
+                      : '<p style="color:#999;font-style:italic">A prévia aparecerá aqui...</p>',
+                  }}
+                />
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Os valores reais serão substituídos no momento do envio.
+              </p>
             </div>
           </div>
           <DialogFooter>
