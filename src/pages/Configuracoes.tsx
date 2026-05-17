@@ -6,8 +6,11 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, Loader2, Building2, Wallet, ScrollText, Tags, SlidersHorizontal, BookOpen } from "lucide-react";
+import { Save, Loader2, Building2, Wallet, ScrollText, Tags, SlidersHorizontal, BookOpen, Mail } from "lucide-react";
 import { TabDadosLoja, type DadosLojaConfig } from "@/components/configuracoes/TabDadosLoja";
+import { TabIntegracaoEmail } from "@/components/configuracoes/TabIntegracaoEmail";
+import { useUserTenant } from "@/core/tenant/useUserTenant";
+import { useModuleAccess } from "@/hooks/useModuleAccess";
 import { TabParametrosFinanceiros } from "@/components/configuracoes/TabParametrosFinanceiros";
 import { TabRegrasMaconicas } from "@/components/configuracoes/TabRegrasMaconicas";
 import { TabCategoriasFinanceiras, type CategoriaFinanceira } from "@/components/configuracoes/TabCategoriasFinanceiras";
@@ -62,6 +65,8 @@ export default function Configuracoes() {
   const { hasPermission } = useAuth();
   const canWrite = hasPermission("configuracoes", "write");
   const { logAction } = useAuditLog();
+  const { tenantId } = useUserTenant();
+  const { enabled: emailModuleEnabled } = useModuleAccess(tenantId, "email_servers");
 
   const [config, setConfig] = useState<LodgeConfig>(defaultConfig);
   const previousConfig = useRef<LodgeConfig>(defaultConfig);
@@ -196,6 +201,11 @@ export default function Configuracoes() {
           <TabsTrigger value="plano_contas" className="gap-1.5 text-xs sm:text-sm">
             <BookOpen className="h-3.5 w-3.5" /> Plano de Contas
           </TabsTrigger>
+          {emailModuleEnabled && (
+            <TabsTrigger value="email" className="gap-1.5 text-xs sm:text-sm">
+              <Mail className="h-3.5 w-3.5" /> Servidor de E-mail
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="dados" className="mt-6">
@@ -225,6 +235,12 @@ export default function Configuracoes() {
         <TabsContent value="plano_contas" className="mt-6">
           <TabPlanoContas />
         </TabsContent>
+
+        {emailModuleEnabled && tenantId && (
+          <TabsContent value="email" className="mt-6">
+            <TabIntegracaoEmail tenantId={tenantId} enabled={emailModuleEnabled} />
+          </TabsContent>
+        )}
       </Tabs>
 
       {/* Impact notice */}
