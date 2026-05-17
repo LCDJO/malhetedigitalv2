@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2, FileText, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import DOMPurify from "dompurify";
 
 interface ActiveTerm {
   id: string;
