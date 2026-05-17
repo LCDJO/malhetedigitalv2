@@ -1952,6 +1952,84 @@ export type Database = {
           },
         ]
       }
+      tenant_email_integrations: {
+        Row: {
+          api_token: string
+          created_at: string
+          domain: string
+          enabled: boolean
+          from_email: string
+          from_name: string
+          id: string
+          provider: string
+          smtp_host: string
+          smtp_password: string
+          smtp_port: number
+          smtp_user: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          api_token?: string
+          created_at?: string
+          domain?: string
+          enabled?: boolean
+          from_email?: string
+          from_name?: string
+          id?: string
+          provider?: string
+          smtp_host?: string
+          smtp_password?: string
+          smtp_port?: number
+          smtp_user?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          api_token?: string
+          created_at?: string
+          domain?: string
+          enabled?: boolean
+          from_email?: string
+          from_name?: string
+          id?: string
+          provider?: string
+          smtp_host?: string
+          smtp_password?: string
+          smtp_port?: number
+          smtp_user?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tenant_module_overrides: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          module_key: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          module_key: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          module_key?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tenant_users: {
         Row: {
           created_at: string
@@ -2354,6 +2432,10 @@ export type Database = {
       get_user_tenant_ids: { Args: { _user_id: string }; Returns: string[] }
       has_module_access: {
         Args: { _module: string; _user_id: string }
+        Returns: boolean
+      }
+      has_module_enabled: {
+        Args: { _module: string; _tenant_id: string }
         Returns: boolean
       }
       has_role: {
