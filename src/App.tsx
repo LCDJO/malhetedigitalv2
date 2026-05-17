@@ -27,6 +27,7 @@ import TotemAdmin from "./pages/TotemAdmin";
 import ComunicacoesPreferencias from "./pages/comunicacoes/ComunicacoesPreferencias";
 import ComunicacoesTemplates from "./pages/comunicacoes/ComunicacoesTemplates";
 import ComunicacoesTarefas from "./pages/comunicacoes/ComunicacoesTarefas";
+import ComunicacoesPush from "./pages/comunicacoes/ComunicacoesPush";
 
 import PortalAuth from "./pages/portal/PortalAuth";
 import PortalDashboard from "./pages/portal/PortalDashboard";
@@ -196,6 +197,7 @@ const App = () => (
                       <Route path="/comunicacoes/preferencias" element={<ProtectedRoute navKey="comunicacoes"><ComunicacoesPreferencias /></ProtectedRoute>} />
                       <Route path="/comunicacoes/templates" element={<ProtectedRoute navKey="comunicacoes"><ComunicacoesTemplates /></ProtectedRoute>} />
                       <Route path="/comunicacoes/tarefas" element={<ProtectedRoute navKey="comunicacoes"><ComunicacoesTarefas /></ProtectedRoute>} />
+                      <Route path="/comunicacoes/push/preferencias" element={<ProtectedRoute navKey="comunicacoes"><ComunicacoesPush /></ProtectedRoute>} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </DashboardLayout>
