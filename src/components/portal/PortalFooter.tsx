@@ -53,7 +53,7 @@ export function PortalFooter() {
             <p className="text-xs text-muted-foreground">Versão {docDialog?.version}</p>
           </DialogHeader>
           <ScrollArea className="h-[500px] rounded-md border p-4">
-            <div className="prose prose-sm max-w-none text-sm text-foreground whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: docDialog?.content ?? "" }} />
+            <div className="prose prose-sm max-w-none text-sm text-foreground whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(docDialog?.content ?? "", { ALLOWED_TAGS: ['p','br','strong','em','u','h1','h2','h3','h4','ul','ol','li','a','blockquote','code','pre'], ALLOWED_ATTR: ['href','target','rel'] }) }} />
           </ScrollArea>
         </DialogContent>
       </Dialog>
