@@ -24,6 +24,9 @@ import GestaoTermos from "./pages/GestaoTermos";
 import ControleAceites from "./pages/ControleAceites";
 import NotFound from "./pages/NotFound";
 import TotemAdmin from "./pages/TotemAdmin";
+import ComunicacoesPreferencias from "./pages/comunicacoes/ComunicacoesPreferencias";
+import ComunicacoesTemplates from "./pages/comunicacoes/ComunicacoesTemplates";
+import ComunicacoesTarefas from "./pages/comunicacoes/ComunicacoesTarefas";
 
 import PortalAuth from "./pages/portal/PortalAuth";
 import PortalDashboard from "./pages/portal/PortalDashboard";
