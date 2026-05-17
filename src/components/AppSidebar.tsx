@@ -188,19 +188,51 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 {section.items.map((item) => (
-                  <SidebarMenuItem key={item.url}>
-                    <SidebarMenuButton asChild tooltip={item.title}>
-                      <NavLink
-                        to={item.url}
-                        end={item.url === "/dashboard"}
-                        className="text-sidebar-foreground/65 hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground transition-all duration-150 rounded-md"
-                        activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold shadow-sm"
-                      >
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
+                  item.children && item.children.length > 0 ? (
+                    <Collapsible key={item.url} defaultOpen className="group/collapsible">
+                      <SidebarMenuItem>
+                        <CollapsibleTrigger asChild>
+                          <SidebarMenuButton tooltip={item.title} className="text-sidebar-foreground/65 hover:bg-sidebar-accent/80">
+                            <item.icon className="h-4 w-4" />
+                            <span>{item.title}</span>
+                            <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />
+                          </SidebarMenuButton>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <SidebarMenu className="ml-4 border-l border-sidebar-border pl-2 mt-1">
+                            {item.children.map((child) => (
+                              <SidebarMenuItem key={child.url}>
+                                <SidebarMenuButton asChild tooltip={child.title} size="sm">
+                                  <NavLink
+                                    to={child.url}
+                                    className="text-sidebar-foreground/60 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground transition-all rounded-md text-[13px]"
+                                    activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold"
+                                  >
+                                    <child.icon className="h-3.5 w-3.5" />
+                                    <span>{child.title}</span>
+                                  </NavLink>
+                                </SidebarMenuButton>
+                              </SidebarMenuItem>
+                            ))}
+                          </SidebarMenu>
+                        </CollapsibleContent>
+                      </SidebarMenuItem>
+                    </Collapsible>
+                  ) : (
+                    <SidebarMenuItem key={item.url}>
+                      <SidebarMenuButton asChild tooltip={item.title}>
+                        <NavLink
+                          to={item.url}
+                          end={item.url === "/dashboard"}
+                          className="text-sidebar-foreground/65 hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground transition-all duration-150 rounded-md"
+                          activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold shadow-sm"
+                        >
+                          <item.icon className="h-4 w-4" />
+                          <span>{item.title}</span>
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )
                 ))}
               </SidebarMenu>
             </SidebarGroupContent>
