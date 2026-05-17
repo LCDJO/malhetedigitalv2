@@ -46,26 +46,30 @@ export function MeuPerfilDialog({ open, onOpenChange }: MeuPerfilDialogProps) {
   useEffect(() => {
     if (!open || !user) return;
     setLoading(true);
-    supabase
-      .from("profiles")
-      .select("full_name, phone, cpf, address, birth_date, avatar_url, slug, show_suggestions")
-      .eq("id", user.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data) {
-          setForm({
-            full_name: data.full_name ?? "",
-            phone: data.phone ?? "",
-            cpf: data.cpf ?? "",
-            address: data.address ?? "",
-            birth_date: data.birth_date ?? "",
-            avatar_url: data.avatar_url,
-            slug: data.slug ?? "",
-            show_suggestions: data.show_suggestions ?? true,
-          });
-        }
-        setLoading(false);
-      });
+    (async () => {
+      const [{ data: pub }, { data: priv }] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("full_name, avatar_url, slug, show_suggestions")
+          .eq("id", user.id)
+          .maybeSingle(),
+        supabase.rpc("get_my_profile_private"),
+      ]);
+      const privRow = Array.isArray(priv) ? priv[0] : priv;
+      if (pub) {
+        setForm({
+          full_name: pub.full_name ?? "",
+          phone: privRow?.phone ?? "",
+          cpf: privRow?.cpf ?? "",
+          address: privRow?.address ?? "",
+          birth_date: privRow?.birth_date ?? "",
+          avatar_url: pub.avatar_url,
+          slug: pub.slug ?? "",
+          show_suggestions: pub.show_suggestions ?? true,
+        });
+      }
+      setLoading(false);
+    })();
   }, [open, user]);
 
   const handleSave = async () => {
