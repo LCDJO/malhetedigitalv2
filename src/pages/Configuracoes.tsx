@@ -65,6 +65,8 @@ export default function Configuracoes() {
   const { hasPermission } = useAuth();
   const canWrite = hasPermission("configuracoes", "write");
   const { logAction } = useAuditLog();
+  const { tenantId } = useUserTenant();
+  const { enabled: emailModuleEnabled } = useModuleAccess(tenantId, "email_servers");
 
   const [config, setConfig] = useState<LodgeConfig>(defaultConfig);
   const previousConfig = useRef<LodgeConfig>(defaultConfig);
