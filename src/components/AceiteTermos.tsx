@@ -92,7 +92,7 @@ export function AceiteTermos() {
         </CardHeader>
         <CardContent className="space-y-4">
           <ScrollArea className="h-[400px] rounded-md border p-4">
-            <div className="prose prose-sm max-w-none text-sm text-foreground whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: term.conteudo }} />
+            <div className="prose prose-sm max-w-none text-sm text-foreground whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(term.conteudo, { ALLOWED_TAGS: ['p','br','strong','em','u','h1','h2','h3','h4','ul','ol','li','a','blockquote','code','pre'], ALLOWED_ATTR: ['href','target','rel'] }) }} />
           </ScrollArea>
 
           <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 border">
