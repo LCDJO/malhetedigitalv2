@@ -190,7 +190,8 @@ export type NavKey =
   | "gestao_termos"
   | "controle_aceites"
   | "financeiro_geral"
-  | "atendimento";
+  | "atendimento"
+  | "comunicacoes";
 
 const NAV_ENTITY_MAP: Record<NavKey, PermissionEntity> = {
   dashboard: "dashboard",
@@ -206,6 +207,7 @@ const NAV_ENTITY_MAP: Record<NavKey, PermissionEntity> = {
   controle_aceites: "termos_uso",
   financeiro_geral: "member_transactions",
   atendimento: "support_tickets",
+  comunicacoes: "lodge_config",
 };
 
 /**
