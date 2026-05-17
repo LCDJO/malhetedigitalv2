@@ -53,3 +53,6 @@ verify_jwt = false
 
 [functions.api-admin]
 verify_jwt = false
+
+[functions.titan-email]
+verify_jwt = false
