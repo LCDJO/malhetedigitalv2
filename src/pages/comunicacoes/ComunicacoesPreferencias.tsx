@@ -1,13 +1,13 @@
 import { useScope } from "@/contexts/ScopeContext";
 import { useModuleAccess } from "@/hooks/useModuleAccess";
-import TabIntegracaoEmail from "@/components/configuracoes/TabIntegracaoEmail";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { TabIntegracaoEmail } from "@/components/configuracoes/TabIntegracaoEmail";
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Mail, Loader2 } from "lucide-react";
 
 export default function ComunicacoesPreferencias() {
   const { tenantId, loading } = useScope();
-  const { hasAccess, loading: moduleLoading } = useModuleAccess("email_servers");
+  const { enabled: hasAccess, loading: moduleLoading } = useModuleAccess(tenantId, "email_servers");
 
   if (loading || moduleLoading) {
     return (
