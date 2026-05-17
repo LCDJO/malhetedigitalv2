@@ -97,6 +97,24 @@ const navSections: NavSection[] = [
     ],
   },
 
+  // ── COMUNICAÇÕES ──
+  {
+    label: "Comunicações",
+    items: [
+      {
+        title: "Comunicações",
+        url: "/dashboard/comunicacoes/preferencias",
+        icon: Mail,
+        navKey: "comunicacoes",
+        children: [
+          { title: "Preferências", url: "/dashboard/comunicacoes/preferencias", icon: Settings, navKey: "comunicacoes" },
+          { title: "Templates de E-mail", url: "/dashboard/comunicacoes/templates", icon: FileText, navKey: "comunicacoes" },
+          { title: "Tarefas de Disparo", url: "/dashboard/comunicacoes/tarefas", icon: Send, navKey: "comunicacoes" },
+        ],
+      },
+    ],
+  },
+
   // ── CONFIGURAÇÕES ──
   {
     label: "Configurações",
