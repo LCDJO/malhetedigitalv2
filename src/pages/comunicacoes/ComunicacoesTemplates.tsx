@@ -69,7 +69,7 @@ const WELCOME_TEMPLATE = {
 function renderPreview(html: string): string {
   let out = html;
   for (const v of AVAILABLE_VARIABLES) {
-    out = out.replaceAll(`{{${v.key}}}`, v.sample);
+    out = out.split(`{{${v.key}}}`).join(v.sample);
   }
   return out;
 }
