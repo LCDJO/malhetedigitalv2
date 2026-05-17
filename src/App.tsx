@@ -193,6 +193,9 @@ const App = () => (
                       <Route path="/atendimento" element={<ProtectedRoute navKey="atendimento"><Atendimento /></ProtectedRoute>} />
                       <Route path="/chancelaria" element={<ProtectedRoute navKey="chancelaria"><Chancelaria /></ProtectedRoute>} />
                       <Route path="/financeiro-geral" element={<ProtectedRoute navKey="financeiro_geral"><FinanceiroGeral /></ProtectedRoute>} />
+                      <Route path="/comunicacoes/preferencias" element={<ProtectedRoute navKey="comunicacoes"><ComunicacoesPreferencias /></ProtectedRoute>} />
+                      <Route path="/comunicacoes/templates" element={<ProtectedRoute navKey="comunicacoes"><ComunicacoesTemplates /></ProtectedRoute>} />
+                      <Route path="/comunicacoes/tarefas" element={<ProtectedRoute navKey="comunicacoes"><ComunicacoesTarefas /></ProtectedRoute>} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </DashboardLayout>
