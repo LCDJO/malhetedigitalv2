@@ -2161,6 +2161,39 @@ export type Database = {
         }
         Relationships: []
       }
+      tenant_push_integrations: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          onesignal_api_key: string
+          onesignal_app_id: string
+          provider: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          onesignal_api_key?: string
+          onesignal_app_id?: string
+          provider?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          onesignal_api_key?: string
+          onesignal_app_id?: string
+          provider?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tenant_users: {
         Row: {
           created_at: string
