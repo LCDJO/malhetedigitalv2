@@ -79,8 +79,13 @@ export default function Atas() {
     if (data) setBlocos(data as Bloco[]);
   };
 
+  const loadAssinaturas = async (ataId: string) => {
+    const { data } = await supabase.from("assinaturas_ata").select("*").eq("ata_id", ataId).order("assinado_em");
+    if (data) setAssinaturas(data as Assinatura[]);
+  };
+
   useEffect(() => { if (tenantId) load(); }, [tenantId]);
-  useEffect(() => { if (selected) loadBlocos(selected.id); }, [selected]);
+  useEffect(() => { if (selected) { loadBlocos(selected.id); loadAssinaturas(selected.id); } }, [selected]);
 
   const criarAta = async () => {
     if (!tenantId || !nova.sessao_id) return toast.error("Sessão é obrigatória");
