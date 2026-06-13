@@ -16,7 +16,7 @@ type Grau = "aprendiz" | "companheiro" | "mestre";
 type EstadoAumento = "proposto" | "instruido" | "escrutinio" | "aprovado" | "rejeitado" | "realizado" | "arquivado";
 
 interface Cargo { id: string; nome: string; ordem: number; grau_minimo: number | null; ativo: boolean; }
-interface Member { id: string; full_name: string; grau: string | null; }
+interface Member { id: string; full_name: string; degree: string | null; }
 interface MembroCargo {
   id: string; cargo_id: string; member_id: string;
   mandato_inicio: string | null; mandato_fim: string | null; ativo: boolean;
@@ -47,7 +47,7 @@ export default function Oficina() {
     if (!tenantId) return;
     const [c, m, v, a] = await Promise.all([
       supabase.from("cargos_oficina").select("*").eq("tenant_id", tenantId).order("ordem"),
-      supabase.from("members").select("id, full_name, grau").eq("tenant_id", tenantId).eq("status", "ativo").order("full_name"),
+      supabase.from("members").select("id, full_name, degree").eq("tenant_id", tenantId).eq("status", "ativo").order("full_name"),
       supabase.from("membro_cargos").select("*").eq("tenant_id", tenantId).eq("ativo", true),
       supabase.from("aumentos_salario").select("*").eq("tenant_id", tenantId).order("created_at", { ascending: false }),
     ]);
@@ -100,7 +100,7 @@ export default function Oficina() {
   const proporAumento = async () => {
     if (!tenantId || !novoAumento.member_id) return toast.error("Selecione o irmão.");
     const m = memberMap.get(novoAumento.member_id);
-    const origem = (m?.grau as Grau) || "aprendiz";
+    const origem = (m?.degree as Grau) || "aprendiz";
     if (origem === novoAumento.grau_destino) return toast.error("Grau de destino igual ao atual.");
     const { error } = await supabase.from("aumentos_salario").insert({
       tenant_id: tenantId,
@@ -213,7 +213,7 @@ export default function Oficina() {
               <div className="grid md:grid-cols-3 gap-3">
                 <Select value={novoAumento.member_id} onValueChange={(v) => setNovoAumento({ ...novoAumento, member_id: v })}>
                   <SelectTrigger><SelectValue placeholder="Irmão" /></SelectTrigger>
-                  <SelectContent>{members.map((m) => <SelectItem key={m.id} value={m.id}>{m.full_name} ({m.grau ?? "—"})</SelectItem>)}</SelectContent>
+                  <SelectContent>{members.map((m) => <SelectItem key={m.id} value={m.id}>{m.full_name} ({m.degree ?? "—"})</SelectItem>)}</SelectContent>
                 </Select>
                 <Select value={novoAumento.grau_destino} onValueChange={(v) => setNovoAumento({ ...novoAumento, grau_destino: v as Grau })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
