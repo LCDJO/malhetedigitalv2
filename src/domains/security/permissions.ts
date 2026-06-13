@@ -193,7 +193,8 @@ export type NavKey =
   | "atendimento"
   | "comunicacoes"
   | "sessoes"
-  | "atas";
+  | "atas"
+  | "beneficencia";
 
 const NAV_ENTITY_MAP: Record<NavKey, PermissionEntity> = {
   dashboard: "dashboard",
