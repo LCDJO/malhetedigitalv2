@@ -29,6 +29,7 @@ import Atas from "./pages/Atas";
 import Beneficencia from "./pages/Beneficencia";
 import Propostas from "./pages/Propostas";
 import Oficina from "./pages/Oficina";
+import Presencas from "./pages/Presencas";
 import ComunicacoesPreferencias from "./pages/comunicacoes/ComunicacoesPreferencias";
 import ComunicacoesTemplates from "./pages/comunicacoes/ComunicacoesTemplates";
 import ComunicacoesTarefas from "./pages/comunicacoes/ComunicacoesTarefas";
