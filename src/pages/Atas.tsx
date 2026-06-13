@@ -116,7 +116,7 @@ export default function Atas() {
       const { data: { user } } = await supabase.auth.getUser();
       const vErr = await supabase.from("versoes_ata").insert([{
         tenant_id: tenantId!, ata_id: selected.id, versao: selected.versao_atual,
-        snapshot, hash, motivo: "Travamento da ata", created_by: user?.id,
+        snapshot: snapshot as unknown as Record<string, unknown>, hash, motivo: "Travamento da ata", created_by: user?.id,
       }]);
       if (vErr.error) return toast.error(vErr.error.message);
       await supabase.from("atas").update({
