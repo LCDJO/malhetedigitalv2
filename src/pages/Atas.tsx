@@ -189,12 +189,10 @@ export default function Atas() {
         orient: lodgeConfig.orient,
         potencia: lodgeConfig.potencia,
       });
-      const updates: Promise<unknown>[] = [];
       const cab = blocos.find(b => b.tipo === "cabecalho");
       const abe = blocos.find(b => b.tipo === "abertura");
-      if (cab) updates.push(supabase.from("blocos_ata").update({ conteudo: result.cabecalho }).eq("id", cab.id));
-      if (abe) updates.push(supabase.from("blocos_ata").update({ conteudo: result.abertura }).eq("id", abe.id));
-      await Promise.all(updates);
+      if (cab) await supabase.from("blocos_ata").update({ conteudo: result.cabecalho }).eq("id", cab.id);
+      if (abe) await supabase.from("blocos_ata").update({ conteudo: result.abertura }).eq("id", abe.id);
       toast.success(`Abertura preenchida (${result.stats.presentes} presentes, ${result.stats.visitantes} visitantes).`);
       loadBlocos(selected.id);
     } catch (e: any) {
