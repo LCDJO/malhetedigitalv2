@@ -61,6 +61,7 @@ const navItems: NavItem[] = [
     children: [
       { to: "/portal/prestacao-contas", icon: FileBarChart, label: "Prestação de Contas" },
       { to: "/portal/documentos", icon: FileText, label: "Documentos" },
+      { to: "/portal/atas", icon: FileText, label: "Atas Publicadas" },
     ],
   },
   { to: "/portal/financeiro", icon: Wallet, label: "Meu Financeiro" },

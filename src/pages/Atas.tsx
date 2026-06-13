@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Plus, FileText, Lock, ArrowLeft, Save } from "lucide-react";
+import { Plus, FileText, Lock, ArrowLeft, Save, ShieldCheck, MessageSquarePlus } from "lucide-react";
 
 type Estado = "rascunho" | "revisao" | "leitura" | "aprovada" | "travada" | "publicada" | "retificada";
 type BlocoTipo = "cabecalho" | "abertura" | "expediente" | "saco_propostas" | "ordem_dia" | "tempo_estudos" | "tronco" | "palavra_bem" | "encerramento" | "outros";
@@ -43,6 +43,8 @@ const PROXIMO_ESTADO: Record<Estado, Estado | null> = {
 interface Ata { id: string; numero: string | null; titulo: string | null; estado: Estado; versao_atual: number; sessao_id: string; created_at: string; }
 interface Sessao { id: string; numero: string | null; data: string; tipo: string; grau: number; }
 interface Bloco { id: string; tipo: BlocoTipo; ordem: number; titulo: string | null; conteudo: string | null; }
+interface Assinatura { id: string; papel: string; assinado_em: string; user_id: string; versao: number; }
+const PAPEIS = ["Venerável Mestre", "Orador", "Secretário", "1º Vigilante", "2º Vigilante"];
 
 async function sha256(text: string): Promise<string> {
   const buf = new TextEncoder().encode(text);
@@ -56,8 +58,11 @@ export default function Atas() {
   const [sessoes, setSessoes] = useState<Sessao[]>([]);
   const [selected, setSelected] = useState<Ata | null>(null);
   const [blocos, setBlocos] = useState<Bloco[]>([]);
+  const [assinaturas, setAssinaturas] = useState<Assinatura[]>([]);
   const [open, setOpen] = useState(false);
   const [nova, setNova] = useState({ sessao_id: "", numero: "", titulo: "" });
+  const [manifesto, setManifesto] = useState("");
+  const [papel, setPapel] = useState(PAPEIS[0]);
 
   const load = async () => {
     if (!tenantId) return;
@@ -74,8 +79,13 @@ export default function Atas() {
     if (data) setBlocos(data as Bloco[]);
   };
 
+  const loadAssinaturas = async (ataId: string) => {
+    const { data } = await supabase.from("assinaturas_ata").select("*").eq("ata_id", ataId).order("assinado_em");
+    if (data) setAssinaturas(data as Assinatura[]);
+  };
+
   useEffect(() => { if (tenantId) load(); }, [tenantId]);
-  useEffect(() => { if (selected) loadBlocos(selected.id); }, [selected]);
+  useEffect(() => { if (selected) { loadBlocos(selected.id); loadAssinaturas(selected.id); } }, [selected]);
 
   const criarAta = async () => {
     if (!tenantId || !nova.sessao_id) return toast.error("Sessão é obrigatória");
@@ -134,6 +144,32 @@ export default function Atas() {
     load();
   };
 
+  const adicionarManifesto = async () => {
+    if (!selected || !tenantId || !manifesto.trim()) return;
+    const nextOrdem = blocos.length;
+    const { error } = await supabase.from("blocos_ata").insert({
+      tenant_id: tenantId, ata_id: selected.id, tipo: "outros", ordem: nextOrdem,
+      titulo: "Manifesto / Palavra a Bem", conteudo: manifesto,
+    });
+    if (error) return toast.error(error.message);
+    toast.success("Manifesto registrado");
+    setManifesto("");
+    loadBlocos(selected.id);
+  };
+
+  const assinar = async () => {
+    if (!selected || !tenantId) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return toast.error("Sessão expirada");
+    const { error } = await supabase.from("assinaturas_ata").insert({
+      tenant_id: tenantId, ata_id: selected.id, user_id: user.id,
+      papel, versao: selected.versao_atual,
+    });
+    if (error) return toast.error(error.message);
+    toast.success(`Assinada como ${papel}`);
+    loadAssinaturas(selected.id);
+  };
+
   if (tLoading) return <div className="p-6">Carregando…</div>;
 
   // ── Detalhe ──
@@ -163,6 +199,46 @@ export default function Atas() {
             <BlocoEditor key={b.id} bloco={b} locked={locked} onSave={(c) => salvarBloco(b, c)}/>
           ))}
         </div>
+
+        {selected.estado === "leitura" && (
+          <Card>
+            <CardHeader className="py-3"><CardTitle className="text-base flex items-center gap-2"><MessageSquarePlus className="h-4 w-4"/>Manifesto em Sessão</CardTitle></CardHeader>
+            <CardContent className="space-y-2">
+              <Textarea value={manifesto} onChange={(e) => setManifesto(e.target.value)} rows={3} placeholder="Registre uma palavra a bem, observação ou voto…"/>
+              <Button size="sm" onClick={adicionarManifesto} disabled={!manifesto.trim()}>Registrar manifesto</Button>
+            </CardContent>
+          </Card>
+        )}
+
+        <Card>
+          <CardHeader className="py-3"><CardTitle className="text-base flex items-center gap-2"><ShieldCheck className="h-4 w-4"/>Assinaturas</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
+            {assinaturas.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhuma assinatura registrada.</p>
+            ) : (
+              <ul className="text-sm space-y-1">
+                {assinaturas.map(a => (
+                  <li key={a.id} className="flex justify-between border-b py-1">
+                    <span>{a.papel} <Badge variant="outline" className="ml-1">v{a.versao}</Badge></span>
+                    <span className="text-muted-foreground">{new Date(a.assinado_em).toLocaleString("pt-BR")}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {(selected.estado === "aprovada" || selected.estado === "travada") && (
+              <div className="flex gap-2 items-end pt-2 border-t">
+                <div className="flex-1">
+                  <Label>Papel</Label>
+                  <Select value={papel} onValueChange={setPapel}>
+                    <SelectTrigger><SelectValue/></SelectTrigger>
+                    <SelectContent>{PAPEIS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <Button onClick={assinar}><ShieldCheck className="h-4 w-4 mr-2"/>Assinar</Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     );
   }
