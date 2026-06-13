@@ -31,6 +31,7 @@ import {
   Send,
   Bell,
   Calendar,
+  HandHeart,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth, roleLabels } from "@/contexts/AuthContext";
