@@ -1,0 +1,256 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useUserTenant } from "@/core/tenant";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { toast } from "sonner";
+import { Plus, FileText, Lock, ArrowLeft, Save } from "lucide-react";
+
+type Estado = "rascunho" | "revisao" | "leitura" | "aprovada" | "travada" | "publicada" | "retificada";
+type BlocoTipo = "cabecalho" | "abertura" | "expediente" | "saco_propostas" | "ordem_dia" | "tempo_estudos" | "tronco" | "palavra_bem" | "encerramento" | "outros";
+
+const BLOCO_LABELS: Record<BlocoTipo, string> = {
+  cabecalho: "Cabeçalho",
+  abertura: "Abertura dos Trabalhos",
+  expediente: "Expediente",
+  saco_propostas: "Saco de Propostas",
+  ordem_dia: "Ordem do Dia",
+  tempo_estudos: "Tempo de Estudos",
+  tronco: "Tronco de Beneficência",
+  palavra_bem: "Palavra a Bem da Ordem",
+  encerramento: "Encerramento",
+  outros: "Outros",
+};
+const BLOCOS_PADRAO: BlocoTipo[] = ["cabecalho","abertura","expediente","saco_propostas","ordem_dia","tempo_estudos","tronco","palavra_bem","encerramento"];
+
+const ESTADO_COLOR: Record<Estado, string> = {
+  rascunho: "secondary", revisao: "default", leitura: "default",
+  aprovada: "default", travada: "destructive", publicada: "default", retificada: "outline",
+} as Record<Estado, string>;
+
+const PROXIMO_ESTADO: Record<Estado, Estado | null> = {
+  rascunho: "revisao", revisao: "leitura", leitura: "aprovada",
+  aprovada: "travada", travada: "publicada", publicada: null, retificada: null,
+};
+
+interface Ata { id: string; numero: string | null; titulo: string | null; estado: Estado; versao_atual: number; sessao_id: string; created_at: string; }
+interface Sessao { id: string; numero: string | null; data: string; tipo: string; grau: number; }
+interface Bloco { id: string; tipo: BlocoTipo; ordem: number; titulo: string | null; conteudo: string | null; }
+
+async function sha256(text: string): Promise<string> {
+  const buf = new TextEncoder().encode(text);
+  const hash = await crypto.subtle.digest("SHA-256", buf);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+export default function Atas() {
+  const { tenantId, loading: tLoading } = useUserTenant();
+  const [atas, setAtas] = useState<Ata[]>([]);
+  const [sessoes, setSessoes] = useState<Sessao[]>([]);
+  const [selected, setSelected] = useState<Ata | null>(null);
+  const [blocos, setBlocos] = useState<Bloco[]>([]);
+  const [open, setOpen] = useState(false);
+  const [nova, setNova] = useState({ sessao_id: "", numero: "", titulo: "" });
+
+  const load = async () => {
+    if (!tenantId) return;
+    const [a, s] = await Promise.all([
+      supabase.from("atas").select("*").eq("tenant_id", tenantId).order("created_at", { ascending: false }),
+      supabase.from("sessoes").select("id, numero, data, tipo, grau").eq("tenant_id", tenantId).order("data", { ascending: false }),
+    ]);
+    if (a.data) setAtas(a.data as Ata[]);
+    if (s.data) setSessoes(s.data as Sessao[]);
+  };
+
+  const loadBlocos = async (ataId: string) => {
+    const { data } = await supabase.from("blocos_ata").select("*").eq("ata_id", ataId).order("ordem");
+    if (data) setBlocos(data as Bloco[]);
+  };
+
+  useEffect(() => { if (tenantId) load(); }, [tenantId]);
+  useEffect(() => { if (selected) loadBlocos(selected.id); }, [selected]);
+
+  const criarAta = async () => {
+    if (!tenantId || !nova.sessao_id) return toast.error("Sessão é obrigatória");
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data, error } = await supabase.from("atas").insert({
+      tenant_id: tenantId, sessao_id: nova.sessao_id,
+      numero: nova.numero || null, titulo: nova.titulo || null,
+      created_by: user?.id,
+    }).select().single();
+    if (error) return toast.error(error.message);
+    // cria blocos padrão REAA
+    const blocosInsert = BLOCOS_PADRAO.map((tipo, i) => ({
+      tenant_id: tenantId, ata_id: data.id, tipo, ordem: i, titulo: BLOCO_LABELS[tipo], conteudo: "",
+    }));
+    await supabase.from("blocos_ata").insert(blocosInsert);
+    toast.success("Ata criada com blocos REAA");
+    setOpen(false);
+    setNova({ sessao_id: "", numero: "", titulo: "" });
+    load();
+  };
+
+  const salvarBloco = async (bloco: Bloco, conteudo: string) => {
+    const { error } = await supabase.from("blocos_ata").update({ conteudo }).eq("id", bloco.id);
+    if (error) return toast.error(error.message);
+    toast.success("Bloco salvo");
+    if (selected) loadBlocos(selected.id);
+  };
+
+  const avancarEstado = async () => {
+    if (!selected) return;
+    const proximo = PROXIMO_ESTADO[selected.estado];
+    if (!proximo) return toast.info("Estado final");
+
+    // Ao travar, gera hash + snapshot na versoes_ata
+    if (proximo === "travada") {
+      const snapshot = { ata: selected, blocos };
+      const hash = await sha256(JSON.stringify(snapshot));
+      const { data: { user } } = await supabase.auth.getUser();
+      const vErr = await supabase.from("versoes_ata").insert([{
+        tenant_id: tenantId!, ata_id: selected.id, versao: selected.versao_atual,
+        snapshot: JSON.parse(JSON.stringify(snapshot)), hash, motivo: "Travamento da ata", created_by: user?.id,
+      }]);
+      if (vErr.error) return toast.error(vErr.error.message);
+      await supabase.from("atas").update({
+        estado: proximo, hash_integridade: hash, travada_em: new Date().toISOString(),
+      }).eq("id", selected.id);
+    } else if (proximo === "publicada") {
+      await supabase.from("atas").update({
+        estado: proximo, publicada_em: new Date().toISOString(),
+      }).eq("id", selected.id);
+    } else {
+      await supabase.from("atas").update({ estado: proximo }).eq("id", selected.id);
+    }
+    toast.success(`Estado: ${proximo}`);
+    setSelected({ ...selected, estado: proximo });
+    load();
+  };
+
+  if (tLoading) return <div className="p-6">Carregando…</div>;
+
+  // ── Detalhe ──
+  if (selected) {
+    const locked = selected.estado === "travada" || selected.estado === "publicada";
+    return (
+      <div className="p-6 space-y-4">
+        <Button variant="ghost" onClick={() => setSelected(null)}><ArrowLeft className="h-4 w-4 mr-2"/>Voltar</Button>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-serif font-bold flex items-center gap-2">
+              <FileText className="h-6 w-6"/> {selected.titulo || `Ata nº ${selected.numero ?? "—"}`}
+            </h1>
+            <div className="flex gap-2 mt-1">
+              <Badge variant={ESTADO_COLOR[selected.estado] as "default"}>{selected.estado}</Badge>
+              <Badge variant="outline">v{selected.versao_atual}</Badge>
+              {locked && <Badge variant="destructive"><Lock className="h-3 w-3 mr-1"/>Bloqueada</Badge>}
+            </div>
+          </div>
+          {PROXIMO_ESTADO[selected.estado] && (
+            <Button onClick={avancarEstado}>Avançar → {PROXIMO_ESTADO[selected.estado]}</Button>
+          )}
+        </div>
+
+        <div className="space-y-3">
+          {blocos.map(b => (
+            <BlocoEditor key={b.id} bloco={b} locked={locked} onSave={(c) => salvarBloco(b, c)}/>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Lista ──
+  return (
+    <div className="p-6 space-y-6">
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-serif font-bold">Atas Maçônicas</h1>
+          <p className="text-muted-foreground">Atas REAA com blocos, versionamento e máquina de estados.</p>
+        </div>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2"/>Nova Ata</Button></DialogTrigger>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Nova Ata</DialogTitle></DialogHeader>
+            <div className="space-y-3">
+              <div>
+                <Label>Sessão *</Label>
+                <Select value={nova.sessao_id} onValueChange={(v) => setNova({...nova, sessao_id: v})}>
+                  <SelectTrigger><SelectValue placeholder="Selecione…"/></SelectTrigger>
+                  <SelectContent>
+                    {sessoes.map(s => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {new Date(s.data).toLocaleDateString("pt-BR")} — {s.tipo} • Grau {s.grau}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div><Label>Número</Label><Input value={nova.numero} onChange={(e) => setNova({...nova, numero: e.target.value})}/></div>
+              <div><Label>Título</Label><Input value={nova.titulo} onChange={(e) => setNova({...nova, titulo: e.target.value})}/></div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+              <Button onClick={criarAta}>Criar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <Card>
+        <CardHeader><CardTitle>Atas</CardTitle></CardHeader>
+        <CardContent>
+          {atas.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8">Nenhuma ata registrada.</p>
+          ) : (
+            <Table>
+              <TableHeader><TableRow>
+                <TableHead>Número</TableHead><TableHead>Título</TableHead>
+                <TableHead>Estado</TableHead><TableHead>Versão</TableHead><TableHead></TableHead>
+              </TableRow></TableHeader>
+              <TableBody>
+                {atas.map(a => (
+                  <TableRow key={a.id}>
+                    <TableCell>{a.numero ?? "—"}</TableCell>
+                    <TableCell>{a.titulo ?? "—"}</TableCell>
+                    <TableCell><Badge variant={ESTADO_COLOR[a.estado] as "default"}>{a.estado}</Badge></TableCell>
+                    <TableCell>v{a.versao_atual}</TableCell>
+                    <TableCell><Button size="sm" variant="outline" onClick={() => setSelected(a)}>Abrir</Button></TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function BlocoEditor({ bloco, locked, onSave }: { bloco: Bloco; locked: boolean; onSave: (c: string) => void }) {
+  const [val, setVal] = useState(bloco.conteudo ?? "");
+  useEffect(() => { setVal(bloco.conteudo ?? ""); }, [bloco.id, bloco.conteudo]);
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between py-3">
+        <CardTitle className="text-base">{bloco.titulo || BLOCO_LABELS[bloco.tipo]}</CardTitle>
+        {!locked && (
+          <Button size="sm" variant="outline" onClick={() => onSave(val)}>
+            <Save className="h-4 w-4 mr-2"/>Salvar
+          </Button>
+        )}
+      </CardHeader>
+      <CardContent>
+        <Textarea value={val} onChange={(e) => setVal(e.target.value)} rows={5} disabled={locked}
+          placeholder={`Conteúdo de ${BLOCO_LABELS[bloco.tipo]}…`}/>
+      </CardContent>
+    </Card>
+  );
+}
