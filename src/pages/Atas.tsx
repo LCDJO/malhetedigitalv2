@@ -43,7 +43,7 @@ const PROXIMO_ESTADO: Record<Estado, Estado | null> = {
   aprovada: "travada", travada: "publicada", publicada: null, retificada: null,
 };
 
-interface Ata { id: string; numero: string | null; titulo: string | null; estado: Estado; versao_atual: number; sessao_id: string; created_at: string; }
+interface Ata { id: string; numero: string | null; titulo: string | null; estado: Estado; versao_atual: number; sessao_id: string; created_at: string; publicada_em?: string | null; travada_em?: string | null; hash_integridade?: string | null; }
 interface Sessao { id: string; numero: string | null; data: string; tipo: string; grau: number; }
 interface Bloco { id: string; tipo: BlocoTipo; ordem: number; titulo: string | null; conteudo: string | null; }
 interface Assinatura { id: string; papel: string; assinado_em: string; user_id: string; versao: number; }
