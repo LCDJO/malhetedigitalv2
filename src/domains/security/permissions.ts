@@ -211,6 +211,7 @@ const NAV_ENTITY_MAP: Record<NavKey, PermissionEntity> = {
   atendimento: "support_tickets",
   comunicacoes: "lodge_config",
   sessoes: "members",
+  atas: "members",
 };
 
 /**
