@@ -114,10 +114,10 @@ export default function Atas() {
       const snapshot = { ata: selected, blocos };
       const hash = await sha256(JSON.stringify(snapshot));
       const { data: { user } } = await supabase.auth.getUser();
-      const vErr = await supabase.from("versoes_ata").insert({
+      const vErr = await supabase.from("versoes_ata").insert([{
         tenant_id: tenantId!, ata_id: selected.id, versao: selected.versao_atual,
         snapshot, hash, motivo: "Travamento da ata", created_by: user?.id,
-      });
+      }]);
       if (vErr.error) return toast.error(vErr.error.message);
       await supabase.from("atas").update({
         estado: proximo, hash_integridade: hash, travada_em: new Date().toISOString(),
