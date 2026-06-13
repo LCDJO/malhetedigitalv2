@@ -26,6 +26,7 @@ import NotFound from "./pages/NotFound";
 import TotemAdmin from "./pages/TotemAdmin";
 import Sessoes from "./pages/Sessoes";
 import Atas from "./pages/Atas";
+import Beneficencia from "./pages/Beneficencia";
 import ComunicacoesPreferencias from "./pages/comunicacoes/ComunicacoesPreferencias";
 import ComunicacoesTemplates from "./pages/comunicacoes/ComunicacoesTemplates";
 import ComunicacoesTarefas from "./pages/comunicacoes/ComunicacoesTarefas";
@@ -191,6 +192,7 @@ const App = () => (
                       <Route path="/totem" element={<ProtectedRoute navKey="totem"><TotemAdmin /></ProtectedRoute>} />
                       <Route path="/sessoes" element={<ProtectedRoute navKey="sessoes"><Sessoes /></ProtectedRoute>} />
                       <Route path="/atas" element={<ProtectedRoute navKey="atas"><Atas /></ProtectedRoute>} />
+                      <Route path="/beneficencia" element={<ProtectedRoute navKey="beneficencia"><Beneficencia /></ProtectedRoute>} />
                       <Route path="/configuracoes" element={<ProtectedRoute navKey="configuracoes"><Configuracoes /></ProtectedRoute>} />
                       <Route path="/relatorios" element={<ProtectedRoute navKey="relatorios"><Relatorios /></ProtectedRoute>} />
                       <Route path="/gestao-usuarios" element={<ProtectedRoute navKey="gestao_usuarios"><GestaoUsuarios /></ProtectedRoute>} />
