@@ -20,7 +20,13 @@ interface AuthContextValue {
   acceptTerms: (termoId: string) => Promise<boolean>;
 }
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+const authContextGlobal = globalThis as typeof globalThis & {
+  __malheteAuthContext?: ReturnType<typeof createContext<AuthContextValue | null>>;
+};
+
+const AuthContext =
+  authContextGlobal.__malheteAuthContext ??
+  (authContextGlobal.__malheteAuthContext = createContext<AuthContextValue | null>(null));
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
