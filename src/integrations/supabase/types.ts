@@ -629,6 +629,79 @@ export type Database = {
           },
         ]
       }
+      aumentos_salario: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data_prevista: string | null
+          data_realizado: string | null
+          escrutinio_id: string | null
+          estado: Database["public"]["Enums"]["aumento_estado"]
+          grau_destino: Database["public"]["Enums"]["grau_macom"]
+          grau_origem: Database["public"]["Enums"]["grau_macom"]
+          id: string
+          justificativa: string | null
+          member_id: string
+          observacoes: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data_prevista?: string | null
+          data_realizado?: string | null
+          escrutinio_id?: string | null
+          estado?: Database["public"]["Enums"]["aumento_estado"]
+          grau_destino: Database["public"]["Enums"]["grau_macom"]
+          grau_origem: Database["public"]["Enums"]["grau_macom"]
+          id?: string
+          justificativa?: string | null
+          member_id: string
+          observacoes?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data_prevista?: string | null
+          data_realizado?: string | null
+          escrutinio_id?: string | null
+          estado?: Database["public"]["Enums"]["aumento_estado"]
+          grau_destino?: Database["public"]["Enums"]["grau_macom"]
+          grau_origem?: Database["public"]["Enums"]["grau_macom"]
+          id?: string
+          justificativa?: string | null
+          member_id?: string
+          observacoes?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aumentos_salario_escrutinio_id_fkey"
+            columns: ["escrutinio_id"]
+            isOneToOne: false
+            referencedRelation: "escrutinios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aumentos_salario_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aumentos_salario_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       banner_impressions: {
         Row: {
           banner_id: string
@@ -1657,6 +1730,8 @@ export type Database = {
           data_fim: string | null
           data_inicio: string
           id: string
+          mandato_fim: string | null
+          mandato_inicio: string | null
           member_id: string
           observacao: string | null
           tenant_id: string
@@ -1669,6 +1744,8 @@ export type Database = {
           data_fim?: string | null
           data_inicio?: string
           id?: string
+          mandato_fim?: string | null
+          mandato_inicio?: string | null
           member_id: string
           observacao?: string | null
           tenant_id: string
@@ -1681,6 +1758,8 @@ export type Database = {
           data_fim?: string | null
           data_inicio?: string
           id?: string
+          mandato_fim?: string | null
+          mandato_inicio?: string | null
           member_id?: string
           observacao?: string | null
           tenant_id?: string
@@ -3599,6 +3678,14 @@ export type Database = {
         | "travada"
         | "publicada"
         | "retificada"
+      aumento_estado:
+        | "proposto"
+        | "instruido"
+        | "escrutinio"
+        | "aprovado"
+        | "rejeitado"
+        | "realizado"
+        | "arquivado"
       beneficencia_origem:
         | "tronco_sessao"
         | "doacao"
@@ -3619,6 +3706,7 @@ export type Database = {
         | "outros"
       campaign_status: "rascunho" | "ativa" | "pausada" | "encerrada"
       escrutinio_estado: "aberto" | "encerrado" | "anulado"
+      grau_macom: "aprendiz" | "companheiro" | "mestre"
       hospitalaria_status:
         | "aberto"
         | "em_acompanhamento"
@@ -3812,6 +3900,15 @@ export const Constants = {
         "publicada",
         "retificada",
       ],
+      aumento_estado: [
+        "proposto",
+        "instruido",
+        "escrutinio",
+        "aprovado",
+        "rejeitado",
+        "realizado",
+        "arquivado",
+      ],
       beneficencia_origem: [
         "tronco_sessao",
         "doacao",
@@ -3834,6 +3931,7 @@ export const Constants = {
       ],
       campaign_status: ["rascunho", "ativa", "pausada", "encerrada"],
       escrutinio_estado: ["aberto", "encerrado", "anulado"],
+      grau_macom: ["aprendiz", "companheiro", "mestre"],
       hospitalaria_status: [
         "aberto",
         "em_acompanhamento",

@@ -195,7 +195,8 @@ export type NavKey =
   | "sessoes"
   | "atas"
   | "beneficencia"
-  | "propostas";
+  | "propostas"
+  | "oficina";
 
 const NAV_ENTITY_MAP: Record<NavKey, PermissionEntity> = {
   dashboard: "dashboard",
@@ -216,6 +217,7 @@ const NAV_ENTITY_MAP: Record<NavKey, PermissionEntity> = {
   atas: "members",
   beneficencia: "member_transactions",
   propostas: "members",
+  oficina: "members",
 };
 
 /**
