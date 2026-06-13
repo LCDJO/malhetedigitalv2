@@ -146,11 +146,10 @@ export default function Atas() {
 
   const adicionarManifesto = async () => {
     if (!selected || !tenantId || !manifesto.trim()) return;
-    const { data: { user } } = await supabase.auth.getUser();
     const nextOrdem = blocos.length;
     const { error } = await supabase.from("blocos_ata").insert({
       tenant_id: tenantId, ata_id: selected.id, tipo: "outros", ordem: nextOrdem,
-      titulo: "Manifesto / Palavra a Bem", conteudo: manifesto, autor_id: user?.id,
+      titulo: "Manifesto / Palavra a Bem", conteudo: manifesto,
     });
     if (error) return toast.error(error.message);
     toast.success("Manifesto registrado");
