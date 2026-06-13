@@ -194,6 +194,7 @@ const App = () => (
                       <Route path="/sessoes" element={<ProtectedRoute navKey="sessoes"><Sessoes /></ProtectedRoute>} />
                       <Route path="/atas" element={<ProtectedRoute navKey="atas"><Atas /></ProtectedRoute>} />
                       <Route path="/beneficencia" element={<ProtectedRoute navKey="beneficencia"><Beneficencia /></ProtectedRoute>} />
+                      <Route path="/propostas" element={<ProtectedRoute navKey="propostas"><Propostas /></ProtectedRoute>} />
                       <Route path="/configuracoes" element={<ProtectedRoute navKey="configuracoes"><Configuracoes /></ProtectedRoute>} />
                       <Route path="/relatorios" element={<ProtectedRoute navKey="relatorios"><Relatorios /></ProtectedRoute>} />
                       <Route path="/gestao-usuarios" element={<ProtectedRoute navKey="gestao_usuarios"><GestaoUsuarios /></ProtectedRoute>} />
