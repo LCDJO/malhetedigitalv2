@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Plus, FileText, Lock, ArrowLeft, Save } from "lucide-react";
+import { Plus, FileText, Lock, ArrowLeft, Save, ShieldCheck, MessageSquarePlus } from "lucide-react";
 
 type Estado = "rascunho" | "revisao" | "leitura" | "aprovada" | "travada" | "publicada" | "retificada";
 type BlocoTipo = "cabecalho" | "abertura" | "expediente" | "saco_propostas" | "ordem_dia" | "tempo_estudos" | "tronco" | "palavra_bem" | "encerramento" | "outros";
