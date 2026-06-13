@@ -188,6 +188,7 @@ const App = () => (
                       <Route path="/tesouraria" element={<ProtectedRoute navKey="tesouraria"><Tesouraria /></ProtectedRoute>} />
                       <Route path="/totem" element={<ProtectedRoute navKey="totem"><TotemAdmin /></ProtectedRoute>} />
                       <Route path="/sessoes" element={<ProtectedRoute navKey="sessoes"><Sessoes /></ProtectedRoute>} />
+                      <Route path="/atas" element={<ProtectedRoute navKey="atas"><Atas /></ProtectedRoute>} />
                       <Route path="/configuracoes" element={<ProtectedRoute navKey="configuracoes"><Configuracoes /></ProtectedRoute>} />
                       <Route path="/relatorios" element={<ProtectedRoute navKey="relatorios"><Relatorios /></ProtectedRoute>} />
                       <Route path="/gestao-usuarios" element={<ProtectedRoute navKey="gestao_usuarios"><GestaoUsuarios /></ProtectedRoute>} />
