@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserTenant } from "@/core/tenant";
+import { useLodgeConfig } from "@/hooks/useLodgeConfig";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +12,9 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Plus, FileText, Lock, ArrowLeft, Save, ShieldCheck, MessageSquarePlus } from "lucide-react";
+import { Plus, FileText, Lock, ArrowLeft, Save, ShieldCheck, MessageSquarePlus, Sparkles, Download, FilePlus2 } from "lucide-react";
+import { gerarBlocosAbertura } from "@/lib/ataAutoBlocks";
+import { exportAtaPdf } from "@/lib/ataPdf";
 
 type Estado = "rascunho" | "revisao" | "leitura" | "aprovada" | "travada" | "publicada" | "retificada";
 type BlocoTipo = "cabecalho" | "abertura" | "expediente" | "saco_propostas" | "ordem_dia" | "tempo_estudos" | "tronco" | "palavra_bem" | "encerramento" | "outros";
@@ -40,7 +43,7 @@ const PROXIMO_ESTADO: Record<Estado, Estado | null> = {
   aprovada: "travada", travada: "publicada", publicada: null, retificada: null,
 };
 
-interface Ata { id: string; numero: string | null; titulo: string | null; estado: Estado; versao_atual: number; sessao_id: string; created_at: string; }
+interface Ata { id: string; numero: string | null; titulo: string | null; estado: Estado; versao_atual: number; sessao_id: string; created_at: string; publicada_em?: string | null; travada_em?: string | null; hash_integridade?: string | null; }
 interface Sessao { id: string; numero: string | null; data: string; tipo: string; grau: number; }
 interface Bloco { id: string; tipo: BlocoTipo; ordem: number; titulo: string | null; conteudo: string | null; }
 interface Assinatura { id: string; papel: string; assinado_em: string; user_id: string; versao: number; }
@@ -54,6 +57,7 @@ async function sha256(text: string): Promise<string> {
 
 export default function Atas() {
   const { tenantId, loading: tLoading } = useUserTenant();
+  const { config: lodgeConfig } = useLodgeConfig();
   const [atas, setAtas] = useState<Ata[]>([]);
   const [sessoes, setSessoes] = useState<Sessao[]>([]);
   const [selected, setSelected] = useState<Ata | null>(null);
@@ -63,6 +67,8 @@ export default function Atas() {
   const [nova, setNova] = useState({ sessao_id: "", numero: "", titulo: "" });
   const [manifesto, setManifesto] = useState("");
   const [papel, setPapel] = useState(PAPEIS[0]);
+  const [retOpen, setRetOpen] = useState(false);
+  const [retMotivo, setRetMotivo] = useState("");
 
   const load = async () => {
     if (!tenantId) return;
@@ -170,6 +176,84 @@ export default function Atas() {
     loadAssinaturas(selected.id);
   };
 
+  const preencherAberturaAuto = async () => {
+    if (!selected || !tenantId) return;
+    if (!lodgeConfig.lodge_name) return toast.error("Configure os dados da Loja primeiro.");
+    try {
+      const result = await gerarBlocosAbertura({
+        tenantId,
+        sessaoId: selected.sessao_id,
+        ataNumero: selected.numero,
+        lodgeName: lodgeConfig.lodge_name,
+        lodgeNumber: lodgeConfig.lodge_number,
+        orient: lodgeConfig.orient,
+        potencia: lodgeConfig.potencia,
+      });
+      const cab = blocos.find(b => b.tipo === "cabecalho");
+      const abe = blocos.find(b => b.tipo === "abertura");
+      if (cab) await supabase.from("blocos_ata").update({ conteudo: result.cabecalho }).eq("id", cab.id);
+      if (abe) await supabase.from("blocos_ata").update({ conteudo: result.abertura }).eq("id", abe.id);
+      toast.success(`Abertura preenchida (${result.stats.presentes} presentes, ${result.stats.visitantes} visitantes).`);
+      loadBlocos(selected.id);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha ao gerar abertura.");
+    }
+  };
+
+  const exportarPdf = async () => {
+    if (!selected) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    exportAtaPdf({
+      config: lodgeConfig,
+      ata: selected,
+      blocos: blocos.map(b => ({ titulo: b.titulo, tipo: b.tipo, conteudo: b.conteudo, ordem: b.ordem })),
+      assinaturas,
+      emitidoPor: user?.email ?? undefined,
+    });
+  };
+
+  const retificar = async () => {
+    if (!selected || !tenantId || !retMotivo.trim()) return toast.error("Informe o motivo da retificação.");
+    // Verifica prazo configurado
+    const referencia = selected.publicada_em ? new Date(selected.publicada_em) : null;
+    if (referencia && lodgeConfig && (lodgeConfig as any).dias_prazo_retificacao) {
+      const prazoDias = (lodgeConfig as any).dias_prazo_retificacao as number;
+      const diff = (Date.now() - referencia.getTime()) / (1000 * 60 * 60 * 24);
+      if (diff > prazoDias) {
+        return toast.error(`Prazo de retificação (${prazoDias} dias) expirado.`);
+      }
+    }
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data: novaAta, error } = await supabase.from("atas").insert({
+      tenant_id: tenantId,
+      sessao_id: selected.sessao_id,
+      numero: selected.numero ? `${selected.numero}-R` : null,
+      titulo: `Retificação — ${selected.titulo ?? `Ata ${selected.numero ?? ""}`}`.trim(),
+      retificacao_de: selected.id,
+      created_by: user?.id,
+    }).select().single();
+    if (error || !novaAta) return toast.error(error?.message ?? "Falha ao retificar.");
+    // Clona blocos da ata original
+    const clones = blocos.map(b => ({
+      tenant_id: tenantId, ata_id: novaAta.id,
+      tipo: b.tipo, ordem: b.ordem,
+      titulo: b.titulo, conteudo: b.conteudo,
+    }));
+    if (clones.length) await supabase.from("blocos_ata").insert(clones);
+    // Bloco de motivo
+    await supabase.from("blocos_ata").insert({
+      tenant_id: tenantId, ata_id: novaAta.id, tipo: "outros",
+      ordem: clones.length, titulo: "Motivo da Retificação", conteudo: retMotivo,
+    });
+    // Marca a original como retificada
+    await supabase.from("atas").update({ estado: "retificada" }).eq("id", selected.id);
+    toast.success("Ata retificadora criada em rascunho.");
+    setRetOpen(false);
+    setRetMotivo("");
+    await load();
+    setSelected({ ...(novaAta as Ata) });
+  };
+
   if (tLoading) return <div className="p-6">Carregando…</div>;
 
   // ── Detalhe ──
@@ -189,9 +273,43 @@ export default function Atas() {
               {locked && <Badge variant="destructive"><Lock className="h-3 w-3 mr-1"/>Bloqueada</Badge>}
             </div>
           </div>
-          {PROXIMO_ESTADO[selected.estado] && (
-            <Button onClick={avancarEstado}>Avançar → {PROXIMO_ESTADO[selected.estado]}</Button>
-          )}
+          <div className="flex gap-2 flex-wrap justify-end">
+            {!locked && (
+              <Button variant="outline" onClick={preencherAberturaAuto}>
+                <Sparkles className="h-4 w-4 mr-2"/>Preencher abertura
+              </Button>
+            )}
+            <Button variant="outline" onClick={exportarPdf}>
+              <Download className="h-4 w-4 mr-2"/>PDF oficial
+            </Button>
+            {(selected.estado === "publicada" || selected.estado === "travada") && (
+              <Dialog open={retOpen} onOpenChange={setRetOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline"><FilePlus2 className="h-4 w-4 mr-2"/>Retificar</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader><DialogTitle>Retificar Ata</DialogTitle></DialogHeader>
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      Uma nova ata será criada em rascunho, vinculada a esta, e a original ficará marcada como retificada.
+                    </p>
+                    <div>
+                      <Label>Motivo da retificação *</Label>
+                      <Textarea rows={4} value={retMotivo} onChange={(e) => setRetMotivo(e.target.value)}
+                        placeholder="Descreva o erro material ou omissão a corrigir…"/>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setRetOpen(false)}>Cancelar</Button>
+                    <Button onClick={retificar} disabled={!retMotivo.trim()}>Criar retificadora</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            )}
+            {PROXIMO_ESTADO[selected.estado] && (
+              <Button onClick={avancarEstado}>Avançar → {PROXIMO_ESTADO[selected.estado]}</Button>
+            )}
+          </div>
         </div>
 
         <div className="space-y-3">

@@ -33,6 +33,14 @@ interface LodgeConfig extends DadosLojaConfig {
   permitir_lancamento_retroativo: boolean;
   exigir_aprovacao_tesouraria: boolean;
   notificar_inadimplencia: boolean;
+  quorum_minimo_aprendiz: number;
+  quorum_minimo_companheiro: number;
+  quorum_minimo_mestre: number;
+  escrutinio_secreto_obrigatorio: boolean;
+  exigir_assinatura_vm: boolean;
+  exigir_assinatura_orador: boolean;
+  exigir_assinatura_secretario: boolean;
+  dias_prazo_retificacao: number;
 }
 
 const defaultConfig: LodgeConfig = {
@@ -59,6 +67,14 @@ const defaultConfig: LodgeConfig = {
   permitir_lancamento_retroativo: true,
   exigir_aprovacao_tesouraria: false,
   notificar_inadimplencia: true,
+  quorum_minimo_aprendiz: 7,
+  quorum_minimo_companheiro: 7,
+  quorum_minimo_mestre: 7,
+  escrutinio_secreto_obrigatorio: true,
+  exigir_assinatura_vm: true,
+  exigir_assinatura_orador: true,
+  exigir_assinatura_secretario: true,
+  dias_prazo_retificacao: 90,
 };
 
 export default function Configuracoes() {
