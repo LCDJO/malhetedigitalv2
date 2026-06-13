@@ -1373,9 +1373,14 @@ export type Database = {
           categorias_financeiras: Json
           created_at: string
           dia_vencimento: number
+          dias_prazo_retificacao: number
           email_institucional: string | null
           endereco: string | null
+          escrutinio_secreto_obrigatorio: boolean
           exigir_aprovacao_tesouraria: boolean
+          exigir_assinatura_orador: boolean
+          exigir_assinatura_secretario: boolean
+          exigir_assinatura_vm: boolean
           exigir_quitacao_para_avanco: boolean
           id: string
           lodge_name: string
@@ -1391,6 +1396,9 @@ export type Database = {
           permitir_juros: boolean
           permitir_lancamento_retroativo: boolean
           potencia: string
+          quorum_minimo_aprendiz: number
+          quorum_minimo_companheiro: number
+          quorum_minimo_mestre: number
           telefone: string | null
           tempo_minimo_aprendiz: number
           tempo_minimo_companheiro: number
@@ -1401,9 +1409,14 @@ export type Database = {
           categorias_financeiras?: Json
           created_at?: string
           dia_vencimento?: number
+          dias_prazo_retificacao?: number
           email_institucional?: string | null
           endereco?: string | null
+          escrutinio_secreto_obrigatorio?: boolean
           exigir_aprovacao_tesouraria?: boolean
+          exigir_assinatura_orador?: boolean
+          exigir_assinatura_secretario?: boolean
+          exigir_assinatura_vm?: boolean
           exigir_quitacao_para_avanco?: boolean
           id?: string
           lodge_name: string
@@ -1419,6 +1432,9 @@ export type Database = {
           permitir_juros?: boolean
           permitir_lancamento_retroativo?: boolean
           potencia?: string
+          quorum_minimo_aprendiz?: number
+          quorum_minimo_companheiro?: number
+          quorum_minimo_mestre?: number
           telefone?: string | null
           tempo_minimo_aprendiz?: number
           tempo_minimo_companheiro?: number
@@ -1429,9 +1445,14 @@ export type Database = {
           categorias_financeiras?: Json
           created_at?: string
           dia_vencimento?: number
+          dias_prazo_retificacao?: number
           email_institucional?: string | null
           endereco?: string | null
+          escrutinio_secreto_obrigatorio?: boolean
           exigir_aprovacao_tesouraria?: boolean
+          exigir_assinatura_orador?: boolean
+          exigir_assinatura_secretario?: boolean
+          exigir_assinatura_vm?: boolean
           exigir_quitacao_para_avanco?: boolean
           id?: string
           lodge_name?: string
@@ -1447,6 +1468,9 @@ export type Database = {
           permitir_juros?: boolean
           permitir_lancamento_retroativo?: boolean
           potencia?: string
+          quorum_minimo_aprendiz?: number
+          quorum_minimo_companheiro?: number
+          quorum_minimo_mestre?: number
           telefone?: string | null
           tempo_minimo_aprendiz?: number
           tempo_minimo_companheiro?: number
