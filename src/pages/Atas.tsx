@@ -57,6 +57,7 @@ async function sha256(text: string): Promise<string> {
 
 export default function Atas() {
   const { tenantId, loading: tLoading } = useUserTenant();
+  const { config: lodgeConfig } = useLodgeConfig();
   const [atas, setAtas] = useState<Ata[]>([]);
   const [sessoes, setSessoes] = useState<Sessao[]>([]);
   const [selected, setSelected] = useState<Ata | null>(null);
@@ -66,6 +67,8 @@ export default function Atas() {
   const [nova, setNova] = useState({ sessao_id: "", numero: "", titulo: "" });
   const [manifesto, setManifesto] = useState("");
   const [papel, setPapel] = useState(PAPEIS[0]);
+  const [retOpen, setRetOpen] = useState(false);
+  const [retMotivo, setRetMotivo] = useState("");
 
   const load = async () => {
     if (!tenantId) return;
