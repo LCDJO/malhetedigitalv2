@@ -91,6 +91,7 @@ const navSections: NavSection[] = [
     items: [
       { title: "Secretaria", url: "/dashboard/secretaria", icon: BookOpen, navKey: "secretaria" },
       { title: "Sessões", url: "/dashboard/sessoes", icon: Calendar, navKey: "sessoes" },
+      { title: "Atas", url: "/dashboard/atas", icon: FileText, navKey: "atas" },
       { title: "Chancelaria", url: "/dashboard/chancelaria", icon: Stamp, navKey: "chancelaria" },
       { title: "Tesouraria", url: "/dashboard/tesouraria", icon: Wallet, navKey: "tesouraria" },
       { title: "Financeiro Geral", url: "/dashboard/financeiro-geral", icon: DollarSign, navKey: "financeiro_geral" },
