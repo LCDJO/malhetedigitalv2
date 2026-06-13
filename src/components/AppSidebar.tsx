@@ -95,6 +95,7 @@ const navSections: NavSection[] = [
       { title: "Atas", url: "/dashboard/atas", icon: FileText, navKey: "atas" },
       { title: "Propostas", url: "/dashboard/propostas", icon: FileText, navKey: "propostas" },
       { title: "Oficina", url: "/dashboard/oficina", icon: BookOpen, navKey: "oficina" },
+      { title: "Presenças", url: "/dashboard/presencas", icon: Calendar, navKey: "presencas" },
       { title: "Chancelaria", url: "/dashboard/chancelaria", icon: Stamp, navKey: "chancelaria" },
       { title: "Tesouraria", url: "/dashboard/tesouraria", icon: Wallet, navKey: "tesouraria" },
       { title: "Beneficência", url: "/dashboard/beneficencia", icon: HandHeart, navKey: "beneficencia" },
