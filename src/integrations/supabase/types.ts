@@ -534,6 +534,50 @@ export type Database = {
           },
         ]
       }
+      cargos_oficina: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          descricao: string | null
+          grau_minimo: number | null
+          id: string
+          nome: string
+          ordem: number
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          grau_minimo?: number | null
+          id?: string
+          nome: string
+          ordem?: number
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          grau_minimo?: number | null
+          id?: string
+          nome?: string
+          ordem?: number
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cargos_oficina_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_dispatch_tasks: {
         Row: {
           audience: string
@@ -1064,6 +1108,7 @@ export type Database = {
           exaltation_date: string | null
           force_password_change: boolean
           full_name: string
+          grau_numerico: number | null
           id: string
           initiation_date: string | null
           master_installed: boolean
@@ -1087,6 +1132,7 @@ export type Database = {
           exaltation_date?: string | null
           force_password_change?: boolean
           full_name: string
+          grau_numerico?: number | null
           id?: string
           initiation_date?: string | null
           master_installed?: boolean
@@ -1110,6 +1156,7 @@ export type Database = {
           exaltation_date?: string | null
           force_password_change?: boolean
           full_name?: string
+          grau_numerico?: number | null
           id?: string
           initiation_date?: string | null
           master_installed?: boolean
@@ -1122,6 +1169,67 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "members_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      membro_cargos: {
+        Row: {
+          ativo: boolean
+          cargo_id: string
+          created_at: string
+          data_fim: string | null
+          data_inicio: string
+          id: string
+          member_id: string
+          observacao: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          cargo_id: string
+          created_at?: string
+          data_fim?: string | null
+          data_inicio?: string
+          id?: string
+          member_id: string
+          observacao?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          cargo_id?: string
+          created_at?: string
+          data_fim?: string | null
+          data_inicio?: string
+          id?: string
+          member_id?: string
+          observacao?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "membro_cargos_cargo_id_fkey"
+            columns: ["cargo_id"]
+            isOneToOne: false
+            referencedRelation: "cargos_oficina"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "membro_cargos_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "membro_cargos_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -1595,6 +1703,64 @@ export type Database = {
         }
         Relationships: []
       }
+      presencas: {
+        Row: {
+          created_at: string
+          id: string
+          justificada: boolean
+          member_id: string
+          observacao: string | null
+          presente: boolean
+          sessao_id: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          justificada?: boolean
+          member_id: string
+          observacao?: string | null
+          presente?: boolean
+          sessao_id: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          justificada?: boolean
+          member_id?: string
+          observacao?: string | null
+          presente?: boolean
+          sessao_id?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presencas_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presencas_sessao_id_fkey"
+            columns: ["sessao_id"]
+            isOneToOne: false
+            referencedRelation: "sessoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presencas_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           access_level: number | null
@@ -1780,6 +1946,65 @@ export type Database = {
           nome?: string
         }
         Relationships: []
+      }
+      sessoes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data: string
+          grau: number
+          hora_fim: string | null
+          hora_inicio: string | null
+          id: string
+          local: string | null
+          numero: string | null
+          observacoes: string | null
+          status: string
+          tenant_id: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data: string
+          grau?: number
+          hora_fim?: string | null
+          hora_inicio?: string | null
+          id?: string
+          local?: string | null
+          numero?: string | null
+          observacoes?: string | null
+          status?: string
+          tenant_id: string
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data?: string
+          grau?: number
+          hora_fim?: string | null
+          hora_inicio?: string | null
+          id?: string
+          local?: string | null
+          numero?: string | null
+          observacoes?: string | null
+          status?: string
+          tenant_id?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sessoes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       solicitacoes_titular: {
         Row: {
@@ -2439,6 +2664,69 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      visitantes: {
+        Row: {
+          cim: string | null
+          created_at: string
+          grau: number | null
+          id: string
+          loja_origem: string | null
+          nome: string
+          observacao: string | null
+          oriente: string | null
+          potencia: string | null
+          rito: string | null
+          sessao_id: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          cim?: string | null
+          created_at?: string
+          grau?: number | null
+          id?: string
+          loja_origem?: string | null
+          nome: string
+          observacao?: string | null
+          oriente?: string | null
+          potencia?: string | null
+          rito?: string | null
+          sessao_id: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          cim?: string | null
+          created_at?: string
+          grau?: number | null
+          id?: string
+          loja_origem?: string | null
+          nome?: string
+          observacao?: string | null
+          oriente?: string | null
+          potencia?: string | null
+          rito?: string | null
+          sessao_id?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visitantes_sessao_id_fkey"
+            columns: ["sessao_id"]
+            isOneToOne: false
+            referencedRelation: "sessoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visitantes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       wallet_transactions: {
         Row: {
