@@ -458,6 +458,130 @@ export type Database = {
           },
         ]
       }
+      assinaturas_ata: {
+        Row: {
+          assinado_em: string
+          ata_id: string
+          id: string
+          ip: string | null
+          papel: string
+          tenant_id: string
+          user_agent: string | null
+          user_id: string
+          versao: number
+        }
+        Insert: {
+          assinado_em?: string
+          ata_id: string
+          id?: string
+          ip?: string | null
+          papel: string
+          tenant_id: string
+          user_agent?: string | null
+          user_id: string
+          versao: number
+        }
+        Update: {
+          assinado_em?: string
+          ata_id?: string
+          id?: string
+          ip?: string | null
+          papel?: string
+          tenant_id?: string
+          user_agent?: string | null
+          user_id?: string
+          versao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assinaturas_ata_ata_id_fkey"
+            columns: ["ata_id"]
+            isOneToOne: false
+            referencedRelation: "atas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assinaturas_ata_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      atas: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          estado: Database["public"]["Enums"]["ata_estado"]
+          hash_integridade: string | null
+          id: string
+          numero: string | null
+          publicada_em: string | null
+          retificacao_de: string | null
+          sessao_id: string
+          tenant_id: string
+          titulo: string | null
+          travada_em: string | null
+          updated_at: string
+          versao_atual: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          estado?: Database["public"]["Enums"]["ata_estado"]
+          hash_integridade?: string | null
+          id?: string
+          numero?: string | null
+          publicada_em?: string | null
+          retificacao_de?: string | null
+          sessao_id: string
+          tenant_id: string
+          titulo?: string | null
+          travada_em?: string | null
+          updated_at?: string
+          versao_atual?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          estado?: Database["public"]["Enums"]["ata_estado"]
+          hash_integridade?: string | null
+          id?: string
+          numero?: string | null
+          publicada_em?: string | null
+          retificacao_de?: string | null
+          sessao_id?: string
+          tenant_id?: string
+          titulo?: string | null
+          travada_em?: string | null
+          updated_at?: string
+          versao_atual?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atas_retificacao_de_fkey"
+            columns: ["retificacao_de"]
+            isOneToOne: false
+            referencedRelation: "atas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atas_sessao_id_fkey"
+            columns: ["sessao_id"]
+            isOneToOne: false
+            referencedRelation: "sessoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atas_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           action: string
@@ -530,6 +654,70 @@ export type Database = {
             columns: ["banner_id"]
             isOneToOne: false
             referencedRelation: "login_banners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      blocos_ata: {
+        Row: {
+          ata_id: string
+          autor_id: string | null
+          conteudo: string | null
+          conteudo_json: Json | null
+          created_at: string
+          id: string
+          ordem: number
+          tenant_id: string
+          tipo: Database["public"]["Enums"]["bloco_tipo"]
+          titulo: string | null
+          updated_at: string
+        }
+        Insert: {
+          ata_id: string
+          autor_id?: string | null
+          conteudo?: string | null
+          conteudo_json?: Json | null
+          created_at?: string
+          id?: string
+          ordem?: number
+          tenant_id: string
+          tipo: Database["public"]["Enums"]["bloco_tipo"]
+          titulo?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ata_id?: string
+          autor_id?: string | null
+          conteudo?: string | null
+          conteudo_json?: Json | null
+          created_at?: string
+          id?: string
+          ordem?: number
+          tenant_id?: string
+          tipo?: Database["public"]["Enums"]["bloco_tipo"]
+          titulo?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blocos_ata_ata_id_fkey"
+            columns: ["ata_id"]
+            isOneToOne: false
+            referencedRelation: "atas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blocos_ata_autor_id_fkey"
+            columns: ["autor_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blocos_ata_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -2665,6 +2853,57 @@ export type Database = {
         }
         Relationships: []
       }
+      versoes_ata: {
+        Row: {
+          ata_id: string
+          created_at: string
+          created_by: string | null
+          hash: string
+          id: string
+          motivo: string | null
+          snapshot: Json
+          tenant_id: string
+          versao: number
+        }
+        Insert: {
+          ata_id: string
+          created_at?: string
+          created_by?: string | null
+          hash: string
+          id?: string
+          motivo?: string | null
+          snapshot: Json
+          tenant_id: string
+          versao: number
+        }
+        Update: {
+          ata_id?: string
+          created_at?: string
+          created_by?: string | null
+          hash?: string
+          id?: string
+          motivo?: string | null
+          snapshot?: Json
+          tenant_id?: string
+          versao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "versoes_ata_ata_id_fkey"
+            columns: ["ata_id"]
+            isOneToOne: false
+            referencedRelation: "atas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "versoes_ata_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       visitantes: {
         Row: {
           cim: string | null
@@ -2937,6 +3176,25 @@ export type Database = {
         | "aguardando_exclusao"
         | "banido"
       app_role: "superadmin" | "administrador"
+      ata_estado:
+        | "rascunho"
+        | "revisao"
+        | "leitura"
+        | "aprovada"
+        | "travada"
+        | "publicada"
+        | "retificada"
+      bloco_tipo:
+        | "cabecalho"
+        | "abertura"
+        | "expediente"
+        | "saco_propostas"
+        | "ordem_dia"
+        | "tempo_estudos"
+        | "tronco"
+        | "palavra_bem"
+        | "encerramento"
+        | "outros"
       campaign_status: "rascunho" | "ativa" | "pausada" | "encerrada"
       status_solicitacao:
         | "pendente"
@@ -3100,6 +3358,27 @@ export const Constants = {
         "banido",
       ],
       app_role: ["superadmin", "administrador"],
+      ata_estado: [
+        "rascunho",
+        "revisao",
+        "leitura",
+        "aprovada",
+        "travada",
+        "publicada",
+        "retificada",
+      ],
+      bloco_tipo: [
+        "cabecalho",
+        "abertura",
+        "expediente",
+        "saco_propostas",
+        "ordem_dia",
+        "tempo_estudos",
+        "tronco",
+        "palavra_bem",
+        "encerramento",
+        "outros",
+      ],
       campaign_status: ["rascunho", "ativa", "pausada", "encerrada"],
       status_solicitacao: [
         "pendente",
