@@ -24,6 +24,7 @@ import GestaoTermos from "./pages/GestaoTermos";
 import ControleAceites from "./pages/ControleAceites";
 import NotFound from "./pages/NotFound";
 import TotemAdmin from "./pages/TotemAdmin";
+import Sessoes from "./pages/Sessoes";
 import ComunicacoesPreferencias from "./pages/comunicacoes/ComunicacoesPreferencias";
 import ComunicacoesTemplates from "./pages/comunicacoes/ComunicacoesTemplates";
 import ComunicacoesTarefas from "./pages/comunicacoes/ComunicacoesTarefas";
