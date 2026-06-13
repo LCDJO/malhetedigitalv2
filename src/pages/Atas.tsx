@@ -273,9 +273,43 @@ export default function Atas() {
               {locked && <Badge variant="destructive"><Lock className="h-3 w-3 mr-1"/>Bloqueada</Badge>}
             </div>
           </div>
-          {PROXIMO_ESTADO[selected.estado] && (
-            <Button onClick={avancarEstado}>Avançar → {PROXIMO_ESTADO[selected.estado]}</Button>
-          )}
+          <div className="flex gap-2 flex-wrap justify-end">
+            {!locked && (
+              <Button variant="outline" onClick={preencherAberturaAuto}>
+                <Sparkles className="h-4 w-4 mr-2"/>Preencher abertura
+              </Button>
+            )}
+            <Button variant="outline" onClick={exportarPdf}>
+              <Download className="h-4 w-4 mr-2"/>PDF oficial
+            </Button>
+            {(selected.estado === "publicada" || selected.estado === "travada") && (
+              <Dialog open={retOpen} onOpenChange={setRetOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline"><FilePlus2 className="h-4 w-4 mr-2"/>Retificar</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader><DialogTitle>Retificar Ata</DialogTitle></DialogHeader>
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      Uma nova ata será criada em rascunho, vinculada a esta, e a original ficará marcada como retificada.
+                    </p>
+                    <div>
+                      <Label>Motivo da retificação *</Label>
+                      <Textarea rows={4} value={retMotivo} onChange={(e) => setRetMotivo(e.target.value)}
+                        placeholder="Descreva o erro material ou omissão a corrigir…"/>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setRetOpen(false)}>Cancelar</Button>
+                    <Button onClick={retificar} disabled={!retMotivo.trim()}>Criar retificadora</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            )}
+            {PROXIMO_ESTADO[selected.estado] && (
+              <Button onClick={avancarEstado}>Avançar → {PROXIMO_ESTADO[selected.estado]}</Button>
+            )}
+          </div>
         </div>
 
         <div className="space-y-3">
