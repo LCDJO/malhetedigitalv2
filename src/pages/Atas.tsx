@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserTenant } from "@/core/tenant";
+import { useLodgeConfig } from "@/hooks/useLodgeConfig";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +12,9 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Plus, FileText, Lock, ArrowLeft, Save, ShieldCheck, MessageSquarePlus } from "lucide-react";
+import { Plus, FileText, Lock, ArrowLeft, Save, ShieldCheck, MessageSquarePlus, Sparkles, Download, FilePlus2 } from "lucide-react";
+import { gerarBlocosAbertura } from "@/lib/ataAutoBlocks";
+import { exportAtaPdf } from "@/lib/ataPdf";
 
 type Estado = "rascunho" | "revisao" | "leitura" | "aprovada" | "travada" | "publicada" | "retificada";
 type BlocoTipo = "cabecalho" | "abertura" | "expediente" | "saco_propostas" | "ordem_dia" | "tempo_estudos" | "tronco" | "palavra_bem" | "encerramento" | "outros";
