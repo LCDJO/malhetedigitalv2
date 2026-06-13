@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { usePortalMember } from "@/core/tenant/usePortalMember";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,20 +10,18 @@ interface Bloco { id: string; tipo: string; ordem: number; titulo: string | null
 interface Assinatura { id: string; papel: string; assinado_em: string; user_id: string; }
 
 export default function PortalAtas() {
-  const { member } = usePortalMember();
-  const tenantId = member?.tenant_id;
   const [atas, setAtas] = useState<Ata[]>([]);
   const [sel, setSel] = useState<Ata | null>(null);
   const [blocos, setBlocos] = useState<Bloco[]>([]);
   const [assinaturas, setAssinaturas] = useState<Assinatura[]>([]);
 
   useEffect(() => {
-    if (!tenantId) return;
+    // RLS filtra por tenant e grau automaticamente
     supabase.from("atas").select("id, numero, titulo, publicada_em, hash_integridade, versao_atual")
-      .eq("tenant_id", tenantId).eq("estado", "publicada")
+      .eq("estado", "publicada")
       .order("publicada_em", { ascending: false })
       .then(({ data }) => data && setAtas(data as Ata[]));
-  }, [tenantId]);
+  }, []);
 
   useEffect(() => {
     if (!sel) return;
