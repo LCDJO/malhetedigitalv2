@@ -24,6 +24,7 @@ import GestaoTermos from "./pages/GestaoTermos";
 import ControleAceites from "./pages/ControleAceites";
 import NotFound from "./pages/NotFound";
 import TotemAdmin from "./pages/TotemAdmin";
+import Sessoes from "./pages/Sessoes";
 import ComunicacoesPreferencias from "./pages/comunicacoes/ComunicacoesPreferencias";
 import ComunicacoesTemplates from "./pages/comunicacoes/ComunicacoesTemplates";
 import ComunicacoesTarefas from "./pages/comunicacoes/ComunicacoesTarefas";
@@ -185,6 +186,7 @@ const App = () => (
                       <Route path="/secretaria" element={<ProtectedRoute navKey="secretaria"><Secretaria /></ProtectedRoute>} />
                       <Route path="/tesouraria" element={<ProtectedRoute navKey="tesouraria"><Tesouraria /></ProtectedRoute>} />
                       <Route path="/totem" element={<ProtectedRoute navKey="totem"><TotemAdmin /></ProtectedRoute>} />
+                      <Route path="/sessoes" element={<ProtectedRoute navKey="sessoes"><Sessoes /></ProtectedRoute>} />
                       <Route path="/configuracoes" element={<ProtectedRoute navKey="configuracoes"><Configuracoes /></ProtectedRoute>} />
                       <Route path="/relatorios" element={<ProtectedRoute navKey="relatorios"><Relatorios /></ProtectedRoute>} />
                       <Route path="/gestao-usuarios" element={<ProtectedRoute navKey="gestao_usuarios"><GestaoUsuarios /></ProtectedRoute>} />

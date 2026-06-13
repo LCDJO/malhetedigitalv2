@@ -30,6 +30,7 @@ import {
   FileText,
   Send,
   Bell,
+  Calendar,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth, roleLabels } from "@/contexts/AuthContext";
@@ -89,6 +90,7 @@ const navSections: NavSection[] = [
     label: "Operação",
     items: [
       { title: "Secretaria", url: "/dashboard/secretaria", icon: BookOpen, navKey: "secretaria" },
+      { title: "Sessões", url: "/dashboard/sessoes", icon: Calendar, navKey: "sessoes" },
       { title: "Chancelaria", url: "/dashboard/chancelaria", icon: Stamp, navKey: "chancelaria" },
       { title: "Tesouraria", url: "/dashboard/tesouraria", icon: Wallet, navKey: "tesouraria" },
       { title: "Financeiro Geral", url: "/dashboard/financeiro-geral", icon: DollarSign, navKey: "financeiro_geral" },
