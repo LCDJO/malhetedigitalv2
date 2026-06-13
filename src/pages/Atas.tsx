@@ -176,6 +176,86 @@ export default function Atas() {
     loadAssinaturas(selected.id);
   };
 
+  const preencherAberturaAuto = async () => {
+    if (!selected || !tenantId) return;
+    if (!lodgeConfig.lodge_name) return toast.error("Configure os dados da Loja primeiro.");
+    try {
+      const result = await gerarBlocosAbertura({
+        tenantId,
+        sessaoId: selected.sessao_id,
+        ataNumero: selected.numero,
+        lodgeName: lodgeConfig.lodge_name,
+        lodgeNumber: lodgeConfig.lodge_number,
+        orient: lodgeConfig.orient,
+        potencia: lodgeConfig.potencia,
+      });
+      const updates: Promise<unknown>[] = [];
+      const cab = blocos.find(b => b.tipo === "cabecalho");
+      const abe = blocos.find(b => b.tipo === "abertura");
+      if (cab) updates.push(supabase.from("blocos_ata").update({ conteudo: result.cabecalho }).eq("id", cab.id));
+      if (abe) updates.push(supabase.from("blocos_ata").update({ conteudo: result.abertura }).eq("id", abe.id));
+      await Promise.all(updates);
+      toast.success(`Abertura preenchida (${result.stats.presentes} presentes, ${result.stats.visitantes} visitantes).`);
+      loadBlocos(selected.id);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha ao gerar abertura.");
+    }
+  };
+
+  const exportarPdf = async () => {
+    if (!selected) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    exportAtaPdf({
+      config: lodgeConfig,
+      ata: selected,
+      blocos: blocos.map(b => ({ titulo: b.titulo, tipo: b.tipo, conteudo: b.conteudo, ordem: b.ordem })),
+      assinaturas,
+      emitidoPor: user?.email ?? undefined,
+    });
+  };
+
+  const retificar = async () => {
+    if (!selected || !tenantId || !retMotivo.trim()) return toast.error("Informe o motivo da retificação.");
+    // Verifica prazo configurado
+    const referencia = selected.publicada_em ? new Date(selected.publicada_em) : null;
+    if (referencia && lodgeConfig && (lodgeConfig as any).dias_prazo_retificacao) {
+      const prazoDias = (lodgeConfig as any).dias_prazo_retificacao as number;
+      const diff = (Date.now() - referencia.getTime()) / (1000 * 60 * 60 * 24);
+      if (diff > prazoDias) {
+        return toast.error(`Prazo de retificação (${prazoDias} dias) expirado.`);
+      }
+    }
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data: novaAta, error } = await supabase.from("atas").insert({
+      tenant_id: tenantId,
+      sessao_id: selected.sessao_id,
+      numero: selected.numero ? `${selected.numero}-R` : null,
+      titulo: `Retificação — ${selected.titulo ?? `Ata ${selected.numero ?? ""}`}`.trim(),
+      retificacao_de: selected.id,
+      created_by: user?.id,
+    }).select().single();
+    if (error || !novaAta) return toast.error(error?.message ?? "Falha ao retificar.");
+    // Clona blocos da ata original
+    const clones = blocos.map(b => ({
+      tenant_id: tenantId, ata_id: novaAta.id,
+      tipo: b.tipo, ordem: b.ordem,
+      titulo: b.titulo, conteudo: b.conteudo,
+    }));
+    if (clones.length) await supabase.from("blocos_ata").insert(clones);
+    // Bloco de motivo
+    await supabase.from("blocos_ata").insert({
+      tenant_id: tenantId, ata_id: novaAta.id, tipo: "outros",
+      ordem: clones.length, titulo: "Motivo da Retificação", conteudo: retMotivo,
+    });
+    // Marca a original como retificada
+    await supabase.from("atas").update({ estado: "retificada" }).eq("id", selected.id);
+    toast.success("Ata retificadora criada em rascunho.");
+    setRetOpen(false);
+    setRetMotivo("");
+    await load();
+    setSelected({ ...(novaAta as Ata) });
+  };
+
   if (tLoading) return <div className="p-6">Carregando…</div>;
 
   // ── Detalhe ──
