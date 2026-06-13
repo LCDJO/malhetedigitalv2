@@ -200,6 +200,46 @@ export default function Atas() {
             <BlocoEditor key={b.id} bloco={b} locked={locked} onSave={(c) => salvarBloco(b, c)}/>
           ))}
         </div>
+
+        {selected.estado === "leitura" && (
+          <Card>
+            <CardHeader className="py-3"><CardTitle className="text-base flex items-center gap-2"><MessageSquarePlus className="h-4 w-4"/>Manifesto em Sessão</CardTitle></CardHeader>
+            <CardContent className="space-y-2">
+              <Textarea value={manifesto} onChange={(e) => setManifesto(e.target.value)} rows={3} placeholder="Registre uma palavra a bem, observação ou voto…"/>
+              <Button size="sm" onClick={adicionarManifesto} disabled={!manifesto.trim()}>Registrar manifesto</Button>
+            </CardContent>
+          </Card>
+        )}
+
+        <Card>
+          <CardHeader className="py-3"><CardTitle className="text-base flex items-center gap-2"><ShieldCheck className="h-4 w-4"/>Assinaturas</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
+            {assinaturas.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhuma assinatura registrada.</p>
+            ) : (
+              <ul className="text-sm space-y-1">
+                {assinaturas.map(a => (
+                  <li key={a.id} className="flex justify-between border-b py-1">
+                    <span>{a.papel} <Badge variant="outline" className="ml-1">v{a.versao}</Badge></span>
+                    <span className="text-muted-foreground">{new Date(a.assinado_em).toLocaleString("pt-BR")}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {(selected.estado === "aprovada" || selected.estado === "travada") && (
+              <div className="flex gap-2 items-end pt-2 border-t">
+                <div className="flex-1">
+                  <Label>Papel</Label>
+                  <Select value={papel} onValueChange={setPapel}>
+                    <SelectTrigger><SelectValue/></SelectTrigger>
+                    <SelectContent>{PAPEIS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <Button onClick={assinar}><ShieldCheck className="h-4 w-4 mr-2"/>Assinar</Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     );
   }
