@@ -144,6 +144,33 @@ export default function Atas() {
     load();
   };
 
+  const adicionarManifesto = async () => {
+    if (!selected || !tenantId || !manifesto.trim()) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    const nextOrdem = blocos.length;
+    const { error } = await supabase.from("blocos_ata").insert({
+      tenant_id: tenantId, ata_id: selected.id, tipo: "outros", ordem: nextOrdem,
+      titulo: "Manifesto / Palavra a Bem", conteudo: manifesto, autor_id: user?.id,
+    });
+    if (error) return toast.error(error.message);
+    toast.success("Manifesto registrado");
+    setManifesto("");
+    loadBlocos(selected.id);
+  };
+
+  const assinar = async () => {
+    if (!selected || !tenantId) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return toast.error("Sessão expirada");
+    const { error } = await supabase.from("assinaturas_ata").insert({
+      tenant_id: tenantId, ata_id: selected.id, user_id: user.id,
+      papel, versao: selected.versao_atual,
+    });
+    if (error) return toast.error(error.message);
+    toast.success(`Assinada como ${papel}`);
+    loadAssinaturas(selected.id);
+  };
+
   if (tLoading) return <div className="p-6">Carregando…</div>;
 
   // ── Detalhe ──
