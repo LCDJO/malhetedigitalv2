@@ -58,8 +58,11 @@ export default function Atas() {
   const [sessoes, setSessoes] = useState<Sessao[]>([]);
   const [selected, setSelected] = useState<Ata | null>(null);
   const [blocos, setBlocos] = useState<Bloco[]>([]);
+  const [assinaturas, setAssinaturas] = useState<Assinatura[]>([]);
   const [open, setOpen] = useState(false);
   const [nova, setNova] = useState({ sessao_id: "", numero: "", titulo: "" });
+  const [manifesto, setManifesto] = useState("");
+  const [papel, setPapel] = useState(PAPEIS[0]);
 
   const load = async () => {
     if (!tenantId) return;
