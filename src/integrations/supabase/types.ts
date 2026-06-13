@@ -658,6 +658,93 @@ export type Database = {
           },
         ]
       }
+      beneficencia_lancamentos: {
+        Row: {
+          ata_id: string | null
+          beneficiario_member_id: string | null
+          created_at: string
+          created_by: string | null
+          data: string
+          descricao: string | null
+          estorno_de: string | null
+          id: string
+          origem: Database["public"]["Enums"]["beneficencia_origem"]
+          sessao_id: string | null
+          tenant_id: string
+          tipo: Database["public"]["Enums"]["beneficencia_tipo"]
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          ata_id?: string | null
+          beneficiario_member_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          data?: string
+          descricao?: string | null
+          estorno_de?: string | null
+          id?: string
+          origem?: Database["public"]["Enums"]["beneficencia_origem"]
+          sessao_id?: string | null
+          tenant_id: string
+          tipo: Database["public"]["Enums"]["beneficencia_tipo"]
+          updated_at?: string
+          valor: number
+        }
+        Update: {
+          ata_id?: string | null
+          beneficiario_member_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          data?: string
+          descricao?: string | null
+          estorno_de?: string | null
+          id?: string
+          origem?: Database["public"]["Enums"]["beneficencia_origem"]
+          sessao_id?: string | null
+          tenant_id?: string
+          tipo?: Database["public"]["Enums"]["beneficencia_tipo"]
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beneficencia_lancamentos_ata_id_fkey"
+            columns: ["ata_id"]
+            isOneToOne: false
+            referencedRelation: "atas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "beneficencia_lancamentos_beneficiario_member_id_fkey"
+            columns: ["beneficiario_member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "beneficencia_lancamentos_estorno_de_fkey"
+            columns: ["estorno_de"]
+            isOneToOne: false
+            referencedRelation: "beneficencia_lancamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "beneficencia_lancamentos_sessao_id_fkey"
+            columns: ["sessao_id"]
+            isOneToOne: false
+            referencedRelation: "sessoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "beneficencia_lancamentos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blocos_ata: {
         Row: {
           ata_id: string
@@ -965,6 +1052,89 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      hospitalaria_assistencias: {
+        Row: {
+          beneficencia_lancamento_id: string | null
+          created_at: string
+          created_by: string | null
+          data_abertura: string
+          data_encerramento: string | null
+          id: string
+          member_id: string
+          motivo: string
+          observacoes: string | null
+          responsavel_member_id: string | null
+          status: Database["public"]["Enums"]["hospitalaria_status"]
+          tenant_id: string
+          tipo: Database["public"]["Enums"]["hospitalaria_tipo"]
+          updated_at: string
+          valor: number | null
+        }
+        Insert: {
+          beneficencia_lancamento_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_abertura?: string
+          data_encerramento?: string | null
+          id?: string
+          member_id: string
+          motivo: string
+          observacoes?: string | null
+          responsavel_member_id?: string | null
+          status?: Database["public"]["Enums"]["hospitalaria_status"]
+          tenant_id: string
+          tipo: Database["public"]["Enums"]["hospitalaria_tipo"]
+          updated_at?: string
+          valor?: number | null
+        }
+        Update: {
+          beneficencia_lancamento_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_abertura?: string
+          data_encerramento?: string | null
+          id?: string
+          member_id?: string
+          motivo?: string
+          observacoes?: string | null
+          responsavel_member_id?: string | null
+          status?: Database["public"]["Enums"]["hospitalaria_status"]
+          tenant_id?: string
+          tipo?: Database["public"]["Enums"]["hospitalaria_tipo"]
+          updated_at?: string
+          valor?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hospitalaria_assistencias_beneficencia_lancamento_id_fkey"
+            columns: ["beneficencia_lancamento_id"]
+            isOneToOne: false
+            referencedRelation: "beneficencia_lancamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hospitalaria_assistencias_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hospitalaria_assistencias_responsavel_member_id_fkey"
+            columns: ["responsavel_member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hospitalaria_assistencias_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       incidentes: {
         Row: {
@@ -3184,6 +3354,13 @@ export type Database = {
         | "travada"
         | "publicada"
         | "retificada"
+      beneficencia_origem:
+        | "tronco_sessao"
+        | "doacao"
+        | "transferencia"
+        | "assistencia"
+        | "outro"
+      beneficencia_tipo: "entrada" | "saida" | "estorno"
       bloco_tipo:
         | "cabecalho"
         | "abertura"
@@ -3196,6 +3373,18 @@ export type Database = {
         | "encerramento"
         | "outros"
       campaign_status: "rascunho" | "ativa" | "pausada" | "encerrada"
+      hospitalaria_status:
+        | "aberto"
+        | "em_acompanhamento"
+        | "concluido"
+        | "cancelado"
+      hospitalaria_tipo:
+        | "visita"
+        | "auxilio_financeiro"
+        | "oracao"
+        | "cesta_basica"
+        | "acompanhamento_familia"
+        | "outro"
       status_solicitacao:
         | "pendente"
         | "em_andamento"
@@ -3367,6 +3556,14 @@ export const Constants = {
         "publicada",
         "retificada",
       ],
+      beneficencia_origem: [
+        "tronco_sessao",
+        "doacao",
+        "transferencia",
+        "assistencia",
+        "outro",
+      ],
+      beneficencia_tipo: ["entrada", "saida", "estorno"],
       bloco_tipo: [
         "cabecalho",
         "abertura",
@@ -3380,6 +3577,20 @@ export const Constants = {
         "outros",
       ],
       campaign_status: ["rascunho", "ativa", "pausada", "encerrada"],
+      hospitalaria_status: [
+        "aberto",
+        "em_acompanhamento",
+        "concluido",
+        "cancelado",
+      ],
+      hospitalaria_tipo: [
+        "visita",
+        "auxilio_financeiro",
+        "oracao",
+        "cesta_basica",
+        "acompanhamento_familia",
+        "outro",
+      ],
       status_solicitacao: [
         "pendente",
         "em_andamento",
