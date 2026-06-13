@@ -1014,6 +1014,121 @@ export type Database = {
         }
         Relationships: []
       }
+      escrutinio_votos: {
+        Row: {
+          cor: Database["public"]["Enums"]["voto_cor"]
+          created_at: string
+          escrutinio_id: string
+          id: string
+          tenant_id: string
+          voter_hash: string
+        }
+        Insert: {
+          cor: Database["public"]["Enums"]["voto_cor"]
+          created_at?: string
+          escrutinio_id: string
+          id?: string
+          tenant_id: string
+          voter_hash: string
+        }
+        Update: {
+          cor?: Database["public"]["Enums"]["voto_cor"]
+          created_at?: string
+          escrutinio_id?: string
+          id?: string
+          tenant_id?: string
+          voter_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "escrutinio_votos_escrutinio_id_fkey"
+            columns: ["escrutinio_id"]
+            isOneToOne: false
+            referencedRelation: "escrutinios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escrutinio_votos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      escrutinios: {
+        Row: {
+          aberto_em: string
+          created_at: string
+          created_by: string | null
+          encerrado_em: string | null
+          estado: Database["public"]["Enums"]["escrutinio_estado"]
+          id: string
+          observacoes: string | null
+          proposta_id: string
+          resultado: string | null
+          sessao_id: string | null
+          tenant_id: string
+          total_brancas: number
+          total_pretas: number
+          updated_at: string
+        }
+        Insert: {
+          aberto_em?: string
+          created_at?: string
+          created_by?: string | null
+          encerrado_em?: string | null
+          estado?: Database["public"]["Enums"]["escrutinio_estado"]
+          id?: string
+          observacoes?: string | null
+          proposta_id: string
+          resultado?: string | null
+          sessao_id?: string | null
+          tenant_id: string
+          total_brancas?: number
+          total_pretas?: number
+          updated_at?: string
+        }
+        Update: {
+          aberto_em?: string
+          created_at?: string
+          created_by?: string | null
+          encerrado_em?: string | null
+          estado?: Database["public"]["Enums"]["escrutinio_estado"]
+          id?: string
+          observacoes?: string | null
+          proposta_id?: string
+          resultado?: string | null
+          sessao_id?: string | null
+          tenant_id?: string
+          total_brancas?: number
+          total_pretas?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "escrutinios_proposta_id_fkey"
+            columns: ["proposta_id"]
+            isOneToOne: false
+            referencedRelation: "propostas_iniciacao"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escrutinios_sessao_id_fkey"
+            columns: ["sessao_id"]
+            isOneToOne: false
+            referencedRelation: "sessoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escrutinios_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       follows: {
         Row: {
           created_at: string
@@ -2196,6 +2311,78 @@ export type Database = {
           },
         ]
       }
+      propostas_iniciacao: {
+        Row: {
+          apresentacao: string | null
+          candidato_cpf: string | null
+          candidato_email: string | null
+          candidato_endereco: string | null
+          candidato_nascimento: string | null
+          candidato_nome: string
+          candidato_profissao: string | null
+          candidato_telefone: string | null
+          created_at: string
+          created_by: string | null
+          estado: Database["public"]["Enums"]["proposta_estado"]
+          id: string
+          observacoes: string | null
+          padrinho_member_id: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          apresentacao?: string | null
+          candidato_cpf?: string | null
+          candidato_email?: string | null
+          candidato_endereco?: string | null
+          candidato_nascimento?: string | null
+          candidato_nome: string
+          candidato_profissao?: string | null
+          candidato_telefone?: string | null
+          created_at?: string
+          created_by?: string | null
+          estado?: Database["public"]["Enums"]["proposta_estado"]
+          id?: string
+          observacoes?: string | null
+          padrinho_member_id?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          apresentacao?: string | null
+          candidato_cpf?: string | null
+          candidato_email?: string | null
+          candidato_endereco?: string | null
+          candidato_nascimento?: string | null
+          candidato_nome?: string
+          candidato_profissao?: string | null
+          candidato_telefone?: string | null
+          created_at?: string
+          created_by?: string | null
+          estado?: Database["public"]["Enums"]["proposta_estado"]
+          id?: string
+          observacoes?: string | null
+          padrinho_member_id?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "propostas_iniciacao_padrinho_member_id_fkey"
+            columns: ["padrinho_member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "propostas_iniciacao_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ranking_snapshots: {
         Row: {
           created_at: string
@@ -2357,6 +2544,64 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "sessoes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sindicancias: {
+        Row: {
+          created_at: string
+          entregue_em: string | null
+          id: string
+          proposta_id: string
+          relatorio: string | null
+          sindicante_member_id: string
+          tenant_id: string
+          updated_at: string
+          voto: Database["public"]["Enums"]["sindicancia_voto"] | null
+        }
+        Insert: {
+          created_at?: string
+          entregue_em?: string | null
+          id?: string
+          proposta_id: string
+          relatorio?: string | null
+          sindicante_member_id: string
+          tenant_id: string
+          updated_at?: string
+          voto?: Database["public"]["Enums"]["sindicancia_voto"] | null
+        }
+        Update: {
+          created_at?: string
+          entregue_em?: string | null
+          id?: string
+          proposta_id?: string
+          relatorio?: string | null
+          sindicante_member_id?: string
+          tenant_id?: string
+          updated_at?: string
+          voto?: Database["public"]["Enums"]["sindicancia_voto"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sindicancias_proposta_id_fkey"
+            columns: ["proposta_id"]
+            isOneToOne: false
+            referencedRelation: "propostas_iniciacao"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sindicancias_sindicante_member_id_fkey"
+            columns: ["sindicante_member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sindicancias_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -3373,6 +3618,7 @@ export type Database = {
         | "encerramento"
         | "outros"
       campaign_status: "rascunho" | "ativa" | "pausada" | "encerrada"
+      escrutinio_estado: "aberto" | "encerrado" | "anulado"
       hospitalaria_status:
         | "aberto"
         | "em_acompanhamento"
@@ -3385,6 +3631,15 @@ export type Database = {
         | "cesta_basica"
         | "acompanhamento_familia"
         | "outro"
+      proposta_estado:
+        | "rascunho"
+        | "sindicancia"
+        | "parecer"
+        | "escrutinio"
+        | "aprovada"
+        | "rejeitada"
+        | "arquivada"
+      sindicancia_voto: "favoravel" | "contrario" | "abstencao"
       status_solicitacao:
         | "pendente"
         | "em_andamento"
@@ -3411,6 +3666,7 @@ export type Database = {
         | "cancelled"
       tipo_solicitacao_titular: "correcao" | "exclusao" | "exportacao"
       transaction_type: "credit" | "debit"
+      voto_cor: "branca" | "preta"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3577,6 +3833,7 @@ export const Constants = {
         "outros",
       ],
       campaign_status: ["rascunho", "ativa", "pausada", "encerrada"],
+      escrutinio_estado: ["aberto", "encerrado", "anulado"],
       hospitalaria_status: [
         "aberto",
         "em_acompanhamento",
@@ -3591,6 +3848,16 @@ export const Constants = {
         "acompanhamento_familia",
         "outro",
       ],
+      proposta_estado: [
+        "rascunho",
+        "sindicancia",
+        "parecer",
+        "escrutinio",
+        "aprovada",
+        "rejeitada",
+        "arquivada",
+      ],
+      sindicancia_voto: ["favoravel", "contrario", "abstencao"],
       status_solicitacao: [
         "pendente",
         "em_andamento",
@@ -3620,6 +3887,7 @@ export const Constants = {
       ],
       tipo_solicitacao_titular: ["correcao", "exclusao", "exportacao"],
       transaction_type: ["credit", "debit"],
+      voto_cor: ["branca", "preta"],
     },
   },
 } as const
