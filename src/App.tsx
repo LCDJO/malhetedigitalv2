@@ -41,6 +41,7 @@ import PortalPerfil from "./pages/portal/PortalPerfil";
 import PortalMinhaLoja from "./pages/portal/PortalMinhaLoja";
 import PortalDocumentos from "./pages/portal/PortalDocumentos";
 import PortalRedeSocial from "./pages/portal/PortalRedeSocial";
+import PortalAtas from "./pages/portal/PortalAtas";
 
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
