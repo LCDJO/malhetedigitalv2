@@ -217,6 +217,7 @@ const NAV_ENTITY_MAP: Record<NavKey, PermissionEntity> = {
   atas: "members",
   beneficencia: "member_transactions",
   propostas: "members",
+  oficina: "members",
 };
 
 /**
