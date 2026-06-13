@@ -93,6 +93,7 @@ const navSections: NavSection[] = [
       { title: "Secretaria", url: "/dashboard/secretaria", icon: BookOpen, navKey: "secretaria" },
       { title: "Sessões", url: "/dashboard/sessoes", icon: Calendar, navKey: "sessoes" },
       { title: "Atas", url: "/dashboard/atas", icon: FileText, navKey: "atas" },
+      { title: "Propostas", url: "/dashboard/propostas", icon: FileText, navKey: "propostas" },
       { title: "Chancelaria", url: "/dashboard/chancelaria", icon: Stamp, navKey: "chancelaria" },
       { title: "Tesouraria", url: "/dashboard/tesouraria", icon: Wallet, navKey: "tesouraria" },
       { title: "Beneficência", url: "/dashboard/beneficencia", icon: HandHeart, navKey: "beneficencia" },
