@@ -32,6 +32,9 @@ import {
   Bell,
   Calendar,
   HandHeart,
+  FolderArchive,
+  Library,
+  FileSignature,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth, roleLabels } from "@/contexts/AuthContext";
@@ -103,6 +106,16 @@ const navSections: NavSection[] = [
       { title: "Totem", url: "/dashboard/totem", icon: Monitor, navKey: "totem" },
       { title: "Relatórios", url: "/dashboard/relatorios", icon: FileBarChart, navKey: "relatorios" },
       { title: "Atendimento", url: "/dashboard/atendimento", icon: MessageSquare, navKey: "atendimento" },
+    ],
+  },
+
+  // ── ACERVO ──
+  {
+    label: "Acervo & Estudos",
+    items: [
+      { title: "Documentos", url: "/dashboard/documentos", icon: FolderArchive, navKey: "documentos" },
+      { title: "Biblioteca", url: "/dashboard/biblioteca", icon: Library, navKey: "biblioteca" },
+      { title: "Pranchas", url: "/dashboard/pranchas", icon: FileSignature, navKey: "pranchas" },
     ],
   },
 
