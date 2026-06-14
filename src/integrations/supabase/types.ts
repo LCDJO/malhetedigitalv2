@@ -1200,6 +1200,52 @@ export type Database = {
           },
         ]
       }
+      comunicado_leituras: {
+        Row: {
+          comunicado_id: string
+          id: string
+          lido_em: string
+          member_id: string
+          tenant_id: string
+        }
+        Insert: {
+          comunicado_id: string
+          id?: string
+          lido_em?: string
+          member_id: string
+          tenant_id: string
+        }
+        Update: {
+          comunicado_id?: string
+          id?: string
+          lido_em?: string
+          member_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comunicado_leituras_comunicado_id_fkey"
+            columns: ["comunicado_id"]
+            isOneToOne: false
+            referencedRelation: "comunicados"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comunicado_leituras_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comunicado_leituras_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       comunicados: {
         Row: {
           autor_id: string | null
