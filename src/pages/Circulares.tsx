@@ -87,6 +87,35 @@ export default function Circulares() {
     } catch (e: any) { toast.error(e.message); }
   }
 
+  function toggleSel(id: string) {
+    setSelected(prev => {
+      const n = new Set(prev);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
+  }
+  async function marcarSelecionadasLidas() {
+    if (!tenantId || !member?.id) return;
+    const ids = Array.from(selected).filter(id => !lidos.has(id));
+    if (ids.length === 0) { toast.info("Nada para marcar."); return; }
+    try {
+      await marcarCircularesLidasEmLote(tenantId, ids, member.id);
+      setLidos(prev => { const n = new Set(prev); ids.forEach(i => n.add(i)); return n; });
+      setSelected(new Set());
+      toast.success(`${ids.length} marcada(s) como lida.`);
+    } catch (e: any) { toast.error(e.message); }
+  }
+  async function marcarTodasLidas() {
+    if (!tenantId || !member?.id) return;
+    const ids = items.filter(i => i.status === "enviada" && !lidos.has(i.id)).map(i => i.id);
+    if (ids.length === 0) { toast.info("Nenhuma não lida."); return; }
+    try {
+      await marcarCircularesLidasEmLote(tenantId, ids, member.id);
+      setLidos(prev => { const n = new Set(prev); ids.forEach(i => n.add(i)); return n; });
+      toast.success(`${ids.length} marcada(s) como lida.`);
+    } catch (e: any) { toast.error(e.message); }
+  }
+
   function openNew() {
     setEditing(null);
     setForm({ numero: "", assunto: "", corpo: "", grau_minimo: 1, enviar_email: true, enviar_push: true });
