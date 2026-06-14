@@ -53,6 +53,7 @@ export default function Circulares() {
     numero: "", assunto: "", corpo: "", grau_minimo: 1,
     enviar_email: true, enviar_push: true,
   });
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   // Filtros
   const [search, setSearch] = useState("");
