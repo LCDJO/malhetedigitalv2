@@ -128,6 +128,17 @@ export async function listarCircularesLidas(tenantId: string, memberId: string):
   return (data ?? []).map((r: any) => r.circular_id);
 }
 
+export async function marcarCircularesLidasEmLote(tenantId: string, circularIds: string[], memberId: string) {
+  if (circularIds.length === 0) return;
+  const { error } = await supabase
+    .from("circular_envios")
+    .update({ lido_em: new Date().toISOString() })
+    .eq("tenant_id", tenantId)
+    .eq("member_id", memberId)
+    .in("circular_id", circularIds);
+  if (error) throw error;
+}
+
 export async function marcarCircularLida(tenantId: string, circularId: string, memberId: string) {
   const { error } = await supabase
     .from("circular_envios")
