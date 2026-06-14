@@ -147,7 +147,7 @@ export default function Mural() {
         onOpenChange={(v) => !v && setConfirmDel(null)}
         title="Excluir comunicado"
         description={`Excluir "${confirmDel?.titulo}"?`}
-        confirmKeyword="EXCLUIR"
+        requireTypedConfirmation="EXCLUIR"
         onConfirm={remove}
       />
     </div>

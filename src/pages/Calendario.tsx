@@ -200,7 +200,7 @@ export default function Calendario() {
         onOpenChange={(v) => !v && setConfirmDel(null)}
         title="Excluir evento"
         description={`Excluir "${confirmDel?.titulo}"?`}
-        confirmKeyword="EXCLUIR"
+        requireTypedConfirmation="EXCLUIR"
         onConfirm={remove}
       />
     </div>

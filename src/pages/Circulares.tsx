@@ -163,7 +163,7 @@ export default function Circulares() {
         onOpenChange={(v) => !v && setConfirmDel(null)}
         title="Excluir circular"
         description={`Excluir circular Nº ${confirmDel?.numero}?`}
-        confirmKeyword="EXCLUIR"
+        requireTypedConfirmation="EXCLUIR"
         onConfirm={remove}
       />
       <ConfirmSensitiveAction
@@ -171,7 +171,7 @@ export default function Circulares() {
         onOpenChange={(v) => !v && setConfirmSend(null)}
         title="Enviar circular"
         description={`Confirma o envio da circular Nº ${confirmSend?.numero} a todos os irmãos elegíveis?`}
-        confirmKeyword="ENVIAR"
+        requireTypedConfirmation="ENVIAR"
         onConfirm={send}
       />
     </div>
