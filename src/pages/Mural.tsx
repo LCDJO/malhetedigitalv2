@@ -14,10 +14,11 @@ import { usePortalMember } from "@/core/tenant/usePortalMember";
 import { useScope } from "@/contexts/ScopeContext";
 import { hasPermission } from "@/domains/security/permissions";
 import { toast } from "sonner";
-import { Pin, Plus, Trash2, Edit, Check, Search } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Pin, Plus, Trash2, Edit, Check, Search, CheckCheck } from "lucide-react";
 import {
   listarComunicados, criarComunicado, atualizarComunicado, excluirComunicado,
-  listarComunicadosLidos, marcarComunicadoLido,
+  listarComunicadosLidos, marcarComunicadoLido, marcarComunicadosLidosEmLote,
   type Comunicado, type ComunicacaoFilters,
 } from "@/services/comunicacao";
 
