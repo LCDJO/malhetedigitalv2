@@ -19,15 +19,44 @@ export interface Comunicado {
   updated_at: string;
 }
 
-export async function listarComunicados(tenantId: string): Promise<Comunicado[]> {
-  const { data, error } = await supabase
-    .from("comunicados")
-    .select("*")
-    .eq("tenant_id", tenantId)
+export interface ComunicacaoFilters {
+  search?: string;
+  grauMinimo?: number;
+  from?: string;
+  to?: string;
+}
+
+export async function listarComunicados(tenantId: string, filters: ComunicacaoFilters = {}): Promise<Comunicado[]> {
+  let q = supabase.from("comunicados").select("*").eq("tenant_id", tenantId);
+  if (filters.grauMinimo) q = q.gte("grau_minimo", filters.grauMinimo);
+  if (filters.from) q = q.gte("created_at", filters.from);
+  if (filters.to) q = q.lte("created_at", filters.to);
+  if (filters.search) q = q.or(`titulo.ilike.%${filters.search}%,conteudo.ilike.%${filters.search}%`);
+  const { data, error } = await q
     .order("fixado", { ascending: false })
     .order("created_at", { ascending: false });
   if (error) throw error;
   return (data ?? []) as Comunicado[];
+}
+
+export async function listarComunicadosLidos(tenantId: string, memberId: string): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("comunicado_leituras")
+    .select("comunicado_id")
+    .eq("tenant_id", tenantId)
+    .eq("member_id", memberId);
+  if (error) throw error;
+  return (data ?? []).map((r: any) => r.comunicado_id);
+}
+
+export async function marcarComunicadoLido(tenantId: string, comunicadoId: string, memberId: string) {
+  const { error } = await supabase
+    .from("comunicado_leituras")
+    .upsert(
+      { tenant_id: tenantId, comunicado_id: comunicadoId, member_id: memberId },
+      { onConflict: "comunicado_id,member_id" }
+    );
+  if (error) throw error;
 }
 
 export async function criarComunicado(input: Partial<Comunicado>) {
