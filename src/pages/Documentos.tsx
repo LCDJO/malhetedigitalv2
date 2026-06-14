@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { ConfirmSensitiveAction } from "@/components/ConfirmSensitiveAction";
 import { useUserTenant } from "@/core/tenant/useUserTenant";
 import { useScope } from "@/contexts/ScopeContext";
+import { hasPermission } from "@/domains/security/permissions";
 import { toast } from "sonner";
 import {
   listarDocumentos, criarDocumento, atualizarDocumento, excluirDocumento,
@@ -38,8 +39,8 @@ const GRAUS = [
 
 export default function Documentos() {
   const { tenantId } = useUserTenant();
-  const { hasPermission } = useScope();
-  const canWrite = hasPermission("lodge_config", "write");
+  const { appRole, tenantRole } = useScope();
+  const canWrite = hasPermission("lodge_config", "write", appRole, tenantRole);
 
   const [items, setItems] = useState<Documento[]>([]);
   const [stats, setStats] = useState<Record<string, number>>({});
@@ -264,7 +265,8 @@ export default function Documentos() {
           onOpenChange={(o) => !o && setConfirmDel(null)}
           title="Excluir documento"
           description={`Confirmar exclusão de "${confirmDel.titulo}"? Esta ação remove o arquivo do acervo.`}
-          confirmKeyword="EXCLUIR"
+          requireTypedConfirmation="EXCLUIR"
+          destructive
           onConfirm={excluir}
         />
       )}
