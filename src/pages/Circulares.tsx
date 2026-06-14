@@ -218,6 +218,13 @@ export default function Circulares() {
                 <CardHeader>
                   <CardTitle className="flex justify-between items-center gap-2 text-base">
                     <span className="flex items-center gap-2">
+                      {member && isEnviada && !lido && (
+                        <Checkbox
+                          checked={selected.has(c.id)}
+                          onCheckedChange={() => toggleSel(c.id)}
+                          aria-label="Selecionar"
+                        />
+                      )}
                       <FileText className="w-4 h-4" />
                       {isEnviada && !lido && <span className="w-2 h-2 rounded-full bg-primary" aria-label="Não lida" />}
                       Nº {c.numero} — {c.assunto}
