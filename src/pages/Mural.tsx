@@ -50,6 +50,7 @@ export default function Mural() {
   const [editing, setEditing] = useState<Comunicado | null>(null);
   const [confirmDel, setConfirmDel] = useState<Comunicado | null>(null);
   const [form, setForm] = useState({ titulo: "", conteudo: "", grau_minimo: 1, fixado: false, publicado: true });
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   // Filtros
   const [search, setSearch] = useState("");
