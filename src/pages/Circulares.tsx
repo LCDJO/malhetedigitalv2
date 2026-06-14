@@ -14,10 +14,11 @@ import { usePortalMember } from "@/core/tenant/usePortalMember";
 import { useScope } from "@/contexts/ScopeContext";
 import { hasPermission } from "@/domains/security/permissions";
 import { toast } from "sonner";
-import { Send, Plus, Trash2, Edit, FileText, Check, Search } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Send, Plus, Trash2, Edit, FileText, Check, Search, CheckCheck } from "lucide-react";
 import {
   listarCirculares, criarCircular, atualizarCircular, excluirCircular, enviarCircular,
-  listarCircularesLidas, marcarCircularLida,
+  listarCircularesLidas, marcarCircularLida, marcarCircularesLidasEmLote,
   type Circular, type ComunicacaoFilters,
 } from "@/services/comunicacao";
 
