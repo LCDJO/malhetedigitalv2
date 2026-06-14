@@ -14,10 +14,11 @@ import { usePortalMember } from "@/core/tenant/usePortalMember";
 import { useScope } from "@/contexts/ScopeContext";
 import { hasPermission } from "@/domains/security/permissions";
 import { toast } from "sonner";
-import { Pin, Plus, Trash2, Edit, Check, Search } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Pin, Plus, Trash2, Edit, Check, Search, CheckCheck } from "lucide-react";
 import {
   listarComunicados, criarComunicado, atualizarComunicado, excluirComunicado,
-  listarComunicadosLidos, marcarComunicadoLido,
+  listarComunicadosLidos, marcarComunicadoLido, marcarComunicadosLidosEmLote,
   type Comunicado, type ComunicacaoFilters,
 } from "@/services/comunicacao";
 
@@ -49,6 +50,7 @@ export default function Mural() {
   const [editing, setEditing] = useState<Comunicado | null>(null);
   const [confirmDel, setConfirmDel] = useState<Comunicado | null>(null);
   const [form, setForm] = useState({ titulo: "", conteudo: "", grau_minimo: 1, fixado: false, publicado: true });
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   // Filtros
   const [search, setSearch] = useState("");
@@ -80,6 +82,37 @@ export default function Mural() {
     try {
       await marcarComunicadoLido(tenantId, c.id, member.id);
       setLidos(prev => new Set(prev).add(c.id));
+    } catch (e: any) { toast.error(e.message); }
+  }
+
+  function toggleSel(id: string) {
+    setSelected(prev => {
+      const n = new Set(prev);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
+  }
+
+  async function marcarSelecionadosLidos() {
+    if (!tenantId || !member?.id) return;
+    const ids = Array.from(selected).filter(id => !lidos.has(id));
+    if (ids.length === 0) { toast.info("Nada para marcar."); return; }
+    try {
+      await marcarComunicadosLidosEmLote(tenantId, ids, member.id);
+      setLidos(prev => { const n = new Set(prev); ids.forEach(i => n.add(i)); return n; });
+      setSelected(new Set());
+      toast.success(`${ids.length} marcado(s) como lido.`);
+    } catch (e: any) { toast.error(e.message); }
+  }
+
+  async function marcarTodosLidos() {
+    if (!tenantId || !member?.id) return;
+    const ids = items.filter(i => !lidos.has(i.id)).map(i => i.id);
+    if (ids.length === 0) { toast.info("Nenhum não lido."); return; }
+    try {
+      await marcarComunicadosLidosEmLote(tenantId, ids, member.id);
+      setLidos(prev => { const n = new Set(prev); ids.forEach(i => n.add(i)); return n; });
+      toast.success(`${ids.length} marcado(s) como lido.`);
     } catch (e: any) { toast.error(e.message); }
   }
 
@@ -159,6 +192,18 @@ export default function Mural() {
         </CardContent>
       </Card>
 
+      {member && items.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <span className="text-muted-foreground">{selected.size} selecionado(s)</span>
+          <Button size="sm" variant="outline" onClick={marcarSelecionadosLidos} disabled={selected.size === 0}>
+            <Check className="w-3 h-3 mr-1" />Marcar selecionados como lidos
+          </Button>
+          <Button size="sm" variant="outline" onClick={marcarTodosLidos} disabled={naoLidos === 0}>
+            <CheckCheck className="w-3 h-3 mr-1" />Marcar todos como lidos ({naoLidos})
+          </Button>
+        </div>
+      )}
+
       {loading ? <p>Carregando…</p> : items.length === 0 ? (
         <Card><CardContent className="py-10 text-center text-muted-foreground">Nenhum comunicado encontrado.</CardContent></Card>
       ) : (
@@ -170,6 +215,13 @@ export default function Mural() {
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between gap-2">
                     <span className="flex items-center gap-2">
+                      {member && !lido && (
+                        <Checkbox
+                          checked={selected.has(c.id)}
+                          onCheckedChange={() => toggleSel(c.id)}
+                          aria-label="Selecionar"
+                        />
+                      )}
                       {c.fixado && <Pin className="w-4 h-4 text-primary" />}
                       {!lido && <span className="w-2 h-2 rounded-full bg-primary" aria-label="Não lido" />}
                       {c.titulo}

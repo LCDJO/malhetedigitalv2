@@ -14,10 +14,11 @@ import { usePortalMember } from "@/core/tenant/usePortalMember";
 import { useScope } from "@/contexts/ScopeContext";
 import { hasPermission } from "@/domains/security/permissions";
 import { toast } from "sonner";
-import { Send, Plus, Trash2, Edit, FileText, Check, Search } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Send, Plus, Trash2, Edit, FileText, Check, Search, CheckCheck } from "lucide-react";
 import {
   listarCirculares, criarCircular, atualizarCircular, excluirCircular, enviarCircular,
-  listarCircularesLidas, marcarCircularLida,
+  listarCircularesLidas, marcarCircularLida, marcarCircularesLidasEmLote,
   type Circular, type ComunicacaoFilters,
 } from "@/services/comunicacao";
 
@@ -52,6 +53,7 @@ export default function Circulares() {
     numero: "", assunto: "", corpo: "", grau_minimo: 1,
     enviar_email: true, enviar_push: true,
   });
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   // Filtros
   const [search, setSearch] = useState("");
@@ -82,6 +84,35 @@ export default function Circulares() {
     try {
       await marcarCircularLida(tenantId, c.id, member.id);
       setLidos(prev => new Set(prev).add(c.id));
+    } catch (e: any) { toast.error(e.message); }
+  }
+
+  function toggleSel(id: string) {
+    setSelected(prev => {
+      const n = new Set(prev);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
+  }
+  async function marcarSelecionadasLidas() {
+    if (!tenantId || !member?.id) return;
+    const ids = Array.from(selected).filter(id => !lidos.has(id));
+    if (ids.length === 0) { toast.info("Nada para marcar."); return; }
+    try {
+      await marcarCircularesLidasEmLote(tenantId, ids, member.id);
+      setLidos(prev => { const n = new Set(prev); ids.forEach(i => n.add(i)); return n; });
+      setSelected(new Set());
+      toast.success(`${ids.length} marcada(s) como lida.`);
+    } catch (e: any) { toast.error(e.message); }
+  }
+  async function marcarTodasLidas() {
+    if (!tenantId || !member?.id) return;
+    const ids = items.filter(i => i.status === "enviada" && !lidos.has(i.id)).map(i => i.id);
+    if (ids.length === 0) { toast.info("Nenhuma não lida."); return; }
+    try {
+      await marcarCircularesLidasEmLote(tenantId, ids, member.id);
+      setLidos(prev => { const n = new Set(prev); ids.forEach(i => n.add(i)); return n; });
+      toast.success(`${ids.length} marcada(s) como lida.`);
     } catch (e: any) { toast.error(e.message); }
   }
 
@@ -175,6 +206,18 @@ export default function Circulares() {
         </CardContent>
       </Card>
 
+      {member && items.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <span className="text-muted-foreground">{selected.size} selecionada(s)</span>
+          <Button size="sm" variant="outline" onClick={marcarSelecionadasLidas} disabled={selected.size === 0}>
+            <Check className="w-3 h-3 mr-1" />Marcar selecionadas como lidas
+          </Button>
+          <Button size="sm" variant="outline" onClick={marcarTodasLidas} disabled={naoLidas === 0}>
+            <CheckCheck className="w-3 h-3 mr-1" />Marcar todas como lidas ({naoLidas})
+          </Button>
+        </div>
+      )}
+
       {loading ? <p>Carregando…</p> : items.length === 0 ? (
         <Card><CardContent className="py-10 text-center text-muted-foreground">Nenhuma circular encontrada.</CardContent></Card>
       ) : (
@@ -187,6 +230,13 @@ export default function Circulares() {
                 <CardHeader>
                   <CardTitle className="flex justify-between items-center gap-2 text-base">
                     <span className="flex items-center gap-2">
+                      {member && isEnviada && !lido && (
+                        <Checkbox
+                          checked={selected.has(c.id)}
+                          onCheckedChange={() => toggleSel(c.id)}
+                          aria-label="Selecionar"
+                        />
+                      )}
                       <FileText className="w-4 h-4" />
                       {isEnviada && !lido && <span className="w-2 h-2 rounded-full bg-primary" aria-label="Não lida" />}
                       Nº {c.numero} — {c.assunto}

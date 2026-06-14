@@ -59,6 +59,15 @@ export async function marcarComunicadoLido(tenantId: string, comunicadoId: strin
   if (error) throw error;
 }
 
+export async function marcarComunicadosLidosEmLote(tenantId: string, comunicadoIds: string[], memberId: string) {
+  if (comunicadoIds.length === 0) return;
+  const rows = comunicadoIds.map(id => ({ tenant_id: tenantId, comunicado_id: id, member_id: memberId }));
+  const { error } = await supabase
+    .from("comunicado_leituras")
+    .upsert(rows, { onConflict: "comunicado_id,member_id" });
+  if (error) throw error;
+}
+
 export async function criarComunicado(input: Partial<Comunicado>) {
   const { data, error } = await supabase.from("comunicados").insert(input as any).select().single();
   if (error) throw error;
@@ -117,6 +126,17 @@ export async function listarCircularesLidas(tenantId: string, memberId: string):
     .not("lido_em", "is", null);
   if (error) throw error;
   return (data ?? []).map((r: any) => r.circular_id);
+}
+
+export async function marcarCircularesLidasEmLote(tenantId: string, circularIds: string[], memberId: string) {
+  if (circularIds.length === 0) return;
+  const { error } = await supabase
+    .from("circular_envios")
+    .update({ lido_em: new Date().toISOString() })
+    .eq("tenant_id", tenantId)
+    .eq("member_id", memberId)
+    .in("circular_id", circularIds);
+  if (error) throw error;
 }
 
 export async function marcarCircularLida(tenantId: string, circularId: string, memberId: string) {
