@@ -59,6 +59,15 @@ export async function marcarComunicadoLido(tenantId: string, comunicadoId: strin
   if (error) throw error;
 }
 
+export async function marcarComunicadosLidosEmLote(tenantId: string, comunicadoIds: string[], memberId: string) {
+  if (comunicadoIds.length === 0) return;
+  const rows = comunicadoIds.map(id => ({ tenant_id: tenantId, comunicado_id: id, member_id: memberId }));
+  const { error } = await supabase
+    .from("comunicado_leituras")
+    .upsert(rows, { onConflict: "comunicado_id,member_id" });
+  if (error) throw error;
+}
+
 export async function criarComunicado(input: Partial<Comunicado>) {
   const { data, error } = await supabase.from("comunicados").insert(input as any).select().single();
   if (error) throw error;
