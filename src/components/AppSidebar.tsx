@@ -123,8 +123,11 @@ const navSections: NavSection[] = [
   {
     label: "Comunicações",
     items: [
+      { title: "Mural", url: "/dashboard/mural", icon: Pin, navKey: "mural" },
+      { title: "Circulares", url: "/dashboard/circulares", icon: Send, navKey: "circulares" },
+      { title: "Calendário", url: "/dashboard/calendario", icon: Calendar, navKey: "calendario" },
       {
-        title: "Comunicações",
+        title: "Configurações de Envio",
         url: "/dashboard/comunicacoes/preferencias",
         icon: Mail,
         navKey: "comunicacoes",
