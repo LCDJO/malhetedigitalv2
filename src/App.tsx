@@ -30,6 +30,9 @@ import Beneficencia from "./pages/Beneficencia";
 import Propostas from "./pages/Propostas";
 import Oficina from "./pages/Oficina";
 import Presencas from "./pages/Presencas";
+import Documentos from "./pages/Documentos";
+import Biblioteca from "./pages/Biblioteca";
+import Pranchas from "./pages/Pranchas";
 import ComunicacoesPreferencias from "./pages/comunicacoes/ComunicacoesPreferencias";
 import ComunicacoesTemplates from "./pages/comunicacoes/ComunicacoesTemplates";
 import ComunicacoesTarefas from "./pages/comunicacoes/ComunicacoesTarefas";
@@ -199,6 +202,9 @@ const App = () => (
                       <Route path="/propostas" element={<ProtectedRoute navKey="propostas"><Propostas /></ProtectedRoute>} />
                       <Route path="/oficina" element={<ProtectedRoute navKey="oficina"><Oficina /></ProtectedRoute>} />
                       <Route path="/presencas" element={<ProtectedRoute navKey="presencas"><Presencas /></ProtectedRoute>} />
+                      <Route path="/documentos" element={<ProtectedRoute navKey="documentos"><Documentos /></ProtectedRoute>} />
+                      <Route path="/biblioteca" element={<ProtectedRoute navKey="biblioteca"><Biblioteca /></ProtectedRoute>} />
+                      <Route path="/pranchas" element={<ProtectedRoute navKey="pranchas"><Pranchas /></ProtectedRoute>} />
                       <Route path="/configuracoes" element={<ProtectedRoute navKey="configuracoes"><Configuracoes /></ProtectedRoute>} />
                       <Route path="/relatorios" element={<ProtectedRoute navKey="relatorios"><Relatorios /></ProtectedRoute>} />
                       <Route path="/gestao-usuarios" element={<ProtectedRoute navKey="gestao_usuarios"><GestaoUsuarios /></ProtectedRoute>} />

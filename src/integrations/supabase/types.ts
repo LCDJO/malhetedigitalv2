@@ -818,6 +818,77 @@ export type Database = {
           },
         ]
       }
+      biblioteca_itens: {
+        Row: {
+          autor: string | null
+          cargos_visiveis: string[]
+          categoria: Database["public"]["Enums"]["biblioteca_categoria"]
+          conteudo: string | null
+          created_at: string
+          descricao: string | null
+          grau_minimo: number
+          id: string
+          mime_type: string | null
+          publicado: boolean
+          publicado_de_prancha_id: string | null
+          storage_path: string | null
+          tags: string[]
+          tamanho_bytes: number | null
+          tenant_id: string
+          titulo: string
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          autor?: string | null
+          cargos_visiveis?: string[]
+          categoria?: Database["public"]["Enums"]["biblioteca_categoria"]
+          conteudo?: string | null
+          created_at?: string
+          descricao?: string | null
+          grau_minimo?: number
+          id?: string
+          mime_type?: string | null
+          publicado?: boolean
+          publicado_de_prancha_id?: string | null
+          storage_path?: string | null
+          tags?: string[]
+          tamanho_bytes?: number | null
+          tenant_id: string
+          titulo: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          autor?: string | null
+          cargos_visiveis?: string[]
+          categoria?: Database["public"]["Enums"]["biblioteca_categoria"]
+          conteudo?: string | null
+          created_at?: string
+          descricao?: string | null
+          grau_minimo?: number
+          id?: string
+          mime_type?: string | null
+          publicado?: boolean
+          publicado_de_prancha_id?: string | null
+          storage_path?: string | null
+          tags?: string[]
+          tamanho_bytes?: number | null
+          tenant_id?: string
+          titulo?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "biblioteca_itens_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blocos_ata: {
         Row: {
           ata_id: string
@@ -919,6 +990,71 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "cargos_oficina_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documentos: {
+        Row: {
+          ano_referencia: number | null
+          cargos_visiveis: string[]
+          categoria: Database["public"]["Enums"]["documento_categoria"]
+          created_at: string
+          descricao: string | null
+          grau_minimo: number
+          id: string
+          mime_type: string | null
+          reservado: boolean
+          storage_path: string | null
+          tags: string[]
+          tamanho_bytes: number | null
+          tenant_id: string
+          titulo: string
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          ano_referencia?: number | null
+          cargos_visiveis?: string[]
+          categoria?: Database["public"]["Enums"]["documento_categoria"]
+          created_at?: string
+          descricao?: string | null
+          grau_minimo?: number
+          id?: string
+          mime_type?: string | null
+          reservado?: boolean
+          storage_path?: string | null
+          tags?: string[]
+          tamanho_bytes?: number | null
+          tenant_id: string
+          titulo: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          ano_referencia?: number | null
+          cargos_visiveis?: string[]
+          categoria?: Database["public"]["Enums"]["documento_categoria"]
+          created_at?: string
+          descricao?: string | null
+          grau_minimo?: number
+          id?: string
+          mime_type?: string | null
+          reservado?: boolean
+          storage_path?: string | null
+          tags?: string[]
+          tamanho_bytes?: number | null
+          tenant_id?: string
+          titulo?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documentos_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -1361,6 +1497,68 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "incidentes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leituras_registro: {
+        Row: {
+          acao: Database["public"]["Enums"]["leitura_acao"]
+          biblioteca_item_id: string | null
+          created_at: string
+          documento_id: string | null
+          id: string
+          member_id: string | null
+          tenant_id: string
+          user_id: string | null
+        }
+        Insert: {
+          acao?: Database["public"]["Enums"]["leitura_acao"]
+          biblioteca_item_id?: string | null
+          created_at?: string
+          documento_id?: string | null
+          id?: string
+          member_id?: string | null
+          tenant_id: string
+          user_id?: string | null
+        }
+        Update: {
+          acao?: Database["public"]["Enums"]["leitura_acao"]
+          biblioteca_item_id?: string | null
+          created_at?: string
+          documento_id?: string | null
+          id?: string
+          member_id?: string | null
+          tenant_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leituras_registro_biblioteca_item_id_fkey"
+            columns: ["biblioteca_item_id"]
+            isOneToOne: false
+            referencedRelation: "biblioteca_itens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leituras_registro_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "documentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leituras_registro_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leituras_registro_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -2278,6 +2476,94 @@ export type Database = {
           sigla?: string
         }
         Relationships: []
+      }
+      pranchas_submissoes: {
+        Row: {
+          categoria: Database["public"]["Enums"]["biblioteca_categoria"]
+          conteudo: string | null
+          created_at: string
+          enviado_em: string | null
+          estado: Database["public"]["Enums"]["prancha_estado"]
+          grau: number
+          id: string
+          member_id: string
+          mime_type: string | null
+          parecer: string | null
+          parecer_em: string | null
+          parecer_por: string | null
+          publicado_item_id: string | null
+          resumo: string | null
+          storage_path: string | null
+          tags: string[]
+          tenant_id: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          categoria?: Database["public"]["Enums"]["biblioteca_categoria"]
+          conteudo?: string | null
+          created_at?: string
+          enviado_em?: string | null
+          estado?: Database["public"]["Enums"]["prancha_estado"]
+          grau?: number
+          id?: string
+          member_id: string
+          mime_type?: string | null
+          parecer?: string | null
+          parecer_em?: string | null
+          parecer_por?: string | null
+          publicado_item_id?: string | null
+          resumo?: string | null
+          storage_path?: string | null
+          tags?: string[]
+          tenant_id: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          categoria?: Database["public"]["Enums"]["biblioteca_categoria"]
+          conteudo?: string | null
+          created_at?: string
+          enviado_em?: string | null
+          estado?: Database["public"]["Enums"]["prancha_estado"]
+          grau?: number
+          id?: string
+          member_id?: string
+          mime_type?: string | null
+          parecer?: string | null
+          parecer_em?: string | null
+          parecer_por?: string | null
+          publicado_item_id?: string | null
+          resumo?: string | null
+          storage_path?: string | null
+          tags?: string[]
+          tenant_id?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pranchas_submissoes_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pranchas_submissoes_publicado_item_id_fkey"
+            columns: ["publicado_item_id"]
+            isOneToOne: false
+            referencedRelation: "biblioteca_itens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pranchas_submissoes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       presencas: {
         Row: {
@@ -3634,6 +3920,10 @@ export type Database = {
       }
       get_advertiser_id: { Args: { _user_id: string }; Returns: string }
       get_auth_email: { Args: never; Returns: string }
+      get_member_grau: {
+        Args: { _tenant_id: string; _user_id: string }
+        Returns: number
+      }
       get_my_profile_private: {
         Args: never
         Returns: {
@@ -3684,6 +3974,10 @@ export type Database = {
         Returns: boolean
       }
       lookup_email_by_cpf: { Args: { _cpf: string }; Returns: string }
+      member_has_cargo: {
+        Args: { _cargo_ids: string[]; _tenant_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       advertiser_status:
@@ -3717,6 +4011,14 @@ export type Database = {
         | "assistencia"
         | "outro"
       beneficencia_tipo: "entrada" | "saida" | "estorno"
+      biblioteca_categoria:
+        | "prancha"
+        | "livro"
+        | "ritualistica"
+        | "historia"
+        | "simbolismo"
+        | "filosofia"
+        | "outros"
       bloco_tipo:
         | "cabecalho"
         | "abertura"
@@ -3729,6 +4031,16 @@ export type Database = {
         | "encerramento"
         | "outros"
       campaign_status: "rascunho" | "ativa" | "pausada" | "encerrada"
+      documento_categoria:
+        | "estatuto"
+        | "regulamento"
+        | "ata_publicada"
+        | "circular"
+        | "oficio"
+        | "balanco"
+        | "relatorio"
+        | "convocacao"
+        | "outros"
       escrutinio_estado: "aberto" | "encerrado" | "anulado"
       grau_macom: "aprendiz" | "companheiro" | "mestre"
       hospitalaria_status:
@@ -3743,6 +4055,13 @@ export type Database = {
         | "cesta_basica"
         | "acompanhamento_familia"
         | "outro"
+      leitura_acao: "visualizou" | "baixou"
+      prancha_estado:
+        | "rascunho"
+        | "em_analise"
+        | "aprovada"
+        | "rejeitada"
+        | "publicada"
       proposta_estado:
         | "rascunho"
         | "sindicancia"
@@ -3941,6 +4260,15 @@ export const Constants = {
         "outro",
       ],
       beneficencia_tipo: ["entrada", "saida", "estorno"],
+      biblioteca_categoria: [
+        "prancha",
+        "livro",
+        "ritualistica",
+        "historia",
+        "simbolismo",
+        "filosofia",
+        "outros",
+      ],
       bloco_tipo: [
         "cabecalho",
         "abertura",
@@ -3954,6 +4282,17 @@ export const Constants = {
         "outros",
       ],
       campaign_status: ["rascunho", "ativa", "pausada", "encerrada"],
+      documento_categoria: [
+        "estatuto",
+        "regulamento",
+        "ata_publicada",
+        "circular",
+        "oficio",
+        "balanco",
+        "relatorio",
+        "convocacao",
+        "outros",
+      ],
       escrutinio_estado: ["aberto", "encerrado", "anulado"],
       grau_macom: ["aprendiz", "companheiro", "mestre"],
       hospitalaria_status: [
@@ -3969,6 +4308,14 @@ export const Constants = {
         "cesta_basica",
         "acompanhamento_familia",
         "outro",
+      ],
+      leitura_acao: ["visualizou", "baixou"],
+      prancha_estado: [
+        "rascunho",
+        "em_analise",
+        "aprovada",
+        "rejeitada",
+        "publicada",
       ],
       proposta_estado: [
         "rascunho",
