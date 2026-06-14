@@ -97,14 +97,36 @@ export interface Circular {
   updated_at: string;
 }
 
-export async function listarCirculares(tenantId: string): Promise<Circular[]> {
-  const { data, error } = await supabase
-    .from("circulares")
-    .select("*")
-    .eq("tenant_id", tenantId)
-    .order("created_at", { ascending: false });
+export async function listarCirculares(tenantId: string, filters: ComunicacaoFilters = {}): Promise<Circular[]> {
+  let q = supabase.from("circulares").select("*").eq("tenant_id", tenantId);
+  if (filters.grauMinimo) q = q.gte("grau_minimo", filters.grauMinimo);
+  if (filters.from) q = q.gte("created_at", filters.from);
+  if (filters.to) q = q.lte("created_at", filters.to);
+  if (filters.search) q = q.or(`numero.ilike.%${filters.search}%,assunto.ilike.%${filters.search}%,corpo.ilike.%${filters.search}%`);
+  const { data, error } = await q.order("created_at", { ascending: false });
   if (error) throw error;
   return (data ?? []) as Circular[];
+}
+
+export async function listarCircularesLidas(tenantId: string, memberId: string): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("circular_envios")
+    .select("circular_id")
+    .eq("tenant_id", tenantId)
+    .eq("member_id", memberId)
+    .not("lido_em", "is", null);
+  if (error) throw error;
+  return (data ?? []).map((r: any) => r.circular_id);
+}
+
+export async function marcarCircularLida(tenantId: string, circularId: string, memberId: string) {
+  const { error } = await supabase
+    .from("circular_envios")
+    .update({ lido_em: new Date().toISOString() })
+    .eq("tenant_id", tenantId)
+    .eq("circular_id", circularId)
+    .eq("member_id", memberId);
+  if (error) throw error;
 }
 
 export async function criarCircular(input: Partial<Circular>) {
