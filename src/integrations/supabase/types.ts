@@ -953,6 +953,82 @@ export type Database = {
           },
         ]
       }
+      calendario_eventos: {
+        Row: {
+          cor: string | null
+          created_at: string
+          data_fim: string | null
+          data_inicio: string
+          descricao: string | null
+          dia_inteiro: boolean
+          grau_minimo: number
+          id: string
+          member_id: string | null
+          recorrencia: string | null
+          sessao_id: string | null
+          tenant_id: string
+          tipo: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          cor?: string | null
+          created_at?: string
+          data_fim?: string | null
+          data_inicio: string
+          descricao?: string | null
+          dia_inteiro?: boolean
+          grau_minimo?: number
+          id?: string
+          member_id?: string | null
+          recorrencia?: string | null
+          sessao_id?: string | null
+          tenant_id: string
+          tipo?: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          cor?: string | null
+          created_at?: string
+          data_fim?: string | null
+          data_inicio?: string
+          descricao?: string | null
+          dia_inteiro?: boolean
+          grau_minimo?: number
+          id?: string
+          member_id?: string | null
+          recorrencia?: string | null
+          sessao_id?: string | null
+          tenant_id?: string
+          tipo?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendario_eventos_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendario_eventos_sessao_id_fkey"
+            columns: ["sessao_id"]
+            isOneToOne: false
+            referencedRelation: "sessoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendario_eventos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cargos_oficina: {
         Row: {
           ativo: boolean
@@ -990,6 +1066,190 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "cargos_oficina_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      circular_envios: {
+        Row: {
+          circular_id: string
+          created_at: string
+          email_enviado: boolean
+          erro: string | null
+          id: string
+          lido_em: string | null
+          member_id: string
+          push_enviado: boolean
+          tenant_id: string
+        }
+        Insert: {
+          circular_id: string
+          created_at?: string
+          email_enviado?: boolean
+          erro?: string | null
+          id?: string
+          lido_em?: string | null
+          member_id: string
+          push_enviado?: boolean
+          tenant_id: string
+        }
+        Update: {
+          circular_id?: string
+          created_at?: string
+          email_enviado?: boolean
+          erro?: string | null
+          id?: string
+          lido_em?: string | null
+          member_id?: string
+          push_enviado?: boolean
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "circular_envios_circular_id_fkey"
+            columns: ["circular_id"]
+            isOneToOne: false
+            referencedRelation: "circulares"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "circular_envios_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "circular_envios_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      circulares: {
+        Row: {
+          anexo_path: string | null
+          assunto: string
+          autor_id: string | null
+          cargos_destino: string[]
+          corpo: string
+          created_at: string
+          enviada_em: string | null
+          enviar_email: boolean
+          enviar_push: boolean
+          grau_minimo: number
+          id: string
+          numero: string
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          anexo_path?: string | null
+          assunto: string
+          autor_id?: string | null
+          cargos_destino?: string[]
+          corpo: string
+          created_at?: string
+          enviada_em?: string | null
+          enviar_email?: boolean
+          enviar_push?: boolean
+          grau_minimo?: number
+          id?: string
+          numero: string
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          anexo_path?: string | null
+          assunto?: string
+          autor_id?: string | null
+          cargos_destino?: string[]
+          corpo?: string
+          created_at?: string
+          enviada_em?: string | null
+          enviar_email?: boolean
+          enviar_push?: boolean
+          grau_minimo?: number
+          id?: string
+          numero?: string
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "circulares_autor_id_fkey"
+            columns: ["autor_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "circulares_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comunicados: {
+        Row: {
+          autor_id: string | null
+          cargos_visiveis: string[]
+          conteudo: string
+          created_at: string
+          fixado: boolean
+          grau_minimo: number
+          id: string
+          publicado: boolean
+          tenant_id: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          autor_id?: string | null
+          cargos_visiveis?: string[]
+          conteudo: string
+          created_at?: string
+          fixado?: boolean
+          grau_minimo?: number
+          id?: string
+          publicado?: boolean
+          tenant_id: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          autor_id?: string | null
+          cargos_visiveis?: string[]
+          conteudo?: string
+          created_at?: string
+          fixado?: boolean
+          grau_minimo?: number
+          id?: string
+          publicado?: boolean
+          tenant_id?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comunicados_autor_id_fkey"
+            columns: ["autor_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comunicados_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
