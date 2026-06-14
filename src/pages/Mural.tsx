@@ -192,6 +192,18 @@ export default function Mural() {
         </CardContent>
       </Card>
 
+      {member && items.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <span className="text-muted-foreground">{selected.size} selecionado(s)</span>
+          <Button size="sm" variant="outline" onClick={marcarSelecionadosLidos} disabled={selected.size === 0}>
+            <Check className="w-3 h-3 mr-1" />Marcar selecionados como lidos
+          </Button>
+          <Button size="sm" variant="outline" onClick={marcarTodosLidos} disabled={naoLidos === 0}>
+            <CheckCheck className="w-3 h-3 mr-1" />Marcar todos como lidos ({naoLidos})
+          </Button>
+        </div>
+      )}
+
       {loading ? <p>Carregando…</p> : items.length === 0 ? (
         <Card><CardContent className="py-10 text-center text-muted-foreground">Nenhum comunicado encontrado.</CardContent></Card>
       ) : (
@@ -203,6 +215,13 @@ export default function Mural() {
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between gap-2">
                     <span className="flex items-center gap-2">
+                      {member && !lido && (
+                        <Checkbox
+                          checked={selected.has(c.id)}
+                          onCheckedChange={() => toggleSel(c.id)}
+                          aria-label="Selecionar"
+                        />
+                      )}
                       {c.fixado && <Pin className="w-4 h-4 text-primary" />}
                       {!lido && <span className="w-2 h-2 rounded-full bg-primary" aria-label="Não lido" />}
                       {c.titulo}
