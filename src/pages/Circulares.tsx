@@ -206,6 +206,18 @@ export default function Circulares() {
         </CardContent>
       </Card>
 
+      {member && items.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <span className="text-muted-foreground">{selected.size} selecionada(s)</span>
+          <Button size="sm" variant="outline" onClick={marcarSelecionadasLidas} disabled={selected.size === 0}>
+            <Check className="w-3 h-3 mr-1" />Marcar selecionadas como lidas
+          </Button>
+          <Button size="sm" variant="outline" onClick={marcarTodasLidas} disabled={naoLidas === 0}>
+            <CheckCheck className="w-3 h-3 mr-1" />Marcar todas como lidas ({naoLidas})
+          </Button>
+        </div>
+      )}
+
       {loading ? <p>Carregando…</p> : items.length === 0 ? (
         <Card><CardContent className="py-10 text-center text-muted-foreground">Nenhuma circular encontrada.</CardContent></Card>
       ) : (
