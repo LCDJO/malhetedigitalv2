@@ -85,6 +85,37 @@ export default function Mural() {
     } catch (e: any) { toast.error(e.message); }
   }
 
+  function toggleSel(id: string) {
+    setSelected(prev => {
+      const n = new Set(prev);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
+  }
+
+  async function marcarSelecionadosLidos() {
+    if (!tenantId || !member?.id) return;
+    const ids = Array.from(selected).filter(id => !lidos.has(id));
+    if (ids.length === 0) { toast.info("Nada para marcar."); return; }
+    try {
+      await marcarComunicadosLidosEmLote(tenantId, ids, member.id);
+      setLidos(prev => { const n = new Set(prev); ids.forEach(i => n.add(i)); return n; });
+      setSelected(new Set());
+      toast.success(`${ids.length} marcado(s) como lido.`);
+    } catch (e: any) { toast.error(e.message); }
+  }
+
+  async function marcarTodosLidos() {
+    if (!tenantId || !member?.id) return;
+    const ids = items.filter(i => !lidos.has(i.id)).map(i => i.id);
+    if (ids.length === 0) { toast.info("Nenhum não lido."); return; }
+    try {
+      await marcarComunicadosLidosEmLote(tenantId, ids, member.id);
+      setLidos(prev => { const n = new Set(prev); ids.forEach(i => n.add(i)); return n; });
+      toast.success(`${ids.length} marcado(s) como lido.`);
+    } catch (e: any) { toast.error(e.message); }
+  }
+
   function openNew() {
     setEditing(null);
     setForm({ titulo: "", conteudo: "", grau_minimo: 1, fixado: false, publicado: true });
